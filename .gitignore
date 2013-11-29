@@ -1,0 +1,4 @@
+#### Ignoring files
+
+#ignore big maquette files
+__mixed/maquette_OGR_Spread/*
