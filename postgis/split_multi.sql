@@ -1,4 +1,4 @@
----------------------------------------------
+﻿---------------------------------------------
 --Copyright Remi-C Thales IGN 13/09/2013
 --
 --
@@ -11,8 +11,8 @@
 --___ public.rc_Split_multi(input_geom geometry ,blade geometry)___
 	
 		--creating a simple wrapper around ST_Split to allow splitting line by multipoints
-		DROP FUNCTION IF EXISTS public.rc_Split_multi(input_geom geometry ,blade geometry);
-		CREATE FUNCTION public.rc_Split_multi(input_geom geometry ,blade geometry)
+		DROP FUNCTION IF EXISTS public.rc_Split_multi(input_geom geometry ,blade geometry, tolerance double precision ) CASCADE;
+		CREATE FUNCTION public.rc_Split_multi(input_geom geometry ,blade geometry, tolerance double precision )
 		  RETURNS geometry AS
 		$BODY$
 		--this function is a wrapper around the function ST_Split to allow splitting mutli_lines with multi_points
@@ -22,6 +22,9 @@
 			simple_blade geometry;
 			blade_geometry_type text := GeometryType(blade); geom_geometry_type text := GeometryType(input_geom);
 			blade_coded_type SMALLINT; geom_coded_type SMALLINT;
+			srid_blade INT := ST_SRID(blade);
+			srid_input_geom INT := ST_SRID(input_geom);
+			
 		    BEGIN
 
 			--finding type of input : mixed type are not allowed
@@ -54,9 +57,9 @@
 
 			result := input_geom;			
 			--Loop on all the geometry in the blade
-			FOR simple_blade IN SELECT (ST_Dump(ST_CollectionExtract(blade, blade_coded_type))).geom
+			FOR simple_blade IN SELECT rc_SnapPointToLine(ST_SetSRID( (ST_Dump(ST_CollectionExtract(blade, blade_coded_type))).geom , srid_blade) , input_geom, tolerance)
 			LOOP
-					result:= ST_CollectionExtract(ST_Split(result,simple_blade),geom_coded_type);
+					result:= ST_SetSRID(ST_CollectionExtract(ST_Split(ST_CollectionExtract(result,geom_coded_type),simple_blade),geom_coded_type), srid_input_geom);
 			END LOOP;
 			RETURN result;
 		    END;
@@ -64,11 +67,14 @@
 		LANGUAGE plpgsql IMMUTABLE;
 		----
 		--Testing the function
-		SELECT ST_AsText(rc_Split_multi(geom, blade))
+		SELECT ST_AsText(rc_Split_multi( geom,blade ,0.001))
 		FROM (
-				SELECT ST_GeomFromText('Multilinestring((-3 0, 3 0),(-1 0,1 0))') AS geom,
-				ST_GeomFromText('MULTIPOINT((-0.5 0),(0.5 0))') AS blade
-				--ST_GeomFromText('POINT(-0.5 0)') AS blade
-				--ST_GeomFromText('MULTILINESTRING((0 1, 0 -1),(0 2,0 -2))') AS blade
-				--ST_GeomFromText('MULTIPOLYGON(((0 1,0 -1 ,1 -1,0 1)),((0 2,0 -2,1 -2,0 2)))') AS blade
+				SELECT 
+					--ST_GeomFromText('Multilinestring((-3 0, 3 0),(-1 0,1 0))') AS geom,
+					--ST_GeomFromText('MULTIPOINT((-0.5 0),(0.5 0))') AS blade
+					--ST_GeomFromText('POINT(-0.5 0)') AS blade
+					--ST_GeomFromText('MULTILINESTRING((0 1, 0 -1),(0 2,0 -2))') AS blade
+					--ST_GeomFromText('MULTIPOLYGON(((0 1,0 -1 ,1 -1,0 1)),((0 2,0 -2,1 -2,0 2)))') AS blade
+				ST_GeomFromtext('MULTIPOINT(621.254 1483.268,628.529 1488.133)' ) AS blade
+				,ST_GeomFromtext('LINESTRING(655.1 1505.9,605.3 1472.6)') AS geom
 			) AS toto
