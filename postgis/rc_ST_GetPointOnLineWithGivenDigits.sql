@@ -34,6 +34,8 @@
 			--@output :	"geometry"		: a point with same srid as "point", either "point" if "point" is farthest than "tolerance" from "line", 
 			--							or the closest point on "line" to "point" with at most "n_more_digits" than max number of digits from line. 
 			DECLARE
+			_srid_l int := ST_SRID(line);
+			_srid_p int := ST_SRID(point);
 			_cpoint geometry;
 			_r record; --to hold extremities of concerned segment
 			_x_1 numeric(100,50); _x_2 numeric(100,50);  --first point of the segment
@@ -43,6 +45,11 @@
 			_ts numeric(100,50) ; --the fraction of length of the segment where the projected point with good number if digits is.
 			
 			BEGIN
+				--if mixed SRID, waringni and stopping
+				IF _srid_l!= _srid_p THEN
+					RAISE WARNING 'warning : point and line have mixed srids : % and %', _srid_p, _srid_l;
+				END IF;
+			
 				--if point is not too far from line, we project it and go on, 
 				--else we return the original point
 				IF ST_DWithin(line,point,tolerance)=FALSE  AND tolerance !=0 THEN
@@ -51,7 +58,7 @@
 				END IF;
 
 				--computing the closest point ,  i.e projecting
-				_cpoint:= ST_ClosestPoint(line, point); 
+				_cpoint:= ST_SetSRID(ST_ClosestPoint(line, point), _srid_l); 
 
 
 			--now we want the closest point to the closest point with a given number of digits (at most)
@@ -64,7 +71,7 @@
 							,(St_DumpPoints(seg.geom)).path ASC
 						LIMIT 2
 					) AS foo;
-					RAISE NOTICE 'seg found : % , %', St_AsText(_r.pt[1]), ST_AsText(_r.pt[2]);
+				--	RAISE NOTICE 'seg found : % , %', St_AsText(_r.pt[1]), ST_AsText(_r.pt[2]);
 
 				
 					--x_1 is the first point on the segment : P1
@@ -73,7 +80,17 @@
 						_x_2:=ST_X(_r.pt[2]); _y_2:=ST_Y(_r.pt[2]);
 
 				--now we compute k, wich is the normalized distance from P1 to the projected point
-					_k := ST_Distance(ST_makePoint(_x_1,_y_1),_cpoint) / ST_Distance(ST_MakePoint(_x_1,_y_1),ST_MakePoint(_x_2,_y_2)) ;
+					_k := ST_Distance(
+						ST_SetSRID(
+							ST_makePoint(_x_1,_y_1)
+							,_srid_l)
+						,_cpoint) 
+						/ 
+						ST_Distance(
+							ST_SetSRID(
+							ST_MakePoint(_x_1,_y_1)
+							,_srid_l)
+						,ST_SetSRID(ST_MakePoint(_x_2,_y_2),_srid_l)) ;
 
 					--_ts is now a version of _k with a guaranteed max number of digits
 					_ts := round(_k , n_more_digits  );
