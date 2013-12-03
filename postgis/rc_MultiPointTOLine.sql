@@ -25,7 +25,7 @@ DROP FUNCTION IF EXISTS public.rc_MultiPointTOLine( multipoint geometry);
 			BEGIN
 				WITH dump AS (
 					SELECT 1 as id, the_dump.path, the_dump.geom 
-					FROM  ST_DumpPoints(multipoint) the_dump
+					FROM  ST_DumpPoints(ST_CollectionExtract(multipoint,1)) the_dump
 				)
 				SELECT ST_MakeLine(d.geom ORDER BY d.path ASc) AS l INTO _result
 					FROM dump AS d
