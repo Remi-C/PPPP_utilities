@@ -23,6 +23,7 @@
 				--point1 and point2 must be type point and non empty 
 				--max_radius should be positive, 0 is allowed and means 'always returns a line'
 				--tolerance should be positive, O means no tolerance (excat computation)
+				--	it is defined as the smallest possible distance between 2 points. 
 		--degenerate cases
 			--|P1P2|<tolerance
 				--YES:
