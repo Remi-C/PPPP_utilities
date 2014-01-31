@@ -54,7 +54,7 @@ END;
 $$LANGUAGE plpgsql; 
 
 /*exemple use-case :*/
-SELECT rc_create_index_on_all_geom_column_in_schema('odparis_test');
+--SELECT rc_create_index_on_all_geom_column_in_schema('odparis_test');
 
 
 
@@ -90,5 +90,5 @@ END;
 $$LANGUAGE plpgsql; 
 
 /*exemple use-case :*/
-SELECT rc_create_index_on_geom_column('odparis_test','assainissement','geom');
+--SELECT rc_create_index_on_geom_column('odparis_test','assainissement','geom');
 
