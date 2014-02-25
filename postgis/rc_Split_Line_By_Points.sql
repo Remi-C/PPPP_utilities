@@ -44,6 +44,7 @@ $BODY$
 	j INT;
 	temp_f FLOAT ;
 	tolerance_in_CurvAbs FLOAT;
+	srid int := ST_SRID((input_gdumpline).geom);
 		BEGIN
 
 		--taking care of precision on CurvAbs array
@@ -86,7 +87,7 @@ $BODY$
 				--create  a new line  going from res[i-1] to res[i] curv abs
 
 				FOR j IN 2..array_length(res,1) LOOP
-					RETURN QUERY  SELECT ARRAY[j-1] , ST_LineSubstring((input_gdumpline).geom,res[j-1],res[j]) ;
+					RETURN QUERY  SELECT ARRAY[j-1] ,ST_SetSRID( ST_LineSubstring((input_gdumpline).geom,res[j-1],res[j]) ,srid);
 				END LOOP;
 		--take care of path 
 		--return result
@@ -138,13 +139,13 @@ DECLARE
 					FROM  rc_DumpLines(input_line) AS line
 				)
 				,pointss AS (
-					SELECT point AS point
+					SELECT point AS point, ST_SRID(input_points) AS srid
 					FROM ST_DumpPoints(input_points)AS point
 				)
 				,curv_abses AS (--list all tuple (line, point) where point is close enough to line, and compute curv_absc for each couple, plus non cut lines
-					(SELECT line_id,  line, ST_LineLocatePoint((line).geom,(point).geom) AS curv_abs
+					(SELECT line_id,  line, ST_LineLocatePoint((line).geom,ST_SetSRID((point).geom,srid)) AS curv_abs
 						FROM liness , pointss 
-						WHERE ST_DWithin((line).geom,(point).geom,tolerance)=TRUE
+						WHERE ST_DWithin((line).geom,ST_SetSRID((point).geom,srid),tolerance)=TRUE
 						ORDER BY curv_abs ASC)
 					UNION -- adding the line which will not be split, but should be outputed without modification anyway.
 					(SELECT line_id, line, 0::float as curv_abs 
@@ -182,6 +183,15 @@ DECLARE
 --
 $BODY$
  LANGUAGE plpgsql STRICT;
+
+ SELECT result.path , ST_AsText(result.geom)
+FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(789 578, 258 963, 654 789))',932011) AS line
+		, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)',932011) AS point
+		,rc_split_line_by_points(
+		input_line:=line
+		,input_points:=point
+		,tolerance:=4
+		) AS result;
 
 
 --testing the function
@@ -274,22 +284,24 @@ $BODY$
 --testing the full outer join
 
 --testing the grouping of points per line 
+
+
 	WITH the_geom AS (
 	 SELECT *
-	FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(89 89, 789 689))') AS liness
-			, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)') AS pointss )
+	FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(89 89, 789 689))',932011) AS liness
+			, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)',932011) AS pointss )
 	,liness AS (
 		SELECT  row_number() over() AS line_id, line
 		FROM the_geom, rc_DumpLines(the_geom.liness) AS line
 	)
 	,pointss AS (
-	SELECT ST_DumpPoints(pointss)AS point
+	SELECT ST_DumpPoints(pointss)AS point, ST_SRID(pointss) AS srid
 	FROM the_geom
 	)
 	,curv_abses AS (
-	(SELECT line_id,  line, ST_LineLocatePoint((line).geom,(point).geom) AS curv_abs
+	(SELECT line_id,  line, ST_LineLocatePoint((line).geom,ST_SetSRID((point).geom,srid)) AS curv_abs
 	FROM liness , pointss 
-	WHERE ST_DWithin((line).geom,(point).geom,0.1)=TRUE --NOTE : we want to keep 0,1 , we will deal with it after AND curv_abs!=0 AND curv_abs !=1 
+	WHERE ST_DWithin((line).geom,ST_SetSRID((point).geom,srid),0.1)=TRUE --NOTE : we want to keep 0,1 , we will deal with it after AND curv_abs!=0 AND curv_abs !=1 
 	ORDER BY curv_abs ASC)
 		UNION
 	(SELECT line_id, line, 0::float as curv_abs
@@ -311,5 +323,6 @@ $BODY$
 	SELECT line_id,lpath || (cl).path AS path, ST_AsText((cl).geom)
 	FROM cut_lines;
 	--ORDER BY line ASC, curv_abses.curv_abs ASC
+
 
 */
