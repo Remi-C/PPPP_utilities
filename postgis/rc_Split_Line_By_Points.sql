@@ -12,7 +12,7 @@
 --rc_DumpLines
 --------------------------------------------
 
-/*
+
 DROP FUNCTION IF EXISTS rc_split_Simple_line_by_Ordered_Curvilinear_Abscissa( GEOMETRY_DUMP,FLOAT[],FLOAT);
 CREATE OR REPLACE FUNCTION rc_split_Simple_line_by_Ordered_Curvilinear_Abscissa(
 	input_gdumpline GEOMETRY_DUMP
@@ -112,15 +112,15 @@ WITH toto AS (
 	FROM toto;
 
 
- */
+ 
 
-
+DROP FUNCTION IF EXISTS rc_split_line_by_points( GEOMETRY,GEOMETRY, FLOAT);
 CREATE OR REPLACE FUNCTION rc_split_line_by_points(
 	input_line GEOMETRY
 	,input_points GEOMETRY
 	,tolerance FLOAT DEFAULT 1
 	)
-  RETURNS geometry_dump AS
+  RETURNS SETOF geometry_dump AS
 $BODY$
 	--Splitting (multi)linestring with (multi) points , considering the points are o the line if they are closesr than "tolerance".
 	--@param : a (multi)linestring we want to split
@@ -132,34 +132,77 @@ DECLARE
 
 			--pseudo code
 				--break multilines into lines and multipoints into point
-				--list all tuple (line, point) where point is close enough to line, and compute curv_absc for each couple
-				--group by line, order by curv_abs asc
+			RETURN QUERY
+				WITH liness AS (
+					SELECT  row_number() over() AS line_id, line
+					FROM  rc_DumpLines(input_line) AS line
+				)
+				,pointss AS (
+					SELECT point AS point
+					FROM ST_DumpPoints(input_points)AS point
+				)
+				,curv_abses AS (--list all tuple (line, point) where point is close enough to line, and compute curv_absc for each couple, plus non cut lines
+					(SELECT line_id,  line, ST_LineLocatePoint((line).geom,(point).geom) AS curv_abs
+						FROM liness , pointss 
+						WHERE ST_DWithin((line).geom,(point).geom,tolerance)=TRUE
+						ORDER BY curv_abs ASC)
+					UNION -- adding the line which will not be split, but should be outputed without modification anyway.
+					(SELECT line_id, line, 0::float as curv_abs 
+					FROM liness)
+				)
+				,grouped_r AS (--group by line, order by curv_abs asc
+					SELECT line_id, line, array_agg(curv_abses.curv_abs) AS CurvAbs
+					FROM curv_abses
+					GROUP BY line_id,line
+				),
+				cut_lines AS (
 				--split line using the ordered curve abs
-				--be sure that each line is at least once in the output (split shoud return the unchanged line if no points where splitting it)
+					SELECT line_id, (line).path AS lpath, rc_split_Simple_line_by_Ordered_Curvilinear_Abscissa(
+						input_gdumpline:=line
+						,input_CurvAbs:= CurvAbs
+						,tolerance:=tolerance
+						) AS cl
+					FROM grouped_r
+				)
 				--fill path and return
-
-			
-
-			
-			RETURN rc_DumpLines(input_line);
+				SELECT lpath || (cl).path AS path, (cl).geom AS geom
+				FROM cut_lines;	
+			RETURN;
 		END ;
 
 --example :
+-- SELECT result.path , ST_AsText(result.geom)
+-- FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(789 578, 258 963, 654 789))') AS line
+-- 		, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)') AS point
+-- 		,rc_split_line_by_points(
+-- 		input_line:=line
+-- 		,input_points:=point
+-- 		,tolerance:=4
+-- 		) AS result;
 --
 $BODY$
  LANGUAGE plpgsql STRICT;
 
 
 --testing the function
-	SELECT result.path , ST_AsText(result.geom)
-FROM ST_GeomFromText('LINESTRING (0 0 ,10 10 , 20 10 )') AS line
-		, ST_GeomFromText('point (5.01 4.99)') AS point
-		,rc_split_line_by_points(
-		input_line:=line
-		,input_points:=point
-		,tolerance:=1
-		) AS result;
+-- 	SELECT result.path , ST_AsText(result.geom)
+-- FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(789 578, 258 963, 654 789))') AS line
+-- 		, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)') AS point
+-- 		,rc_split_line_by_points(
+-- 		input_line:=line
+-- 		,input_points:=point
+-- 		,tolerance:=4
+-- 		) AS result;
 
+
+
+------------------------------
+--remaining of dev
+--for historical reasons
+------------------------------
+
+/*
+--remaining of dev
 
 --testing the breaking into pieces of multi and / or collection
 	WITH the_geom AS (
@@ -194,36 +237,79 @@ FROM ST_GeomFromText('LINESTRING (0 0 ,10 10 , 20 10 )') AS line
 --testing the grouping of points per line 
 	WITH the_geom AS (
 	 SELECT *
-	FROM ST_GeomFromText('MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58))') AS liness
+	FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(89 89, 789 689))') AS liness
 			, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)') AS pointss )
+	,liness AS (
+		SELECT  row_number() over() AS line_id, line
+		FROM the_geom, rc_DumpLines(the_geom.liness) AS line
+	)
 	,breaking_collection AS (
-	SELECT line ,  point
-	FROM the_geom, rc_DumpLines(liness) AS line,ST_DumpPoints(pointss)AS point
+	SELECT liness.* ,  point
+	FROM the_geom,liness ,ST_DumpPoints(pointss)AS point
 	)
 	,curv_abses AS (
-	SELECT  line, point, ST_LineLocatePoint((line).geom,(point).geom) AS curv_abs
+	SELECT line_id,  line, point, ST_LineLocatePoint((line).geom,(point).geom) AS curv_abs
 	FROM breaking_collection
 	WHERE ST_DWithin((line).geom,(point).geom,0.1)=TRUE --NOTE : we want to keep 0,1 , we will deal with it after AND curv_abs!=0 AND curv_abs !=1 
 	ORDER BY curv_abs ASC
 	)
 	,grouped_r AS (
-	SELECT row_number() over() as line_id, line, array_agg(point) AS dpoints, array_agg(curv_abses.curv_abs) AS CurvAbs
+	SELECT line_id, line, array_agg(point) AS dpoints, array_agg(curv_abses.curv_abs) AS CurvAbs
 	FROM curv_abses
-	GROUP BY line
+	GROUP BY line_id,line
 	),
 	cut_lines AS (
-	SELECT line_id, rc_split_Simple_line_by_Ordered_Curvilinear_Abscissa(
+	SELECT line_id, (line).path AS lpath, rc_split_Simple_line_by_Ordered_Curvilinear_Abscissa(
 		input_gdumpline:=line
 		,input_CurvAbs:= CurvAbs
 		,tolerance:=0.01
 		) AS cl
 	FROM grouped_r
 	)
-	SELECT line_id, (cl).path, ST_AsText((cl).geom)
-	FROM cut_lines
+	SELECT line_id,lpath || (cl).path AS path, ST_AsText((cl).geom)
+	FROM cut_lines;
 	--ORDER BY line ASC, curv_abses.curv_abs ASC
 
 
+--testing the full outer join
 
---NOTE : TODO : using tolerance, take care of cases when nearly one, nearly 0, and curv_abs too close. AND ST_Length((line).geom)*curv_abs
+--testing the grouping of points per line 
+	WITH the_geom AS (
+	 SELECT *
+	FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(89 89, 789 689))') AS liness
+			, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)') AS pointss )
+	,liness AS (
+		SELECT  row_number() over() AS line_id, line
+		FROM the_geom, rc_DumpLines(the_geom.liness) AS line
+	)
+	,pointss AS (
+	SELECT ST_DumpPoints(pointss)AS point
+	FROM the_geom
+	)
+	,curv_abses AS (
+	(SELECT line_id,  line, ST_LineLocatePoint((line).geom,(point).geom) AS curv_abs
+	FROM liness , pointss 
+	WHERE ST_DWithin((line).geom,(point).geom,0.1)=TRUE --NOTE : we want to keep 0,1 , we will deal with it after AND curv_abs!=0 AND curv_abs !=1 
+	ORDER BY curv_abs ASC)
+		UNION
+	(SELECT line_id, line, 0::float as curv_abs
+	FROM liness)
+	)
+	,grouped_r AS (
+	SELECT line_id, line, array_agg(curv_abses.curv_abs) AS CurvAbs
+	FROM curv_abses
+	GROUP BY line_id,line
+	),
+	cut_lines AS (
+	SELECT line_id, (line).path AS lpath, rc_split_Simple_line_by_Ordered_Curvilinear_Abscissa(
+		input_gdumpline:=line
+		,input_CurvAbs:= CurvAbs
+		,tolerance:=0.01
+		) AS cl
+	FROM grouped_r
+	)
+	SELECT line_id,lpath || (cl).path AS path, ST_AsText((cl).geom)
+	FROM cut_lines;
+	--ORDER BY line ASC, curv_abses.curv_abs ASC
 
+*/
