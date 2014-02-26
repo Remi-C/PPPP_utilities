@@ -102,15 +102,15 @@ $BODY$
 $BODY$
  LANGUAGE plpgsql STRICT;
 
-WITH toto AS (
- SELECT rc_split_Simple_line_by_Ordered_Curvilinear_Abscissa(
-	input_gdumpline := ST_Dump(ST_GeomFromText('LINESTRING(0 0 , 10 10 ,  10 20)'))
-	,input_CurvAbs:= ARRAY[0.8,0.81,0.85,0.9,0.99, 1]
-	,tolerance:=0.4
-	) AS cutlines
-	)
-	SELECT (cutlines).path, ST_AsText((cutlines).geom)
-	FROM toto;
+-- WITH toto AS (
+--  SELECT rc_split_Simple_line_by_Ordered_Curvilinear_Abscissa(
+-- 	input_gdumpline := ST_Dump(ST_GeomFromText('LINESTRING(0 0 , 10 10 ,  10 20)'))
+-- 	,input_CurvAbs:= ARRAY[0.8,0.81,0.85,0.9,0.99, 1]
+-- 	,tolerance:=0.4
+-- 	) AS cutlines
+-- 	)
+-- 	SELECT (cutlines).path, ST_AsText((cutlines).geom)
+-- 	FROM toto;
 
 
  
@@ -184,14 +184,14 @@ DECLARE
 $BODY$
  LANGUAGE plpgsql STRICT;
 
- SELECT result.path , ST_AsText(result.geom)
-FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(789 578, 258 963, 654 789))',932011) AS line
-		, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)',932011) AS point
-		,rc_split_line_by_points(
-		input_line:=line
-		,input_points:=point
-		,tolerance:=4
-		) AS result;
+--  SELECT result.path , ST_AsText(result.geom)
+-- FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(789 578, 258 963, 654 789))',932011) AS line
+-- 		, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)',932011) AS point
+-- 		,rc_split_line_by_points(
+-- 		input_line:=line
+-- 		,input_points:=point
+-- 		,tolerance:=4
+-- 		) AS result;
 
 
 --testing the function
@@ -285,11 +285,12 @@ FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),
 
 --testing the grouping of points per line 
 
+*/
 
 	WITH the_geom AS (
 	 SELECT *
 	FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(89 89, 789 689))',932011) AS liness
-			, ST_GeomFromText('multipoint (5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)',932011) AS pointss )
+			, ST_GeomFromText('multipoint(5.01 4.99, 15.05 10.04, 74 69, 24.2 24.1)',932011) AS pointss )
 	,liness AS (
 		SELECT  row_number() over() AS line_id, line
 		FROM the_geom, rc_DumpLines(the_geom.liness) AS line
@@ -324,5 +325,3 @@ FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),
 	FROM cut_lines;
 	--ORDER BY line ASC, curv_abses.curv_abs ASC
 
-
-*/
