@@ -8,6 +8,10 @@
 			--this function breaks a line/multiline/geomCollection into minimal segments and return the segment, along with the path
 			--There is no loss of information : operation can be reverted if there are no geometry collection
 			--the srid is transmitted.
+			
+			--@param : a polylines which will be broken into 2points lines
+			--@return : a set of 2points-lines composing the input polyline, along with it's path to avoid lose of information
+			
 			DECLARE
 			_r record;
 			--_srid integer;
