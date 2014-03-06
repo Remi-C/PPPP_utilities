@@ -35,8 +35,13 @@ $$
 		WITH L0 AS (
 			SELECT
 				(L0_xml_r).ordinality AS L0_id, L0_xml_r.value AS L0_xml ,( xpath(''name(/*)'',L0_xml_r.value))[1] AS L0_name 
-				, CASE WHEN xpath_exists(''/*/@*'',L0_xml_r.value) THEN  (rc_unnest_with_ordinality(xpath(''/*/@*'',L0_xml_r.value))).ordinality  ELSE NULL END as L0_attributes_id
-				, CASE WHEN xpath_exists(''/*/@*'',L0_xml_r.value) THEN (rc_unnest_with_ordinality(xpath(''/*/@*'',L0_xml_r.value))).value ELSE NULL END as L0_attributes
+				, CASE WHEN  xpath_exists(''/*/text()'',L0_xml_r.value)  THEN  ((xpath(''/*/text()'',L0_xml_r.value)))[1]  ELSE NULL END as L0_text
+				, CASE WHEN xpath_exists(''/*/@*'',L0_xml_r.value) 
+					THEN  (rc_unnest_with_ordinality(xpath(''/*/@*'',L0_xml_r.value))).ordinality  
+					ELSE NULL END as L0_attributes_id
+				, CASE WHEN xpath_exists(''/*/@*'',L0_xml_r.value) 
+					THEN (rc_unnest_with_ordinality(xpath(''/*/@*'',L0_xml_r.value))).value 
+					ELSE NULL END as L0_attributes
 			FROM  rc_unnest_with_ordinality(xpath(''/*'',$1)) as L0_xml_r)
 		,L0_b AS (
 			SELECT L0.* 
@@ -51,7 +56,7 @@ $$
 		EXECUTE _stop_statement INTO _stop USING input_xml;
 		--RAISE NOTICE '%', _stop;
 		IF _stop = FALSE THEN RAISE WARNING 'the provided xml is not deep enough (not even 1-level deep)';RETURN FALSE; END IF;
-		_column_names := 'L0_id, L0_name,L0_attributes_id,L0_attributes,L0_attributes_name';
+		_column_names := 'L0_id, L0_name,L0_text,L0_attributes_id,L0_attributes,L0_attributes_name';
 		
 		--loop while we havn't reached the bottom of the tree
 		<<going_deeper>>
@@ -71,6 +76,7 @@ $$
 				SELECT '||_column_names ||' 
 					,L'||_iteration||'_xml , L'||_iteration||'_id
 					,( xpath(''name(/*)'',L'||_iteration||'_xml))[1] AS L'||_iteration||'_name 
+					, CASE WHEN  xpath_exists(''/*/text()'',L'||_iteration||'_xml )  THEN  ((xpath(''/*/text()'',L'||_iteration||'_xml )))[1]  ELSE NULL END as L'||_iteration||'_text
 					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml) 
 						THEN  (rc_unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml))).ordinality  
 						ELSE NULL END as L'||_iteration||'_attributes_id
@@ -83,6 +89,7 @@ $$
 				SELECT '||_column_names ||'
 					, L'||_iteration||'_id
 					, L'||_iteration||'_name
+					, L'||_iteration||'_text
 					, L'||_iteration||'_attributes_id
 					, L'||_iteration||'_attributes
 					,  L'||_iteration||'_xml 
@@ -94,7 +101,7 @@ $$
 			--RAISE NOTICE '%',_sql;
 			--EXIT going_deeper;
 
-			_column_names := _column_names ||', L'||_iteration||'_id, L'||_iteration||'_name, L'||_iteration||'_attributes_id, L'||_iteration||'_attributes, L'||_iteration||'_attributes_name';
+			_column_names := _column_names ||', L'||_iteration||'_id, L'||_iteration||'_name, L'||_iteration||'_text, L'||_iteration||'_attributes_id, L'||_iteration||'_attributes, L'||_iteration||'_attributes_name';
 			_iteration:=_iteration+1;
 			_depth_pattern := repeat('/*',_iteration+1);
 			_stop_statement := 'SELECT  xpath_exists('|| quote_literal(_depth_pattern) ||',$1) as u1';
@@ -112,7 +119,7 @@ $$
 			FOR _j IN 0.._iteration-1
 			LOOP
 				--raise notice 'loop %',_j;
-				_eoq := _eoq ||' L' || _j||'_id , L' || _j||'_name, L' || _j||'_attributes_id, L' || _j||'_attributes_name, L' || _j||'_attributes  ';
+				_eoq := _eoq ||' L' || _j||'_id , L' || _j||'_name, L' || _j||'_text, L' || _j||'_attributes_id, L' || _j||'_attributes_name, L' || _j||'_attributes  ';
 				IF _j != _iteration-1 THEN _eoq := _eoq || ','; END IF;
 			END LOOP;
 			_eoq := _eoq ||' 
