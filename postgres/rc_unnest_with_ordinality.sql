@@ -1,6 +1,6 @@
 ﻿
 
-CREATE OR REPLACE FUNCTION unnest_with_ordinality(anyarray, OUT value
+CREATE OR REPLACE FUNCTION rc_unnest_with_ordinality(anyarray, OUT value
 anyelement, OUT ordinality integer)
   RETURNS SETOF record AS
 $$

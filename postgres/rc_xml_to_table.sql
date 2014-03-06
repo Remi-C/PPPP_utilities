@@ -1,7 +1,4 @@
 ﻿
-
-
-
 DROP FUNCTION IF EXISTS rc_xml_to_table(input_xml xml,table_name text, schema_name TEXT);
 CREATE OR REPLACE FUNCTION  rc_xml_to_table(input_xml xml, table_name text, schema_name TEXT DEFAULT 'public')
   RETURNS boolean AS
@@ -63,16 +60,36 @@ $$
 			
 			_depth_pattern := repeat('/*',_iteration);
 			_sql := _sql|| '
-			,L'||_iteration||' AS (
-				SELECT '||_column_names ||'  , 
-					(L'||_iteration||'_xml_r).ordinality AS L'||_iteration||'_id, L'||_iteration||'_xml_r.value AS L'||_iteration||'_xml ,( xpath(''name(/*)'',L'||_iteration||'_xml_r.value))[1] AS L'||_iteration||'_name 
-					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml_r.value) THEN  (rc_unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml_r.value))).ordinality  ELSE NULL END as L'||_iteration||'_attributes_id
-					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml_r.value) THEN (rc_unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml_r.value))).value ELSE NULL END as L'||_iteration||'_attributes
-				FROM L'||_iteration-1||'_b, rc_unnest_with_ordinality(xpath(''/*/*'',L'||_iteration-1||'_xml)) as L'||_iteration||'_xml_r)
+
+			,L'||_iteration||'_a AS (
+				SELECT '||_column_names ||'  
+					, CASE WHEN xpath_exists(''/*/*'',L'||_iteration-1||'_xml) THEN (rc_unnest_with_ordinality(xpath(''/*/*'',L'||_iteration-1||'_xml))).value ELSE  NULL END as L'||_iteration||'_xml 
+					, CASE WHEN xpath_exists(''/*/*'',L'||_iteration-1||'_xml) THEN (rc_unnest_with_ordinality(xpath(''/*/*'',L'||_iteration-1||'_xml))).ordinality ELSE  NULL END as L'||_iteration||'_id
+				FROM L'||_iteration-1||'_b)
+				
+			,L'||_iteration||'_ab AS (
+				SELECT '||_column_names ||' 
+					,L'||_iteration||'_xml , L'||_iteration||'_id
+					,( xpath(''name(/*)'',L'||_iteration||'_xml))[1] AS L'||_iteration||'_name 
+					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml) 
+						THEN  (rc_unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml))).ordinality  
+						ELSE NULL END as L'||_iteration||'_attributes_id
+					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml) 
+						THEN (rc_unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml))).value 
+						ELSE NULL END as L'||_iteration||'_attributes
+				FROM L'||_iteration||'_a)
+				
 			,L'||_iteration||'_b AS(
-				SELECT '||_column_names ||', L'||_iteration||'_id, L'||_iteration||'_name, L'||_iteration||'_attributes_id, L'||_iteration||'_attributes,  L'||_iteration||'_xml 
-					,CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml) THEN  ( xpath(''name(/*/@*['' || L'||_iteration||'_attributes_id||''])'',L'||_iteration||'_xml))[1] ELSE NULL END AS L'||_iteration||'_attributes_name
-				FROM L'||_iteration||')';
+				SELECT '||_column_names ||'
+					, L'||_iteration||'_id
+					, L'||_iteration||'_name
+					, L'||_iteration||'_attributes_id
+					, L'||_iteration||'_attributes
+					,  L'||_iteration||'_xml 
+					,CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml) 
+						THEN  ( xpath(''name(/*/@*['' || L'||_iteration||'_attributes_id||''])'',L'||_iteration||'_xml))[1] 
+						ELSE NULL END AS L'||_iteration||'_attributes_name
+				FROM L'||_iteration||'_ab)';
 
 			--RAISE NOTICE '%',_sql;
 			--EXIT going_deeper;
@@ -103,7 +120,7 @@ $$
 
 			_sql := _sql || _eoq;
 				--raise notice 'oeq %',_eoq;
-			--RAISE NOTICE '%',_sql;
+			RAISE NOTICE '%',_sql;
 
 		--executing the qerry
 		EXECUTE _sql  USING input_xml;
@@ -115,3 +132,4 @@ $$
 	--FROM road_mark
 $$
 LANGUAGE plpgsql VOLATILE; 
+
