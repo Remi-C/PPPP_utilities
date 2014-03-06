@@ -109,10 +109,6 @@ $$
 	END
 	--example :
 	--SELECT rc_xml_to_table(xml_,'output_table' ,'public')
-FROM road_mark
+	--FROM road_mark
 $$
 LANGUAGE plpgsql VOLATILE; 
-
-
-SELECT rc_xml_to_table(xml_,'outpout_table' ,'public')
-FROM road_mark
