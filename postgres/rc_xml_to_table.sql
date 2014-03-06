@@ -1,5 +1,7 @@
 ﻿
 
+
+
 DROP FUNCTION IF EXISTS rc_xml_to_table(input_xml xml,table_name text, schema_name TEXT);
 CREATE OR REPLACE FUNCTION  rc_xml_to_table(input_xml xml, table_name text, schema_name TEXT DEFAULT 'public')
   RETURNS boolean AS
@@ -16,6 +18,7 @@ $$
 		--this guarantee that the xml tree could be reconstructed from the result table (no information loss)
 		--sadly the table massively duplicates information, but this is mandatory
 		--
+		--dependencies : rc_unnest_with_ordinality
 		--
 	DECLARE 
 	_sql text;
@@ -35,9 +38,9 @@ $$
 		WITH L0 AS (
 			SELECT
 				(L0_xml_r).ordinality AS L0_id, L0_xml_r.value AS L0_xml ,( xpath(''name(/*)'',L0_xml_r.value))[1] AS L0_name 
-				, CASE WHEN xpath_exists(''/*/@*'',L0_xml_r.value) THEN  (unnest_with_ordinality(xpath(''/*/@*'',L0_xml_r.value))).ordinality  ELSE NULL END as L0_attributes_id
-				, CASE WHEN xpath_exists(''/*/@*'',L0_xml_r.value) THEN (unnest_with_ordinality(xpath(''/*/@*'',L0_xml_r.value))).value ELSE NULL END as L0_attributes
-			FROM  unnest_with_ordinality(xpath(''/*'',$1)) as L0_xml_r)
+				, CASE WHEN xpath_exists(''/*/@*'',L0_xml_r.value) THEN  (rc_unnest_with_ordinality(xpath(''/*/@*'',L0_xml_r.value))).ordinality  ELSE NULL END as L0_attributes_id
+				, CASE WHEN xpath_exists(''/*/@*'',L0_xml_r.value) THEN (rc_unnest_with_ordinality(xpath(''/*/@*'',L0_xml_r.value))).value ELSE NULL END as L0_attributes
+			FROM  rc_unnest_with_ordinality(xpath(''/*'',$1)) as L0_xml_r)
 		,L0_b AS (
 			SELECT L0.* 
 				,CASE WHEN xpath_exists(''/*/@*'',L0_xml) THEN  ( xpath(''name(/*/@*['' || L0_attributes_id||''])'',L0_xml))[1] ELSE NULL END AS L0_attributes_name
@@ -63,9 +66,9 @@ $$
 			,L'||_iteration||' AS (
 				SELECT '||_column_names ||'  , 
 					(L'||_iteration||'_xml_r).ordinality AS L'||_iteration||'_id, L'||_iteration||'_xml_r.value AS L'||_iteration||'_xml ,( xpath(''name(/*)'',L'||_iteration||'_xml_r.value))[1] AS L'||_iteration||'_name 
-					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml_r.value) THEN  (unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml_r.value))).ordinality  ELSE NULL END as L'||_iteration||'_attributes_id
-					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml_r.value) THEN (unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml_r.value))).value ELSE NULL END as L'||_iteration||'_attributes
-				FROM L'||_iteration-1||'_b, unnest_with_ordinality(xpath(''/*/*'',L'||_iteration-1||'_xml)) as L'||_iteration||'_xml_r)
+					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml_r.value) THEN  (rc_unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml_r.value))).ordinality  ELSE NULL END as L'||_iteration||'_attributes_id
+					, CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml_r.value) THEN (rc_unnest_with_ordinality(xpath(''/*/@*'',L'||_iteration||'_xml_r.value))).value ELSE NULL END as L'||_iteration||'_attributes
+				FROM L'||_iteration-1||'_b, rc_unnest_with_ordinality(xpath(''/*/*'',L'||_iteration-1||'_xml)) as L'||_iteration||'_xml_r)
 			,L'||_iteration||'_b AS(
 				SELECT '||_column_names ||', L'||_iteration||'_id, L'||_iteration||'_name, L'||_iteration||'_attributes_id, L'||_iteration||'_attributes,  L'||_iteration||'_xml 
 					,CASE WHEN xpath_exists(''/*/@*'',L'||_iteration||'_xml) THEN  ( xpath(''name(/*/@*['' || L'||_iteration||'_attributes_id||''])'',L'||_iteration||'_xml))[1] ELSE NULL END AS L'||_iteration||'_attributes_name
