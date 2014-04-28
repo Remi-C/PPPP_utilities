@@ -1,8 +1,65 @@
+﻿----------------------------------
+--Remi-C, 2013
+--
+--
+--
+-----------------------------------
+
+
+/*
+Example to create the table structure that must be used :
+DROP TABLE IF EXISTS adjacencies;
+		CREATE TABLE adjacencies AS (
+			SELECT DISTINCT ON (least(t1.id, t2.id), greatest(t1.id, t2.id) ) ARRAY[least(t1.id::int, t2.id::int), greatest(t1.id::int, t2.id::int)] AS adj --trick to ensure that we first have the lowest value, then the highest
+			FROM segments as t1, segments as t2
+			WHERE t1.id!=t2.id
+				ANd 
+				ST_3DDWithin(t1.segment, t2.segment, 0.2)=TRUE
+			);
+		--adding id column
+			ALTER TABLE adjacencies DROP COLUMN IF EXISTS id;
+			ALTER TABLE adjacencies ADD COLUMN id SERIAL;
+		--adding index
+		CREATE INDEX adjacencies_adj_gin_intarray ON adjacencies USING GIN (adj gin__int_ops);
+		
+
+	--ajout des colonnes
+
+
+	--creating the result table
+		--deleting/creating table
+		DROP TABLE IF EXISTS c_components;
+		CREATE TABLE c_components (
+			id SERIAL,
+			cli int[]
+			);
+		--adding indexes
+		CREATE INDEX c_components_c_component_gin_intarray ON c_components USING GIN (cli gin__int_ops);
+
+	--checking tables
+		--checking adj
+			SELECT * --7341
+			FROM adjacencies
+			LIMIT 100;
+			SELECT *
+			FROM c_components
+			LIMIT 100;
+	--update of stats
+	VACUUM ANALYZE adjacencies;
+	VACUUM ANALYZE c_components;
+
+
+	--launchin algorihtm
+	SELECT rc_find_c_components('toto','toto');
+
+*/
 --c_component_contructing_function
 		DROP FUNCTION IF EXISTS rc_find_c_components(text,text);
 		CREATE OR REPLACE FUNCTION rc_find_c_components(data_table text, result_table text) RETURNS boolean AS $$
 		--this function comput the c_component (connected components), given an adjacency table (WILL BE EMPTYED) and a result table
 		--note : it depends ont intarray EXTENSION
+
+		--WARNING : currently the parameters are useless, the table name are expected to be "adjacencies" a,d "c_components" anyway! 
 		DECLARE
 		number_new_member int :=0;
 		number_new_new_member int :=0;
@@ -147,7 +204,6 @@
 							--	SELECT c.cli[array_upper(cli,1)-number_of_new_members+1:array_upper(cli,1)] /*index_of_old_members*/ 
 							--	FROM new_c_component AS c);
 							--returns ne number of new member found,
-							RETURN number_of_new_members;
-													
+							RETURN number_of_new_members; 
 		END;
 		$$ LANGUAGE plpgsql;

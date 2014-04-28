@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS public.rc_DumpSegments(line geometry ) ;
+﻿DROP FUNCTION IF EXISTS public.rc_DumpSegments(line geometry ) ;
 CREATE OR REPLACE FUNCTION public.rc_DumpSegments(_line geometry)
 RETURNS SETOF geometry_dump
 AS
@@ -40,4 +40,4 @@ RETURN;
 END;
 $BODY$
  LANGUAGE plpgsql  IMMUTABLE STRICT;
-///////////////////////////////////
+--///////////////////////////////////
