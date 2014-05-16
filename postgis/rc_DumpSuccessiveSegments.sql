@@ -6,8 +6,8 @@
 ------------------------------
 
 
-DROP FUNCTION IF EXISTS rc_successiveSegments ( igeom GEOMETRY   );
-CREATE OR REPLACE FUNCTION rc_successiveSegments ( igeom GEOMETRY   )
+DROP FUNCTION IF EXISTS rc_DumpSuccessiveSegments ( igeom GEOMETRY   );
+CREATE OR REPLACE FUNCTION rc_DumpSuccessiveSegments ( igeom GEOMETRY   )
   RETURNS TABLE(ordinality int, geom1 geometry(linestring), geom2 geometry(linestring), path1 int[], path2 int[]) AS 
 	$BODY$
 	
@@ -89,4 +89,4 @@ CREATE OR REPLACE FUNCTION rc_successiveSegments ( igeom GEOMETRY   )
 	--SELECT *
 	--FROM the_geom, rc_DumpSegments(geom ) as dump
 	SELECT sseg.*, ST_Astext(geom1), St_AsText(geom2) 
-	FROM the_geom ,rc_successiveSegments (geom ) as sseg;
+	FROM the_geom ,rc_DumpSuccessiveSegments (geom ) as sseg;
