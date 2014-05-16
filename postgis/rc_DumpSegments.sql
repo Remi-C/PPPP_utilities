@@ -1,4 +1,9 @@
-﻿
+﻿-------------------------------
+-- Remi-C , Thales IGN, 2014
+--
+--
+--breaking geometry into segments, while conserving the order	 
+------------------------------
 
 	DROP FUNCTION IF EXISTS public.rc_DumpSegments(_line geometry ) ;
 	CREATE OR REPLACE FUNCTION public.rc_DumpSegments(_line geometry)
