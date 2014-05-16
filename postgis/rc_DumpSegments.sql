@@ -32,9 +32,12 @@
 						),
 						segments AS (
 							SELECT 
-								CASE WHEN gpath[2] IS NULL 
-									THEN ARRAY[gpath[1],(dp).path[1]-1] 
-									ELSE 
+								CASE
+									WHEN gpath[1] IS NULL
+									THEN ARRAY[(dp).path[1]-1]
+									WHEN gpath[2] IS NULL 
+									THEN ARRAY[gpath[1],(dp).path[1]-1]   
+									ELSE
 									ARRAY[gpath[1],gpath[2], (dp).path[1]-1] 
 								END AS path
 								,ST_SetSRID(ST_MakeLine( 
@@ -53,6 +56,10 @@
 	 LANGUAGE plpgsql  IMMUTABLE STRICT; 
 
 
+ SELECT   ST_AsText(geom.geom) AS t_geom, dmp.path, ST_AsText((dmp).geom) AS t_dmplines, dmp
+	FROM ST_GeomFromText(
+		' LINESTRING(3 4,10 50,20 25)'
+		) as geom, rc_DumpSegments(geom) AS dmp(path,geom);
 
  SELECT   ST_AsText(geom.geom) AS t_geom, dmp.path, ST_AsText((dmp).geom) AS t_dmplines, dmp
 	FROM ST_GeomFromText(
