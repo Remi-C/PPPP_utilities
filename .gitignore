@@ -1,4 +1,8 @@
 #### Ignoring files
-
+*.QGIS
+*.QGS
+*.qgs
+*.qgis
 #ignore big maquette files
 __mixed/maquette_OGR_Spread/*
+
