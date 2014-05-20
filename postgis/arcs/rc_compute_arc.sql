@@ -224,7 +224,7 @@
 			BEGIN
 
 				--getting srid of input if any
-				srid :=  DISTINCT  ON (toto) greatest(toto) FROM unnest(ARRAY[ST_SRID(p1),ST_SRID(p2),ST_SRID(p3)]) AS toto;
+				srid :=  COALESCE(GREATEST(ST_SRID(p1),ST_SRID(p2),ST_SRID(p3)) ,0);
 				--the trick is  to create first a linestring, then to change the WKB reprensentation, going from 2 to 8 to change from line string to circularstring
 				RETURN 
 					ST_SetSRID(
