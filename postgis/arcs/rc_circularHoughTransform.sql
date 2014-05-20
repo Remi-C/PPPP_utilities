@@ -5,24 +5,16 @@
 
 
 DROP FUNCTION IF EXISTS rc_lineToCurve(igeom geometry, precision_center FLOAT ,min_support_points INT);
-CREATE OR REPLACE FUNCTION rc_lineToCurve(igeom geometry, precision_center FLOAT ,min_support_points INT)
+CREATE OR REPLACE FUNCTION rc_lineToCurve(igeom geometry, precision_center FLOAT ,min_support_points INT DEFAULT 3)
 RETURNS SETOF geometry AS
 $BODY$
 		--NOTE : replace by appropriate plr or c function (or python) 
 		-- @param : the input geometry:  a line where we want to detect the curves
-		-- @param :  we deal with non exact computing, the tolerance is then usefull . Expressed as the % of vairation of radius we allow
-		-- @param :  we deal with non exact computing, the cneter of circle is of precision limited (snapped ot grid) 
-		DECLARE  
-			r record;
-			P1 geometry := NULL;
-			P2 geometry := NULL;
-			P3 geometry := NULL;
-			c_t geometry; 
+		-- @param :  we deal with non exact computing, the tolerance is then usefull .Expressed in unit of map
+		-- @param :  minimal number of points suporting a circle to consider it an arc, default to 3
+		DECLARE   
 			_q TEXT;
-		BEGIN 	
-			--break the line into ordered points
-			--for each triplet of points, find the associated circle and radius, approximated to tolerance
-
+		BEGIN 	 
 			
 			 _q:=format(' WITH the_geom AS (
 					SELECT ''%s''::geometry AS geom ,%s AS precision_center,%s AS min_support_points
