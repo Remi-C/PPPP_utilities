@@ -7,11 +7,16 @@
 --	the turning radius is expected to be in the measure data for each point
 --	the turning radius is expected to be in  a table asociating each point to a turning radius (if equality, warning , smallest radius is taken)
 --	or the default is used
+
+--
+--in case where 2 succesive turn are in conflict, and it is concave : way to find tangents : --http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Tangents_between_two_circles
 ------------------------------
 
 	CREATE SCHEMA iF NOT EXISTS buffer_variable;
 	SET search_path TO buffer_variable,bdtopo, public;
 
+
+/* 
 
 DROP FUNCTION IF EXISTS rc_smooth_geom( igeom GEOMETRY ,radius_table regclass ,default_radius float , the_precision FLOAT , buffer_option TEXT  );
 CREATE OR REPLACE FUNCTION rc_smooth_geom(
@@ -39,24 +44,7 @@ CREATE OR REPLACE FUNCTION rc_smooth_geom(
 			RETURN QUERY 
 				SELECT *
 				FROM (
-					WITH the_geom AS (
-						SELECT 1 AS gid, igeom AS geom
-						--FROM test_rc_smooth_geom_line AS geom
-						--,setseed(0.2) --adding a setseed to control random for test purpose
-					)
-					,breaking_to_segment AS (
-						SELECT gid, tg.geom , dump.path , dump.geom as geom_seg
-						FROM the_geom AS tg , rc_DumpSegments(geom ) as dump
-					)
-					,generate_segment_pairs AS(
-						SELECT bts1.*
-							,-- COALESCE( --note : this is to used when dealing with polygons
-								lead((path,geom_seg)::geometry_dump ,1) OVER(ORDER BY path aSC) 
-							--	, first_value((path,geom_seg)::geometry_dump) OVER (ORDER BY path aSC) )
-							  AS prev_s 
-						FROM breaking_to_segment as bts1 
-					)
-					,cleaned_qseg_pair AS (
+					WITH cleaned_qseg_pair AS (
 
 						SELECT   ordinality AS gid, igeom AS geom, path1 ,geom1 AS geom_seg1, path2 ,geom2 AS geom_seg2
 						FROM rc_successiveSegments ( igeom   ) 
@@ -122,6 +110,8 @@ CREATE OR REPLACE FUNCTION rc_smooth_geom(
 		$BODY$
   LANGUAGE plpgsql VOLATILE;
 	--test :
+
+	
 	SELECT smooth.*
 	FROM  test_rc_smooth_geom_line 
 		, rc_smooth_geom( igeom:=geom 
@@ -132,9 +122,8 @@ CREATE OR REPLACE FUNCTION rc_smooth_geom(
 			 ) AS smooth
 
 	
-	 
 
-/* 
+
 DROP FUNCTION IF EXISTS rc_morpho_closing_opening ( igeom GEOMETRY ,radius FLOAT, the_precision FLOAT ,buffer_option text);
 CREATE OR REPLACE FUNCTION rc_morpho_closing_opening( igeom GEOMETRY ,radius FLOAT, the_precision FLOAT ,buffer_option text)
   RETURNS GEOMETRY AS 
@@ -169,8 +158,8 @@ CREATE OR REPLACE FUNCTION rc_morpho_closing_opening( igeom GEOMETRY ,radius FLO
 
  
 
-
 /*
+
 --test case 
 	--construct an example linestring and an associated table
 	DROP TABLE IF EXISTS test_rc_smooth_geom;
@@ -180,6 +169,7 @@ CREATE OR REPLACE FUNCTION rc_morpho_closing_opening( igeom GEOMETRY ,radius FLO
 		,geom geometry
 		,radius float  
 		);
+		
 
 	DROP TABLE IF EXISTS test_rc_smooth_geom_line;
 	CREATE TABLE test_rc_smooth_geom_line
@@ -208,8 +198,10 @@ CREATE OR REPLACE FUNCTION rc_morpho_closing_opening( igeom GEOMETRY ,radius FLO
 		
 	--populating the table 
 	WITH the_geom AS (
-		SELECT row_number() over() as qgis_id, geom , 40 AS base_radius, 0.5 AS pertubation_radius
-		FROM ST_Geomfromtext('LINESTRING(-40 30, -45  30, -25 100 , 100 100, -20 30,47 25, -10 -10 ,85 -65, 110 50 , 10 35 ,12 40 )') AS geom
+		SELECT row_number() over() as qgis_id, geom , 30 AS base_radius, 0.2 AS pertubation_radius
+		--FROM ST_Geomfromtext('LINESTRING(-40 30, -45  30, -25 100 , 100 100, -20 30,47 25, -10 -10 ,85 -65, 110 50 , 10 35 ,12 40 )') AS geom
+		--FROM ST_Geomfromtext('LINESTRING( 170 150, -25 100 , 100 100, -20 30,47 25, -10 -10 ,85 -65, 35 -80 , 40 -55 , 20 -62, 10 -45, -15 -75 )') AS geom
+		FROM ST_Geomfromtext('LINESTRING(120 57,196 -16,206 -14,220 74,170 150,-25 100,100 100,-20 30,47 25,-10 -10,109 -79,59 -94,64 -69,44 -76,34 -59,9 -89,-35 -72,-16 -132,-64 -81,-60 -127,-151 -102,-193 -134)') AS geom
 			,setseed(0.2) --adding a setseed to control random for test purpose
 	)
 	,inserting AS ( --populating the table 	
@@ -222,7 +214,8 @@ CREATE OR REPLACE FUNCTION rc_morpho_closing_opening( igeom GEOMETRY ,radius FLO
 		SELECT qgis_id,geom
 		FROM the_geom;
 	
-	
+	--SELECT ST_Astext(ST_SnapToGrid(geom,1))
+	--FROM test_rc_smooth_geom_line
 
 
 	
@@ -254,7 +247,7 @@ CREATE OR REPLACE FUNCTION rc_morpho_closing_opening( igeom GEOMETRY ,radius FLO
 			WHERE geom_seg2 IS NOT NULL --@DEBUG : only when dealing with line, if polygon, remove
 			ORDER BY cp.gid ASC  
 		)
-		,pair_and_closing AS (
+		--,pair_and_closing AS (
 			SELECT pr.*,seg_closed
 				, ST_AsText(seg_closed)--@DEBUG
 			FROM pair_and_radius AS pr, rc_morpho_closing_opening(ST_MakeLine(geom_seg1,geom_seg2),radius,0.001, 'quad_segs=64') AS seg_closed
@@ -306,5 +299,277 @@ CREATE OR REPLACE FUNCTION rc_morpho_closing_opening( igeom GEOMETRY ,radius FLO
 ---test on buffer about M value, minkowky_sum
 	--same : both function drop Z or M value
 
-	--
+
+
+
+	WITH the_geom AS (
+		SELECT *, ST_Astext(geom)
+		FROM test_rc_smooth_geom_line AS geom
+			,setseed(0.2) --adding a setseed to control random for test purpose
+		)
+	  ,couple AS (
+		SELECT  
+			 smooth.*
+			 ,  o_u_seg_closed
+			  ,dmp.*
+			   , ST_Astext(o_u_seg_closed)
+			--    ST_Astext(morpho)
+		FROM the_geom
+			-- , rc_morpho_closing_opening(geom,30,0.001, 'quad_segs=16') as morpho
+			-- ,rc_DumpsuccessiveSegments(geom)
+			  ,rc_smooth_geom( igeom:=geom 
+			 	,radius_table:='test_rc_smooth_geom_line' 
+			 	,default_radius:=30
+			 	,the_precision:=0.01
+			 	,buffer_option:='quad_segs=8'
+			  ) AS smooth
+			 ,ST_Dump(smooth.o_u_seg_closed) AS dmp
+	)
+	,geom_as_array AS (
+	SELECT array_agg(geom) as geom
+	FROM couple
+	GROUP BY o_gids[1]
+	)
+	SELECT ST_Astext(
+			 ST_Centroid( 
+				ST_Intersection(
+					ST_Buffer(geom[1],0.01)
+					,St_Buffer(geom[2],0.01) 
+			 	)
+			 )
+		 ) as geom
+	FROM geom_as_array
+
+
+	WITH dmped AS (
+	SELECT tr.*  , dmp.*
+	FROM test_rc_smooth_error_case AS tr, ST_Dump( u_seg_closed) As dmp
+	)
+	,geom_as_array AS (
+	SELECT array_agg(geom) as geom
+	FROM dmped
+	GROUP BY gid1
+	)
+	SELECT ST_Astext(
+			  ST_Centroid( 
+				ST_Intersection(
+					ST_Buffer(geom[1],0.01)
+					,St_Buffer(geom[2],0.01) 
+			 	)
+			 )
+		 ) as geom
+	FROM geom_as_array
+
+
+
+
+---------------
+--converting result of closing on 2 successiv segment to a curve.
+
+
+
+		WITH the_geom AS (
+		SELECT *
+		FROM test_rc_smooth_geom_line AS geom
+			,setseed(0.2) --adding a setseed to control random for test purpose
+		)
+		,breaking_to_segment AS (
+			SELECT gid, tg.geom , dump.path , dump.geom as geom_seg
+			FROM the_geom AS tg , rc_DumpSegments(geom ) as dump
+		)
+		,generate_segment_pairs AS(
+			SELECT bts1.*
+				,-- COALESCE( --note : this is to used when dealing with polygons
+					lead((path,geom_seg)::geometry_dump ,1) OVER(ORDER BY path aSC) 
+				--	, first_value((path,geom_seg)::geometry_dump) OVER (ORDER BY path aSC) )
+				  AS prev_s 
+			FROM breaking_to_segment as bts1 
+		)
+		,cleaned_qseg_pair AS (
+			SELECT row_number() over() AS gid, gid AS line_gid, geom ,path AS path1, geom_seg AS geom_seg1,   (prev_s).path AS path2, (prev_s).geom AS geom_seg2
+			FROM generate_segment_pairs
+			ORDER BY path1
+		)
+		,pair_and_radius AS(
+			SELECT cp.*, tg.radius 
+			FROM cleaned_qseg_pair AS cp LEFT OUTER JOIN test_rc_smooth_geom as tg ON (  ST_DWithin(ST_EndPoint(cp.geom_seg1),tg.geom,0.001) ) 
+			WHERE geom_seg2 IS NOT NULL --@DEBUG : only when dealing with line, if polygon, remove
+			ORDER BY cp.gid ASC  
+		)
+		,pair_and_closing AS (
+			SELECT pr.*,seg_closed
+				, ST_AsText(seg_closed)--@DEBUG
+			FROM pair_and_radius AS pr, rc_morpho_closing_opening(ST_MakeLine(geom_seg1,geom_seg2),radius,0.001, 'quad_segs=64') AS seg_closed
+		)
+		,line_for_arc AS (
+			SELECT gid, ST_Difference( 
+				ST_Boundary(seg_closed)
+				,ST_Union(ST_Buffer(geom_seg1,0.01),ST_Buffer( geom_seg2,0.01) )
+				--,0.01
+				)AS geom
+			FROM pair_and_closing
+		)
+		SELECT gid, geom, ST_Astext(geom),ST_Astext( ST_LineToCurve(geom))
+		FROM line_for_arc
+
+
+		
+	WITH dmped AS (
+	SELECT gid, geom  
+	FROM test_rc_smooth_closed   
+	)
+	SELECT ST_Difference()
+	,geom_as_array AS (
+	SELECT array_agg(geom) as geom
+	FROM dmped
+	GROUP BY gid1
+	)
+	SELECT ST_Astext(
+			  ST_Centroid( 
+				ST_Intersection(
+					ST_Buffer(geom[1],0.01)
+					,St_Buffer(geom[2],0.01) 
+			 	)
+			 )
+		 ) as geom
+	FROM geom_as_array
+*/
+
+ --------------------- python function to compute the center of circle given 2 segments and Radius OR tangency point
+DROP FUNCTION IF EXISTS rc_py_compute_circle_from_tangency ( f float[2], e float[2],g float[2],t1 FLOAT[2]);
+CREATE OR REPLACE FUNCTION rc_py_compute_circle_from_tangency ( f float[2],e float[2],g float[2],t1 FLOAT[2] 
+, OUT center FLOAT[2],OUT  radius FLOAT,OUT  t1 FLOAT[2],OUT  t2 FLOAT[2])  
+AS $$
+	###
+	#this function assume that there is 2 input segments with a common point being e (seg fe and eg), along with th point where the circle is tangent that is t1
+
+	
+	#importing the numpy package
+	import numpy as np;
+	#storing the point coordinates as vector to allow fast operations on it.
+	_f = np.asarray( f ) ;
+	_e = np.asarray( e ) ;
+	_g = np.asarray( g ) ;
+	_t1 = np.asarray( t1 ) ;
+
+	_ef = _f-_e;
+	_eg = _g-_e;
+	
+	#@DEBUG finding the radius : = r = tan(theta) * dist(ET1), where theta is half of the angle beteen both segment
+	##note that it is not necessary to explicit theta, we only need cos(theta), but we compute it for debug
+	theta = np.arccos( np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) )/2 ;
+
+	#computing the radius of the circle
+	radius = np.tan(theta)*np.linalg.norm(_t1-_e) ;
+	#plpy.notice(radius) ; 
+	#plpy.notice(theta) ; 
+	
+	#computing the position of the center
+	# E + ( EF + EG )/(norm(EF+EG)) * norm(ET1)/cos(theta)
+	center = _e + (_ef+_eg) / (np.linalg.norm(_ef+_eg) ) * np.linalg.norm(_t1-_e) / (np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) );
+	#plpy.notice(center) ;  
+	
+	t2_g = _e + ((_eg)/np.linalg.norm(_eg)) * np.linalg.norm(_t1-_e) ;
+	t2_f = _e + ((_ef)/np.linalg.norm(_ef)) * np.linalg.norm(_t1-_e) ;
+
+	if np.linalg.norm(t2_g - t1) < np.linalg.norm(t2_f - _t1) :
+		t2 = t2_f  ;
+	else :
+		t2 = t2_g  ;
+
+	_t1 ;
+	#end if on side of t1
+
+	
+	plpy.notice(t2) ; 
+	return  [center  , radius  , _t1  , t2]   ;
+	#return { "center": center, "radius": radius ,  "t1": t1, "t2":t2}
+	
+$$ LANGUAGE plpythonu;
+
+SELECT *
+FROM rc_py_compute_circle_from_tangency(
+		ARRAY[13,3]
+		,ARRAY[0,0]
+		,ARRAY[14,-4]
+		,ARRAY[6,-2]
+		)  ;
+
+
+
+
+
+DROP FUNCTION IF EXISTS rc_py_compute_circle_from_radius ( f float[2], e float[2],g float[2],r FLOAT );
+CREATE OR REPLACE FUNCTION rc_py_compute_circle_from_radius ( f float[2],e float[2],g float[2],r FLOAT  
+, OUT center FLOAT[2],OUT  radius FLOAT,OUT  t1 FLOAT[2],OUT  t2 FLOAT[2])  
+AS $$
+	###
+	#this function assume that there is 2 input segments with a common point being e (seg fe and eg), along with radius of the circle that is tangent ot both seg
+
+	
+	#importing the numpy package
+	import numpy as np;
+	#storing the point coordinates as vector to allow fast operations on it.
+	_f = np.asarray( f ) ;
+	_e = np.asarray( e ) ;
+	_g = np.asarray( g ) ;
+	radius = r;
+
+	_ef = _f-_e;
+	_eg = _g-_e;
+	
+	#@DEBUG finding the radius : = r = tan(theta) * dist(ET1), where theta is half of the angle beteen both segment
+	##note that it is not necessary to explicit theta, we only need cos(theta), but we compute it for debug
+	theta = np.arccos( np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) )/2 ;
+
+	#computing the point T1, on EF
+	_t1 = _e + (_ef / np.linalg.norm(_ef) )* radius / np.tan(theta) ; 
+	#plpy.notice(radius) ; 
+	#plpy.notice(theta) ; 
+	
+	#computing the position of the center
+	# E + ( EF + EG )/(norm(EF+EG)) * norm(ET1)/cos(theta)
+	center = _e + (_ef+_eg) / (np.linalg.norm(_ef+_eg) ) * np.linalg.norm(_t1-_e) / (np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) );
+	#plpy.notice(center) ;  
+	
+	t2  = _e + ((_eg)/np.linalg.norm(_eg)) * np.linalg.norm(_t1-_e) ;
+	t1 = _t1 ;
+	plpy.notice(t2) ; 
+	return  [center  , radius  , t1  , t2]   ;
+	return { "center": center, "radius": radius ,  "t1": t1, "t2":t2}
+	
+$$ LANGUAGE plpythonu;
+
+SELECT *
+FROM rc_py_compute_circle_from_radius(
+		ARRAY[13,3]
+		,ARRAY[0,0]
+		,ARRAY[14,-4]
+		,1.63
+		)  ;
+
+
+		
+/*
+DROP FUNCTION IF EXISTS rc_py_distance_point_line ( a float[2], b float[2],p float[2] );
+CREATE OR REPLACE FUNCTION rc_py_distance_point_line ( a float[2], b float[2],p float[2])
+  RETURNS  FLOAT  --TABLE (center FLOAT[2], radius FLOAT 
+AS $$
+	###
+	#this function assume that a and b are the coordinate of 2 endpoint of a segment, and p is a point . It returns the minimal euclidian distance from point to line passong by 2 endpoints of segment 
+	
+	#importing the numpy package
+	import numpy as np;
+	#storing the point coordinates as vector to allow fast operations on it.
+	_a= np.asarray( a ) ;
+	_b = np.asarray( b ) ;
+	_p = np.asarray( p ) ; 
+	n = (_b-_a)/np.linalg.norm(_b-_a);
+ 
+	#the formula compute distance from point to line, not point to segment. 
+	distance = np.linalg.norm( _a-_p - n *np.dot( _a-_p,n ) ) ; 
+	return distance ; 
+$$ LANGUAGE plpythonu;
+
+SELECT rc_py_distance_point_line( ARRAY[0 ,0] , ARRAY[10,0] ,  ARRAY[-10,-10] );
 */
