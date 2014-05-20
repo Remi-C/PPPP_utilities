@@ -12,6 +12,7 @@ $BODY$
 		-- @param : the input geometry:  a line where we want to detect the curves
 		-- @param :  we deal with non exact computing, the tolerance is then usefull .Expressed in unit of map
 		-- @param :  minimal number of points suporting a circle to consider it an arc, default to 3
+		--@return : a geoemtry collection with line and arcs
 		DECLARE   
 			_q TEXT;
 		BEGIN 	 
@@ -20,26 +21,26 @@ $BODY$
 					SELECT ''%s''::geometry AS geom ,%s AS precision_center,%s AS min_support_points
 				  )',igeom, precision_center,min_support_points );  
 				   _q:= _q||
-					' ,the_dmp AS (
+					' ,the_dmp AS ( --dumping the points , preserving the order into path
 					SELECT the_geom.geom AS total_geom, dmp.* ,precision_center,min_support_points
 					FROM the_geom,ST_DumpPoints(geom) AS dmp
 					)
-					,geom_array AS (
+					,geom_array AS ( --simply an array of all the point ordered according to path. 
+						--non optimal, but make it simpler to write the last part
 						SELECT array_agg(geom ORDER BY path ASC) AS geom_a
 							,min(precision_center) AS precision_center,min(min_support_points) AS min_support_points
 						FROM the_dmp
 					)
-					,hough_t AS (
+					,hough_t AS ( --for each triplet of point, find what kind of circle passes trough all 3 points
 					SELECT path, geom, rc_circular_hough_transform (ST_Collect(ARRAY[geom,lead(geom,1) OVER(),lead(geom,2) OVER() ])   ,precision_center)as c
 						,precision_center,min_support_points
 					FROM the_dmp
 					)
-					,rounded AS (
-					SELECT *, ST_X(c) AS cx , ST_Y(c) AS cy , (ST_M(c)/precision_center)::int*precision_center AS cr 
-						 
+					,rounded AS (--rounding the detected radius of circle acording to user defined parameter
+					SELECT *, ST_X(c) AS cx , ST_Y(c) AS cy , (ST_M(c)/precision_center)::int*precision_center AS cr  
 					FROM hough_t 
 					)
-					 ,grouped AS(
+					 ,grouped AS(  --collapsing the list of point into parts with same arc or no arc hypothesis
 						SELECT min(path)  ,max(path)
 							, array_agg( path[1] ORDER BY path ASC) as paths
 							, array_agg(geom ORDER BY path ASC) as geoms 
@@ -50,14 +51,14 @@ $BODY$
 						GROUP BY ST_SnapToGrid(c ,precision_center) ,cr
 						ORDER  BY min
 					)
-					,u_geom AS (
+					,u_geom AS ( --making line or arc according to the group made
 					SELECT min, max, paths, geoms, n_point_support, cx,cy,cr
 						, CASE WHEN n_point_support <min_support_points --simple line or point alone : take all the points, plus the previous plus the next
 							THEN ST_MakeLine(geom_a[min[1]-1:max[1]+1])
 							ELSE rc_makearc(geoms[1],geoms[2],geoms[array_length(geoms, 1)])
 							END AS u_geom
 					FROM grouped, geom_array
-					)
+					)--make a single geometry collection from the previous stuff, preserving order
 					SELECT ST_Collect(array_agg(u_geom  ORDER BY paths ASC) ) AS geom 
 					FROM u_geom  ;
 					';
