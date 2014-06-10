@@ -25,8 +25,7 @@ from shapely.geometry import asPoint ;
 	#storing the point coordinates as vector to allow fast operations on it.
 _f = np.asarray( wkb.loads( i_f , hex=  in_server ) )  ;
 _e = np.asarray( wkb.loads( i_e , hex= in_server ) )  ;
-_g = np.asarray( wkb.loads( i_g , hex= in_server ) )  ;
-#_t1 = np.asarray( wkb.loads( i_t1 , hex= in_server ) )  ;
+_g = np.asarray( wkb.loads( i_g , hex= in_server ) )  ; 
 
 _ef = _f-_e;
 _eg = _g-_e;
@@ -34,39 +33,40 @@ _eg = _g-_e;
 #the max tangent circle is going to pass by the closest end of segment
 if np.linalg.norm(_ef) > np.linalg.norm(_eg) :
 	_t1 = _g;
-	plpy.notice('case when t1 is   G');
+	plpy.notice('case when t1 is G');
 else :
 	_t1 = _f;
-	plpy.notice('case when t1 is   F');
+	plpy.notice('case when t1 is F');
 	
 	# finding the _radius : = r = tan(theta) * dist(ET1), where theta is half of the angle beteen both segment 
 theta = np.arccos( np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) )/2 ;
-plpy.notice('theta',theta);
+plpy.notice('theta in deg',theta*180/np.pi);
 	#computing the _radius of the circle
 _radius = np.tan(theta)*np.linalg.norm(_t1-_e) ;
-plpy.notice('radius',_radius) ; 
-#plpy.notice(theta) ; 
-	
-
-
-
+plpy.notice('radius',_radius) ;  
+	 
+	#computing t2 : depends on t1 (t2 is on the other segment)
 if np.array_equal(_t1,_g ) :
 	t2__ = _e + ((_ef)/np.linalg.norm(_ef)) * np.linalg.norm(_t1-_e) ;
 else :
 	t2__ = _e + ((_eg)/np.linalg.norm(_eg)) * np.linalg.norm(_t1-_e) ;
 
-#computing the position of the _center
-#getting the direction then moving of the right distance onto it
-# E + ( EF + EG )/(norm(EF+EG)) * norm(ET1)/cos(theta)
-_center =  _e +  ((_t1+t2__)/np.linalg.norm(_t1+t2__)  )* np.linalg.norm(_t1-_e) / (2*(np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) ));
-#_center = _e + (_ef+_eg) / (np.linalg.norm(_ef+_eg) ) * np.linalg.norm(_t1-_e) / (2*(np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) ));
+#the center is on the bisector line. We compute the direction of bisector.
+	#for this, we use the property that norm(et1)=norm(et2), so et1+et2 gives the bisector
+plpy.notice('bisector direction normalized ',(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e )) ;
+	#now we need to get te distance from e to center. We know dist(et1)  and theta. The relation to exploit is cos(theta)=dist(et1)/dist(ecenter).
+	#So dist(e-center) = dist(et1)/cos(theta);
+	#Note : we shouldn't use theta numerical value, but instead convert cos(alpha)=cos(2theta) and directly reuse the formula to compute theta, so as to avoid  cos(arcos/2)
+plpy.notice('distance from E to center :',  np.linalg.norm(_e - _t1)/np.cos(theta) ) ;	
+
+	#Now center is simply found by walking on the bisector with the found distance, modulo the correct sign
+_center = _e + (np.linalg.norm(_e - _t1)/np.cos(theta) ) *(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e ) ;
 plpy.notice('center',_center) ;  
 
 center = wkb.dumps(asPoint(_center), hex=in_server) ;
 radius = _radius ;
 t1 =wkb.dumps(asPoint(_t1), hex=in_server) ;
 t2 = wkb.dumps(asPoint(t2__), hex=in_server) ;
-    
     
 #plpy.notice(t2) ; 
 plpy.notice(_center  , radius  , _t1  , t2__ ) ;
@@ -80,9 +80,9 @@ $$ LANGUAGE plpythonu;
 
 SELECT ST_Astext(center), radius, ST_Astext(t1),ST_Astext(t2)
 FROM rc_py_compute_max_circle(
-		ST_MakePoint(13,3)
-		,ST_MakePoint(0,0)
-		,ST_MakePoint(14,-4)
+		ST_MakePoint(0,0)
+		,ST_MakePoint(6,0)
+		,ST_MakePoint(0,-4)
 		)  ; 
 
 
