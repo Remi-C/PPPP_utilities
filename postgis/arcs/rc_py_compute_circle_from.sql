@@ -10,7 +10,6 @@
 ------------------------------ 
 
 
-
 DROP FUNCTION IF EXISTS rc_py_compute_max_circle ( f geometry(point), e geometry(point),g geometry(point));
 CREATE OR REPLACE FUNCTION rc_py_compute_max_circle ( i_f geometry(point), i_e geometry(point), i_g geometry(point)
 	, OUT center geometry(point),OUT  radius FLOAT,OUT  t1 geometry(point), OUT  t2 geometry(point))  
@@ -33,17 +32,17 @@ _eg = _g-_e;
 #the max tangent circle is going to pass by the closest end of segment
 if np.linalg.norm(_ef) > np.linalg.norm(_eg) :
 	_t1 = _g;
-	plpy.notice('case when t1 is G');
+	#plpy.notice('case when t1 is G');
 else :
 	_t1 = _f;
-	plpy.notice('case when t1 is F');
+	#plpy.notice('case when t1 is F');
 	
 	# finding the _radius : = r = tan(theta) * dist(ET1), where theta is half of the angle beteen both segment 
 theta = np.arccos( np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) )/2 ;
-plpy.notice('theta in deg',theta*180/np.pi);
+#plpy.notice('theta in deg',theta*180/np.pi);
 	#computing the _radius of the circle
 _radius = np.tan(theta)*np.linalg.norm(_t1-_e) ;
-plpy.notice('radius',_radius) ;  
+#plpy.notice('radius',_radius) ;  
 	 
 	#computing t2 : depends on t1 (t2 is on the other segment)
 if np.array_equal(_t1,_g ) :
@@ -53,15 +52,20 @@ else :
 
 #the center is on the bisector line. We compute the direction of bisector.
 	#for this, we use the property that norm(et1)=norm(et2), so et1+et2 gives the bisector
-plpy.notice('bisector direction normalized ',(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e )) ;
+#plpy.notice('bisector direction normalized ',(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e )) ;
 	#now we need to get te distance from e to center. We know dist(et1)  and theta. The relation to exploit is cos(theta)=dist(et1)/dist(ecenter).
 	#So dist(e-center) = dist(et1)/cos(theta);
 	#Note : we shouldn't use theta numerical value, but instead convert cos(alpha)=cos(2theta) and directly reuse the formula to compute theta, so as to avoid  cos(arcos/2)
-plpy.notice('distance from E to center :',  np.linalg.norm(_e - _t1)/np.cos(theta) ) ;	
+	#the formula to exploit here is cos(theta) = sqrt((cos(2theta)+1)/2), and cos(2 theta) is directly given by the scalar product
+plpy.notice('distance from E to center by numerical approx:',  np.linalg.norm(_e - _t1)/np.cos(theta) ) ;
+
+plpy.notice('distance from E to center by correct math formula:',  np.linalg.norm(_e - _t1)/(  np.sqrt((np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) +1)/2) ) ) ;		
 
 	#Now center is simply found by walking on the bisector with the found distance, modulo the correct sign
-_center = _e + (np.linalg.norm(_e - _t1)/np.cos(theta) ) *(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e ) ;
-plpy.notice('center',_center) ;  
+#_center = _e + (np.linalg.norm(_e - _t1)/np.cos(theta) ) *(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e ) ;
+_center = _e + ( np.linalg.norm(_e - _t1)/(  np.sqrt((np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) +1)/2) )     ) *(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e ) ;
+
+#plpy.notice('center',_center) ;  
 
 center = wkb.dumps(asPoint(_center), hex=in_server) ;
 radius = _radius ;
@@ -69,7 +73,7 @@ t1 =wkb.dumps(asPoint(_t1), hex=in_server) ;
 t2 = wkb.dumps(asPoint(t2__), hex=in_server) ;
     
 #plpy.notice(t2) ; 
-plpy.notice(_center  , radius  , _t1  , t2__ ) ;
+#plpy.notice(_center  , radius  , _t1  , t2__ ) ;
 if in_server != True :  
 	print( center  , radius  , t1  , t2)
 else :
@@ -82,7 +86,7 @@ SELECT ST_Astext(center), radius, ST_Astext(t1),ST_Astext(t2)
 FROM rc_py_compute_max_circle(
 		ST_MakePoint(0,0)
 		,ST_MakePoint(6,0)
-		,ST_MakePoint(0,-4)
+		,ST_MakePoint(12,0)
 		)  ; 
 
 
