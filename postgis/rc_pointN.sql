@@ -32,7 +32,7 @@ CREATE OR REPLACE  FUNCTION rc_PointN(IN ig GEOMETRY,IN point_position int
 			)
 			, ppos AS ( --if position is negative, count backward
 				SELECT  
-					CASE WHEN point_position <0 THEN (ST_NPoints(ig)::int+point_position)*1 ELSE point_position END AS _point_position
+					CASE WHEN point_position <0 THEN (ST_NPoints(ig)::int+point_position)*1+1 ELSE point_position END AS _point_position
 				FROM the_geom 
 			)
 			,dump AS ( --dumping the points into input geom
@@ -59,5 +59,12 @@ CREATE OR REPLACE  FUNCTION rc_PointN(IN ig GEOMETRY,IN point_position int
   LANGUAGE plpgsql IMMUTABLE STRICT;
   
   
-
+----test case : 
+			WITH the_geom AS (
+				SELECT ST_SetSRID(geom,4326) As geom
+			 	FROM ST_GeomFromText(' LINESTRING(1 1, 2 2, 3 3, 4 4, 5 5)') AS geom
+				--FROM ST_GeomFromText('MULTILINESTRING((1 1, 2 2, 3 3, 4 4, 5 5),(6 6 , 7 7 , 8 8 , 9 9 ))') AS geom
+			 )
+			 SELECT ST_AsText(rc_PointN(geom,-1))
+			FROM the_geom
  
