@@ -60,6 +60,7 @@ CREATE OR REPLACE  FUNCTION rc_PointN(IN ig GEOMETRY,IN point_position int
   
   
 ----test case : 
+	/*
 			WITH the_geom AS (
 				SELECT ST_SetSRID(geom,4326) As geom
 			 	FROM ST_GeomFromText(' LINESTRING(1 1, 2 2, 3 3, 4 4, 5 5)') AS geom
@@ -67,4 +68,4 @@ CREATE OR REPLACE  FUNCTION rc_PointN(IN ig GEOMETRY,IN point_position int
 			 )
 			 SELECT ST_AsText(rc_PointN(geom,-1))
 			FROM the_geom
- 
+	*/
