@@ -221,18 +221,23 @@ CREATE OR REPLACE FUNCTION rc_circular_hough_transform( igeom GEOMETRY ,  the_pr
 			
 			
 			--first check that this is not degenerate
-			--IF ST_DWIthin(P1,P2, the_precision) OR  ST_DWIthin(P2,P3, the_precision) OR ST_DWIthin(P1,P3, the_precision)
-			--THEN 
-			--	RAISE NOTICE '  3 points form a degenerate case : P1 :%,P2 : %, P3 : % ', ST_AsText(P1), ST_AsText(P2),ST_AsText(P3);
-			--	center := NULL; radius := NULL;
-			--	RETURN   ;
-			--END IF;
+			 IF ST_DWIthin(P1,P2, the_precision) OR  ST_DWIthin(P2,P3, the_precision) OR ST_DWIthin(P1,P3, the_precision)
+			 THEN 
+			 	--RAISE NOTICE '  3 points form a degenerate case : P1 :%,P2 : %, P3 : % ', ST_AsText(P1), ST_AsText(P2),ST_AsText(P3);
+			 	center := NULL; radius := NULL;
+			 	RETURN   ;
+			 END IF;
 
 			den:=ARRAY[ST_X(P1),ST_X(P2),ST_X(P3)  , ST_Y(P1),ST_Y(P2),ST_Y(P3)  ,1,1,1];
 			
 			expx:= ARRAY[  ST_X(P1)^2+ST_Y(P1)^2 , ST_X(P2)^2+ST_Y(P2)^2,  ST_X(P3)^2+ST_Y(P3)^2 ,              ST_Y(P1),ST_Y(P2),ST_Y(P3) ,       1,1,1  ];
 			expy:= ARRAY[  ST_X(P1),ST_X(P2),ST_X(P3)                  , ST_X(P1)^2+ST_Y(P1)^2 , ST_X(P2)^2+ST_Y(P2)^2,  ST_X(P3)^2+ST_Y(P3)^2 ,       1,1,1  ];
 
+			IF rc_determinant3x3(den) = 0 THEN
+				center := NULL; radius := NULL;
+				RETURN;
+			END IF; 
+			
 			PX:= rc_determinant3x3(expx)/(2*rc_determinant3x3(den));
 			PY:= rc_determinant3x3(expy)/(2*rc_determinant3x3(den));
 
