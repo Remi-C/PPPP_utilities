@@ -58,7 +58,7 @@ CREATE OR REPLACE FUNCTION rc_node_to_ordered_edges( atopology character varying
 								THEN abs(p.next_right_edge) 
 								ELSE abs(p.next_left_edge) 
 							END ) 
-				SELECT (row_number() over())::int   , _signed_edge_id::int  
+				SELECT (row_number() over())::int  AS ordinality , _signed_edge_id::int  AS signed_edge_id
 				FROM edgering;
 
 		 

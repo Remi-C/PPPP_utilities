@@ -698,4 +698,191 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 
 
 */
+
+
+
+
+DROP FUNCTION IF EXISTS public.rc_FromTopogeomToNode(atopology TEXT,source_topo topogeometry );
+CREATE FUNCTION public.rc_FromTopogeomToNode(atopology TEXT, source_topo topogeometry  )
+		RETURNS SETOF int AS
+		$BODY$
+		-- This function, given a topogeometry, return all the node that may be affected by a change in this topogeometry
+		--
+		--NOTE:  this function expects an operator for topogeometry = topogeometry
+		----
+		--@TODO : test on inputs
+		DECLARE
+		_old_search_path text;
+		the_query TEXT:='';
+		target_type INT; 
+		
+		BEGIN 
+			--saving the search path :
+			EXECUTE 'SHOW search_path' INTO _old_search_path;
+			 
+			--setting the search path to a new value to avoid prefixing all table name
+			EXECUTE 'SET search_path TO ' || atopology|| ' , topology,public; ';
+
+		 
+				 
+				RETURN QUERY 
+				WITH the_topogeom AS (
+					SELECT   (source_topo).topology_id
+						,(source_topo).layer_id
+						,(source_topo).id
+						, (source_topo).type 
+					LIMIT 1
+				) 
+				  ,
+				the_relation As ( --relation
+					SELECT r.element_id
+					FROM the_topogeom as tt
+						INNER JOIN relation as r ON ( 
+							tt.layer_id= r.layer_id
+							AND tt.id= r.topogeo_id 
+							AND tt.type = r.element_type
+							) 
+					LIMIT 1)
+				 
+				,r_to_node AS (
+					SELECT DISTINCT rc_FromTopoToNode(r.element_id, tt.type) AS edge_id
+					FROM the_relation r, the_topogeom tt
+				)
+				SELECT  edge_id AS node_id
+				FROM r_to_node ; 
+				  
+				--reseting the serach path to original value
+				EXECUTE 'SET search_path TO ' || _old_search_path  ; 
+			
+			RETURN  ;
+		END ;
+		$BODY$
+		LANGUAGE plpgsql VOLATILE;
+
+		SELECT *
+		FROM public.rc_FromTopogeomToNode('bdtopo_topological',(17,6,79,1)::topogeometry );
+
+
+
+		
+
+DROP FUNCTION IF EXISTS public.rc_FromNodeToTopogeom(atopology TEXT,node_id int, target_topo_layer_id INT);
+CREATE FUNCTION public.rc_FromNodeToTopogeom(atopology TEXT, node_id int , target_topo_layer_id INT)
+		RETURNS SETOF topogeometry AS
+		$BODY$
+		-- This function, given a topogeometry, return all the node that may be affected by a change in this topogeometry
+		--
+		--NOTE:  this function expects an operator for topogeometry = topogeometry
+		----
+		--@TODO : test on inputs
+		DECLARE
+		_old_search_path text;
+		the_query TEXT:='';
+		--target_type INT; 
+		
+		BEGIN 
+			--saving the search path :
+			EXECUTE 'SHOW search_path' INTO _old_search_path;
+			 
+			--setting the search path to a new value to avoid prefixing all table name
+			EXECUTE 'SET search_path TO ' || atopology|| ' , topology,public; ';
+
+				RETURN QUERY  
+					WITH the_topogeom_target_info AS (
+						SELECT l.*
+						FROM  topology.layer as l
+						WHERE l.layer_id = target_topo_layer_id AND l.topology_id = (SELECT id FROM topology WHERE name ILIKE atopology LIMIT 1)
+					LIMIT 1
+					)
+					,node_to_r AS(
+						SELECT DISTINCT rc_FromNodeToTopo(node_id, ttti.feature_type ) AS edge_id
+						FROM the_topogeom_target_info ttti
+					) 
+					, the_relation2 As ( --relation
+						SELECT DISTINCT r.topogeo_id,r.layer_id,r.element_id, r.element_type
+						FROM the_topogeom_target_info AS ti, node_to_r as ted
+						INNER JOIN relation as r ON (r.element_id= ted.edge_id )
+						WHERE r.layer_id = ti.layer_id AND r.element_type = ti.feature_type
+					)
+					,the_topogeom_target AS(
+						SELECT ti.topology_id, r.layer_id, r.topogeo_id, ti.feature_type AS type
+						FROM the_relation2 AS r LEFT JOIN the_topogeom_target_info AS ti ON (r.layer_id=ti.layer_id)
+						WHERE r.element_type =ti.feature_type
+					)
+					SELECT  topology_id,layer_id,topogeo_id, type   
+					FROM the_topogeom_target;
+				  
+				--reseting the serach path to original value
+				EXECUTE 'SET search_path TO ' || _old_search_path  ; 
+			
+			RETURN  ;
+		END ;
+		$BODY$
+		LANGUAGE plpgsql VOLATILE;
+
+		SELECT *
+		FROM public.rc_FromNodeToTopogeom('bdtopo_topological',15,rc_getlayerid('route_topogeom', 'bdtopo_topological')  ) ; 
+
+
+
+		
+		
+
+DROP FUNCTION IF EXISTS public.rc_FromBaseToTopogeom(atopology TEXT,base_id int, target_topo_layer_id INT);
+CREATE FUNCTION public.rc_FromBaseToTopogeom(atopology TEXT,base_id int, target_topo_layer_id INT)
+		RETURNS SETOF topogeometry AS
+		$BODY$
+		-- This function, given an id of a (node, face,edge), return the corresponding topogeom in thegiven layer
+		-- 
+		---- 
+		DECLARE
+		_old_search_path text;
+		the_query TEXT:='';
+		--target_type INT; 
+		
+		BEGIN 
+			--saving the search path :
+			EXECUTE 'SHOW search_path' INTO _old_search_path;
+			 
+			--setting the search path to a new value to avoid prefixing all table name
+			EXECUTE 'SET search_path TO ' || atopology|| ' , topology,public; ';
+
+				RETURN QUERY  
+					WITH the_topogeom_target_info AS (
+						SELECT l.*
+						FROM  topology.layer as l
+						WHERE l.layer_id = target_topo_layer_id AND l.topology_id = (SELECT id FROM topology WHERE name ILIKE atopology LIMIT 1)
+					LIMIT 1
+					)  
+					, the_relation2 As ( --relation
+						SELECT DISTINCT r.topogeo_id,r.layer_id,r.element_id, r.element_type
+						FROM the_topogeom_target_info AS ti  ,relation as r  
+						WHERE
+							r.element_id= base_id
+							AND
+							r.layer_id = ti.layer_id AND r.element_type = ti.feature_type
+					)
+					,the_topogeom_target AS(
+						SELECT ti.topology_id, r.layer_id, r.topogeo_id, ti.feature_type AS type
+						FROM the_relation2 AS r LEFT JOIN the_topogeom_target_info AS ti ON (r.layer_id=ti.layer_id)
+						WHERE r.element_type =ti.feature_type
+					)
+					SELECT  topology_id,layer_id,topogeo_id, type   
+					FROM the_topogeom_target;
+				  
+				--reseting the serach path to original value
+				EXECUTE 'SET search_path TO ' || _old_search_path  ; 
+			
+			RETURN  ;
+		END ;
+		$BODY$
+		LANGUAGE plpgsql VOLATILE;
+
+		SELECT *
+		FROM public.rc_FromBaseToTopogeom('bdtopo_topological',15,rc_getlayerid('intersection_center', 'bdtopo_topological')  ) ; 
+
+
+	SELECT *
+	FROM bdtopo_topological.intersection_center
+	WHERE tg::int[] =  ARRAY[17,6,15986,1]; 
 		
