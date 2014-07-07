@@ -13,8 +13,8 @@
 		--	_3D input safely outputing 2D output?
 
 		
-		DROP FUNCTION IF EXISTS public.rc_compute_arc(p1 geometry, p2 geometry, p3 geometry, max_radius double precision, tolerance double	precision );
-		CREATE FUNCTION public.rc_compute_arc(p1 geometry, p2 geometry, p3 geometry,max_radius double precision,  tolerance double precision default 0.00000001 )
+		DROP FUNCTION IF EXISTS public.rc_compute_arc(p1 geometry, p2 geometry, p3 geometry, max_radius double precision, tolerance double precision, allow_full_circle BOOLEAN  );
+		CREATE FUNCTION public.rc_compute_arc(p1 geometry, p2 geometry, p3 geometry,max_radius double precision,  tolerance double precision default 0.00000001, allow_full_circle BOOLEAN DEFAULT TRUE )
 			RETURNS geometry AS
 		$BODY$
 		--note : depends on public.rc_MakeArc()
@@ -28,8 +28,11 @@
 			--|P1P2|<tolerance
 				--YES:
 					-- |P3P1| and |P3P2| > tolerance
-						-- YES : return full circle
-						--NO : WARN, return NULL
+						--allow_full_circle = YES
+							-- YES : return full circle 
+							--NO : WARN, return NULL
+						--allow_full_circle = NO
+							--return a line between P1 and P2
 				--NO : 
 					-- |P1P3| or |P2P3| > max_radius
 						-- YES : return line 
@@ -84,19 +87,23 @@
 				IF ST_DWithin(p1,p2,tolerance)= TRUE
 				THEN
 				--YES:
-					IF ST_DWithin(p1,p3,tolerance)  OR ST_DWithin(p2,p3,tolerance) THEN
-					-- |P3P1| OR |P3P2| < tolerance
-						--YES : WARN, return NULL
-						RAISE NOTICE 'wrong input for arc computation : p1,p2 and p3 are almost identical (up to "tolerance"), returning null'; RETURN NULL;
-					ELSE 
-						-- NO : return full circle : that is circle passing by p1/p2 and by the symmetric point of p1/p2 by p3
-							--note : 
-						RETURN public.rc_MakeArc(
-							p1,
-							ST_Affine(p3, 1,0,0, 0,1,0, 0,0,1, ST_X(p3)-ST_X(p1) ,ST_Y(p3)-ST_Y(p1),0),
-							p2
-							);
-					END IF;	
+					IF allow_full_circle = TRUE THEN
+						IF ST_DWithin(p1,p3,tolerance)  OR ST_DWithin(p2,p3,tolerance) THEN
+						-- |P3P1| OR |P3P2| < tolerance
+							--YES : WARN, return NULL
+							RAISE NOTICE 'wrong input for arc computation : p1,p2 and p3 are almost identical (up to "tolerance"), returning null'; RETURN NULL;
+						ELSE 
+							-- NO : return full circle : that is circle passing by p1/p2 and by the symmetric point of p1/p2 by p3
+								--note : 
+							RETURN public.rc_MakeArc(
+								p1,
+								ST_Affine(p3, 1,0,0, 0,1,0, 0,0,1, ST_X(p3)-ST_X(p1) ,ST_Y(p3)-ST_Y(p1),0),
+								p2
+								);
+						END IF;	
+					ELSE --no full circle : return the line 
+						RETURN ST_MakeLine(p1,p2);
+					END IF; 
 				ELSE
 				--NO : 
 					--RAISE NOTICE ' |P1P3| AND |P2P3| < max_radius %',ST_DWIthin(p1,p3,max_radius)=TRUE AND ST_DWIthin(p2,p3,max_radius)=TRUE ;
