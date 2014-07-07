@@ -9,6 +9,7 @@
 --also a function that given 3 points (central, left, right), compute the biggest arc of circle possible with en d of arc being tangent to to segments
 ------------------------------ 
 
+CREATE EXTENSION IF NOT EXISTS plpythonu;
 
 DROP FUNCTION IF EXISTS rc_py_compute_max_circle ( f geometry(point), e geometry(point),g geometry(point));
 CREATE OR REPLACE FUNCTION rc_py_compute_max_circle ( i_f geometry(point), i_e geometry(point), i_g geometry(point)
@@ -21,6 +22,7 @@ import numpy as np;
 from shapely import wkb ; 
 from shapely.geometry import asPoint ;
 
+#NOTE:  point MUST be of the same dimension! 
 	#storing the point coordinates as vector to allow fast operations on it.
 _f = np.asarray( wkb.loads( i_f , hex=  in_server ) )  ;
 _e = np.asarray( wkb.loads( i_e , hex= in_server ) )  ;
