@@ -55,7 +55,7 @@
 
 			result := input_geom;			
 			--Loop on all the geometry in the blade
-			FOR simple_blade IN SELECT rc_SnapPointToLine(ST_SetSRID( (ST_Dump(ST_CollectionExtract(blade, blade_coded_type))).geom , srid_blade) , input_geom, tolerance)
+			FOR simple_blade IN SELECT  ST_SetSRID( (ST_Dump(ST_CollectionExtract(blade, blade_coded_type))).geom , srid_blade) 
 			LOOP
 					result:= ST_SetSRID(ST_CollectionExtract(ST_Split(ST_CollectionExtract(result,geom_coded_type),simple_blade),geom_coded_type), srid_input_geom);
 			END LOOP;
