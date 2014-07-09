@@ -3,9 +3,7 @@
 --
 --
 --S aimple wrapper around st_split
---
---This script expects a postgres >= 9.2.3, Postgis >= 2.0.2, postgis topology enabled
---we work on table "route", which contains all the road network in Ile De France and many attributes. It is provided by IGN
+-- 
 --------------------------------------------
 
 --___ public.rc_Split_multi(input_geom geometry ,blade geometry)___
