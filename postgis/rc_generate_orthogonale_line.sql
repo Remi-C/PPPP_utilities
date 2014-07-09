@@ -64,11 +64,11 @@ BEGIN
 
 			oline := ST_SetSRID(ST_MakeLine(
 				ST_MakePoint(
-					ST_X(ipoint) -  width * d_vect_y
-					,ST_Y(ipoint) + width * d_vect_x   )
+					ST_X(ipoint) -  width/2 * d_vect_y
+					,ST_Y(ipoint) + width/2 * d_vect_x   )
 				,ST_MakePoint(
-					ST_X(ipoint) +  width * d_vect_y
-					,ST_Y(ipoint) - width * d_vect_x   )
+					ST_X(ipoint) +  width/2 * d_vect_y
+					,ST_Y(ipoint) - width/2 * d_vect_x   )
 				), ST_SRID(iline))
 			RETURN ;
 		END ;
