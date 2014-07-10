@@ -29,7 +29,7 @@ CREATE OR REPLACE FUNCTION rc_generate_orthogonal_line(
 	 ) AS
 $BODY$
 DECLARE    
-	ipoint_curvabs float := ST_LineLocatePoint(iline , ipoint) ;
+	ipoint_curvabs float ;
 	curvwidth FLOAT; 
 	sub  geometry ; 
 	spt1 geometry;
@@ -37,7 +37,10 @@ DECLARE
 	d_vect_x float ;
 	d_vect_y float ;
 	d_norm FLOAT ; 
+	text_var1 text;
 BEGIN 
+	--BEGIN
+	
 		--@brief this function compute an orthogonale output line tothe iline at thegiven ipoint of width width. For doing so it uses the st_linesubstring functionn hence the paramter support_line_size that define the size of the substring used to compute iline 
 
 			--check input type 
@@ -47,7 +50,12 @@ BEGIN
 			--compute normal vector 
 			--apply normal vector to get 2 new points of oline, construct line with it.
 			 
-			
+			IF(ST_IsEmpty(iline)=TRUE OR ST_IsEmpty(ipoint)) 
+				--RAISE NOTICE 'at least one of the input geom is empty, returning null';
+				THEN return;
+			END IF;
+
+			ipoint_curvabs  := ST_LineLocatePoint(iline , ipoint) ;
 			--RAISE NOTICE 'type of input : %',  ipoint_type%TYPE ; 
 
 			curvwidth := LEAST(support_line_size / ST_Length(iline),1) ; 
@@ -71,10 +79,15 @@ BEGIN
 					,ST_Y(ipoint) - width/2 * d_vect_x   )
 				), ST_SRID(iline))
 			RETURN ;
+		--EXCEPTION WHEN OTHERS THEN
+		--	GET STACKED DIAGNOSTICS text_var1 = MESSAGE_TEXT;
+		--	RAISE NOTICE 'big problem : %', text_var1;
+		--	RAISE NOTICE 'faulty input: % , %, % ,%' ,ST_AsText(iline) ,ST_Astext(ipoint ) , width , support_line_size;
+		--END;
 		END ;
 	$BODY$
 LANGUAGE plpgsql IMMUTABLE STRICT; 
-
+ 
 	--testing
 /*	SELECT st_astext(r.oline)
 	FROM 
@@ -87,3 +100,18 @@ LANGUAGE plpgsql IMMUTABLE STRICT;
 			, 0.1  
 			 )  AS r
 */
+
+SELECT st_astext(r.oline),  ST_IsEmpty('01020000A0AB380E0000000000'::geometry) , ST_AsText('01020000A0AB380E0000000000'::geometry)
+	FROM  
+		rc_generate_orthogonal_line(  
+			 '01020000A0AB380E0000000000'::geometry
+			,'0101000020AB380E00C2CCFFFFFFA6B5400539939939A0D540'::geometry
+			, 9.01
+			, 0.01  
+			 )  AS r
+	
+	SELECT ST_LineLocatePoint( 
+		ST_GeomFromtext('LINESTRING EMPTY')
+		,ST_GeomFromtext('point(1 2)')
+		)
+			 
