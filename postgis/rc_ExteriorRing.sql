@@ -45,3 +45,11 @@ LANGUAGE plpgsql IMMUTABLE STRICT;
 	FROM the_geom; 
 
 	*/
+
+	WITH the_geom AS (
+		SELECT  geom1  as geom
+		FROM ST_GeomFromText('POLYGON((0 0, 4 0 , 4 4, 0 4, 0 0),(1 1, 3 1, 3 3, 1 3 , 1 1))') as geom1
+			 
+	)
+	SELECT ST_AsText(rc_ExteriorRing(geom))
+	FROM the_geom; 
