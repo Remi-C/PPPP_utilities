@@ -73,12 +73,17 @@ _center = _e + ( np.linalg.norm(_e - _t1)/(  np.sqrt((np.dot(_ef,_eg)/(np.linalg
 #plpy.notice('center',_center) ;  
 
 center = wkb.dumps(asPoint(_center), hex=in_server) ;
-radius = _radius ;
+if np.isnan( _radius ) :
+	radius = 2147483647 ;
+else : 
+	radius = _radius ;
+	
 t1 =wkb.dumps(asPoint(_t1), hex=in_server) ;
 t2 = wkb.dumps(asPoint(t2__), hex=in_server) ;
 
 #plpy.notice(t2) ; 
-#plpy.notice(_center  , radius  , _t1  , t2__ ) ;
+#plpy.notice(center  , radius  , t1  , t2) ;
+
 if in_server != True :  
 	print( center  , radius  , t1  , t2)
 else :
