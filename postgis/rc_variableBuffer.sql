@@ -12,6 +12,7 @@ DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry );
 			RETURNS geometry AS
 		$BODY$
 			--@brief this function computes a variable buffer given a geometry and a raidus in M dimension of each point
+			--@WARNING : only dilatation , doesn't do erosion
 			--@WARNING : very naive implementation.
 			--Idea from Mathieu B.
 			DECLARE  
