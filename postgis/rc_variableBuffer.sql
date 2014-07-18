@@ -24,7 +24,7 @@ DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry );
 					FROM   rc_DumpSegments(i_geom ) AS dmp
 				)
 				,trapezoid AS (
-				SELECT rc_py_seg_to_trapezoid(ST_Force2D(geom), ST_M(ST_StartPoint(geom)),ST_M(ST_EndPoint(geom))) AS geom
+				SELECT ST_SetSRID(rc_py_seg_to_trapezoid(ST_Force2D(geom), ST_M(ST_StartPoint(geom)),ST_M(ST_EndPoint(geom))),ST_SRID(geom)  )AS geom
 				FROM dump
 				)
 				,pts_and_radius AS (
