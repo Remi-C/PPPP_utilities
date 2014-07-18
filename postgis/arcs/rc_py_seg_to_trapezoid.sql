@@ -43,7 +43,7 @@ AS $$
 	normal =  (p[1]-p[0]) * np.array([ 1,-1] ) ; 
 	normal[0], normal[1], = normal[1],normal[0] ; #exchanging x and y, wihtout copy
 	normal = normal/np.linalg.norm(normal) ;
-	print(normal) ;
+	#print(normal) ;
 	 
 	 #creating the upper point and down point for first and second (hopefully last) point in segment
 	p1u = p[0] + normal * r1 ;
@@ -57,7 +57,7 @@ AS $$
 	ogeom = asPolygon(output_line) ;
 	 
 
-	print(ogeom) ; 
+	#print(ogeom) ; 
 	pp1.pprint( str(geom)); 
 
 	#outputing for postgis : @NOTE : if inside postgres, hex =False, if outside, hex=True
