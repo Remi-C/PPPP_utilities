@@ -11,7 +11,8 @@ RETURNS anyelement LANGUAGE sql IMMUTABLE STRICT AS $$
 $$;
  
 -- And then wrap an aggregate around it
-CREATE AGGREGATE public.first (
+DROP AGGREGATE IF EXISTS public.first(anyelement) ;
+CREATE  AGGREGATE public.first (
         sfunc    = public.first_agg,
         basetype = anyelement,
         stype    = anyelement
@@ -24,26 +25,9 @@ RETURNS anyelement LANGUAGE sql IMMUTABLE STRICT AS $$
 $$;
  
 -- And then wrap an aggregate around it
+DROP AGGREGATE IF EXISTS public.last(anyelement) ;
 CREATE AGGREGATE public.last (
         sfunc    = public.last_agg,
         basetype = anyelement,
         stype    = anyelement
 );
-
-
-
-
---test of perf
-	/*DROP TABLE IF EXISTS toto_perf_agg;
-	CREATE TABLE toto_perf_agg AS 
-	with the_data AS (
-	SELECT s::int/100 as s,  random()   as rand 
-	FROM generate_series(1,100000) AS s
-	)
-	SELECT s 
-		 , public.first(rand)
-		--,max(rand)
-	FROM the_data 
-	GROUP BY s ;
-	*/
-	
