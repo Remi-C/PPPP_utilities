@@ -108,10 +108,6 @@ SELECT st_astext(r.oline),  ST_IsEmpty('01020000A0AB380E0000000000'::geometry) ,
 			,'0101000020AB380E00C2CCFFFFFFA6B5400539939939A0D540'::geometry
 			, 9.01
 			, 0.01  
-			 )  AS r
-	
-	SELECT ST_LineLocatePoint( 
-		ST_GeomFromtext('LINESTRING EMPTY')
-		,ST_GeomFromtext('point(1 2)')
-		)
+			 )  AS r ; 
+ 
 			 
