@@ -12,7 +12,7 @@
 CREATE EXTENSION IF NOT EXISTS plpythonu;
 
 DROP FUNCTION IF EXISTS rc_py_compute_max_circle ( f geometry(point), e geometry(point),g geometry(point));
-CREATE OR REPLACE FUNCTION rc_py_compute_max_circle ( i_f geometry(point), i_e geometry(point), i_g geometry(point)
+CREATE OR REPLACE FUNCTION rc_py_compute_max_circle ( i_e geometry(point), i_f geometry(point), i_g geometry(point)
 	, OUT center geometry(point),OUT  radius FLOAT,OUT  t1 geometry(point), OUT  t2 geometry(point))  
 AS $$
 	##@WARNING  : point in the order of CENTER, LEFT , RIGHT
@@ -27,8 +27,8 @@ from shapely.geometry import asPoint ;
 
 #NOTE:  point MUST be of the same dimension! 
 	#storing the point coordinates as vector to allow fast operations on it. 
-_f = np.asarray( wkb.loads( i_e , hex=  in_server ) )  ;
-_e = np.asarray( wkb.loads( i_f , hex= in_server ) )  ;
+_f = np.asarray( wkb.loads( i_f , hex=  in_server ) )  ;
+_e = np.asarray( wkb.loads( i_e , hex= in_server ) )  ;
 _g = np.asarray( wkb.loads( i_g , hex= in_server ) )  ; 
 
 _ef = _f-_e;
@@ -67,9 +67,20 @@ else :
 #plpy.notice('distance from E to center by correct math formula:',  np.linalg.norm(_e - _t1)/(  np.sqrt((np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) +1)/2) ) ) ;		
 
 	#Now center is simply found by walking on the bisector with the found distance, modulo the correct sign
-#_center = _e + (np.linalg.norm(_e - _t1)/np.cos(theta) ) *(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e ) ;
-_center = _e + ( np.linalg.norm(_e - _t1)/(  np.sqrt((np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) +1)/2) )     ) *(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e ) ;
+	#NOTE: the bissector must be determined robustly, we use either norm(EF+EG) or norm(normal(EF)+normal(EG), chossing one based on who has the lowest scalar product
 
+ef_normal = np.cross(_ef, [0,0,1] ) ;
+eg_normal = np.cross(_eg, [0,0,1] ) ;
+#plpy.notice ( ef_normal , '  ', eg_normal) ;
+
+if np.dot(ef_normal,eg_normal) > np.dot(_ef,_eg) :
+	bissect = ef_normal / np.linalg.norm(ef_normal) +eg_normal / np.linalg.norm( eg_normal) ;
+else :
+	bissect =  _ef/np.linalg.norm(_ef)  + _eg / np.linalg.norm(_eg) ;
+	
+#_center = _e + (np.linalg.norm(_e - _t1)/np.cos(theta) ) *(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e ) ;
+#_center = _e + ( np.linalg.norm(_e - _t1)/(  np.sqrt((np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) +1)/2) )     ) *(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e ) ;
+_center = _e + ( np.linalg.norm(_e - _t1)/(  np.sqrt((np.dot(_ef,_eg)/(np.linalg.norm(_ef)*np.linalg.norm(_eg)) +1)/2) )     ) * bissect ;
 #plpy.notice('center',_center) ;  
 
 center = wkb.dumps(asPoint(_center), hex=in_server) ;
@@ -94,12 +105,12 @@ $$ LANGUAGE plpythonu;
 
 SELECT ST_Astext(center), radius, ST_Astext(t1),ST_Astext(t2)
 FROM rc_py_compute_max_circle(
-		ST_MakePoint(6,0)
+		ST_MakePoint(6,0.00001)
 		,ST_MakePoint(0,0) 
-		,ST_MakePoint(12,0)
+		,ST_MakePoint(12,0.0001)
 		)  ; 
 
-
+/*
  
 DROP FUNCTION IF EXISTS rc_py_compute_circle_from_tangency ( f geometry(point), e geometry(point),g geometry(point),t1 geometry(point));
 CREATE OR REPLACE FUNCTION rc_py_compute_circle_from_tangency ( i_f geometry(point), i_e geometry(point), i_g geometry(point), i_t1 geometry(point)
@@ -227,7 +238,7 @@ FROM rc_py_compute_circle_from_radius(
 		,1.63
 		)  ;
 
-
+*/
 /*
 DROP FUNCTION IF EXISTS rc_py_distance_point_line ( a float[2], b float[2],p float[2] );
 CREATE OR REPLACE FUNCTION rc_py_distance_point_line ( a float[2], b float[2],p float[2])

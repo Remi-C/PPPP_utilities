@@ -69,7 +69,7 @@ AS $$
 $$ LANGUAGE plpythonu;
 
 SELECT * ,  St_Astext(rc_py_seg_to_trapezoid( geom   ,2 ::float,3::float )   )
-FROM ST_GeomFromtext('LINESTRING(0 0 , 10 0 )') AS geom;
+FROM ST_GeomFromtext('LINESTRING(0 0 , 10 15 )') AS geom;
 
 
 
