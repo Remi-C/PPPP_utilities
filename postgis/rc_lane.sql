@@ -145,21 +145,7 @@
 		END; -- required for plpgsql
 		$BODY$
 	LANGUAGE plpgsql VOLATILE;
-
-	  
-	--testing :
-	SELECT  vs.edge_id , vs.section2 , vs.section2_surface, r.nb_voies, r.largeur, f.*, st_astext(lanes)
-	FROM street_amp.visu_result_axis as vs
-		INNER JOIN bdtopo.road as r ON (vs.ign_id=  r.id)
-		, rc_groupLane(
-			vs.section2_surface
-			, vs.section2
-			,  r.nb_voies
-			, r.largeur/2
-			,0.1
-			,'endcap=flat' ) as f
-			ORDER BY vs.edge_id ASC
-	
+ 
 
 	 DROP FUNCTION IF EXISTS public.rc_Dilate(geometry, float, text ,int);
 	CREATE OR REPLACE FUNCTION public.rc_Dilate(geom geometry,radius float, buffer_option text DEFAULT 'quad_segs=4',srid int DEFAULT 931008)
@@ -198,7 +184,7 @@
 		RETURN ST_SymDifference(geomA,geomB);
 	END;
 	$BODY$
-	LANGUAGE plpgsql VOLATILE;
+	LANGUAGE plpgsql VOLATILE; 
 	----test
 	--
 	DROP TABLE IF EXISTS public.test_symdif;
