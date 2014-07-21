@@ -110,6 +110,17 @@ FROM rc_py_compute_max_circle(
 		,ST_MakePoint(12,0.0001)
 		)  ; 
 
+SELECT ST_Astext(center), radius, ST_Astext(t1),ST_Astext(t2)
+FROM rc_py_compute_max_circle(
+		ST_MakePoint(3307.49999998745,19615.4999984735)
+		,ST_MakePoint(3307.49999998745,19615.4999984735) 
+		,ST_MakePoint(3305.03765807083,19616.7853842391)
+		)  ; 
+
+--POINT(3307.49999998745 19615.4999984735)
+--POINT(3307.49999998745 19615.4999984735)
+--POINT(3305.03765807083 19616.7853842391)
+
 /*
  
 DROP FUNCTION IF EXISTS rc_py_compute_circle_from_tangency ( f geometry(point), e geometry(point),g geometry(point),t1 geometry(point));
