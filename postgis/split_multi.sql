@@ -75,4 +75,4 @@
 					--ST_GeomFromText('MULTIPOLYGON(((0 1,0 -1 ,1 -1,0 1)),((0 2,0 -2,1 -2,0 2)))') AS blade
 				ST_GeomFromtext('MULTIPOINT(621.254 1483.268,628.529 1488.133)' ) AS blade
 				,ST_GeomFromtext('LINESTRING(655.1 1505.9,605.3 1472.6)') AS geom
-			) AS toto
+			) AS toto ; 
