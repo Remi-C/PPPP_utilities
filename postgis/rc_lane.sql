@@ -95,7 +95,7 @@
 			lane := rc_SymDif(Di,Di_2) ; lane_position := i;
 			----
 			--Workaround of bug of symdiff : we have to use ST_Split(geometry input, geometry blade) if Di_2 is a line or multiline
-			IF ST_GeometryType(Di_2) = ANY ('{ST_LineString,ST_MultiLineString}'::text[])e
+			IF ST_GeometryType(Di_2) ILIKE  '%LineString'
 			THEN
 				--RAISE NOTICE 'DI_2 is of geometry type :(%) ',ST_GeometryType(Di_2) ;
 
@@ -111,14 +111,39 @@
 -- 					Di_2 : %',ST_AsText(ST_Intersection(Di,Di_2)),ST_AsText(ST_Difference(Di, Di_2)),St_AsText(lane),ST_AsText(Di), ST_AsText(Di_2);
 				Di_2 := Di;
 				
-			RETURN NEXT ;
-			
-
+			RETURN NEXT ; 
 		END LOOP;	
 		END; -- required for plpgsql
 		$BODY$
 	  LANGUAGE plpgsql VOLATILE;
 
+
+
+	DROP FUNCTION IF EXISTS rc_cleanLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text );
+	CREATE OR REPLACE FUNCTION rc_cleanLane(
+		chaussee_geom geometry
+		, chaussee_axis geometry
+		, lane_number integer
+		,lane_width float
+		,snapping_precison float
+		,buffer_opt text 
+		)
+		returnS table  ( lane geometry  , lane_position integer ,lane_ordinality INTEGER) 
+	  AS
+		$BODY$
+		--@brief this functioclean the surfaces created by createlane to remove small lanes and create an ordinality
+		DECLARE  
+		BEGIN 	
+
+			RETURN QUERY
+			SELECT DISTINCT ON (lane_position, lane_ordinality) dmp.geom AS lane, f.lane_position, (row_number()over(partition by f.lane_position ORDER BY dmp.path ASC))::int AS lane_ordinality
+			FROM rc_createLane(chaussee_geom  , chaussee_axis , lane_number ,lane_width ,snapping_precison ,buffer_opt  ) AS f
+				,st_dump(f.lane) AS dmp 
+			WHERE ST_Area(dmp.geom)>0.1 ;
+		 
+		END; -- required for plpgsql
+		$BODY$
+	LANGUAGE plpgsql VOLATILE;
 
 
 	DROP FUNCTION IF EXISTS rc_groupLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text,OUT lane geometry(multipolygon)
