@@ -7,8 +7,8 @@
 ------------------------------
 
 
-DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry );
-		CREATE FUNCTION public.rc_variableBuffer(i_geom geometry , OUT buffered_geom geometry)
+DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry,signe int );
+		CREATE FUNCTION public.rc_variableBuffer(i_geom geometry ,signe int, OUT buffered_geom geometry)
 			RETURNS geometry AS
 		$BODY$
 			--@brief this function computes a variable buffer given a geometry and a raidus in M dimension of each point
@@ -16,50 +16,69 @@ DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry );
 			--@WARNING : very naive implementation.
 			--Idea from Mathieu B.
 			DECLARE  
-			 segs geometry; 
+			 segs geometry;
+			 q text; 
 			BEGIN
 				
-				with dump AS (
+				q:='WITH the_geom AS (
+					SELECT $1 AS geom
+				), dump AS (
 					SELECT DISTINCT dmp.*
-					FROM   rc_DumpSegments(i_geom ) AS dmp
+					FROM   the_geom AS tg, rc_DumpSegments(tg.geom ) AS dmp
 				)
 				,trapezoid AS (
 				SELECT ST_SetSRID(rc_py_seg_to_trapezoid(ST_Force2D(geom), ST_M(ST_StartPoint(geom)),ST_M(ST_EndPoint(geom))),ST_SRID(geom)  )AS geom
 				FROM dump
 				)
 				,pts_and_radius AS (
-				SELECT (ST_DumpPoints(i_geom)).geom  
+				SELECT (ST_DumpPoints(tg.geom)).geom  
+				FROM the_geom AS tg
 				)
 				,buf_pts AS (
 				SELECT ST_Buffer(geom,ST_M(geom)) AS geom
 				FROM pts_and_radius
 				)
 				,all_geom AS (
-				SELECT geom
-				FROM buf_pts
-				UNION ALL 
-				SELECT geom
-				FROM trapezoid
-				)
-				,unioned_geom AS (
-				SELECT ST_union(geom) AS geom
-				FROM all_geom
-				)
-				--,result AS (
-				
-					--SELECT ST_Difference(tg.geom, ug.geom) AS geom --case whendoing a erosion
-				--	SELECT ST_Union(tg.geom, ug.geom) AS geom --case whendoing a dilatation
-				--FROM result ;
-				SELECT geom INTO buffered_geom
-				FROM unioned_geom 
+					SELECT ST_Union(geom) as geom
+					FROM (
+						SELECT geom
+						FROM buf_pts
+						UNION ALL 
+						SELECT geom
+						FROM trapezoid';
+					
+				IF signe >= 0 THEN 
+					q:= q ||'
+						UNION ALL
+						SELECT geom
+						FROM the_geom
+						) as sub
+					)
+					--,unioned_geom AS (
+					SELECT ST_CollectionExtract( geom ,3) AS geom --INTO buffered_geom
+					--SELECT ST_Difference(tg.geom, ug.geom) AS geom --case whendoing a erosion 
+					FROM all_geom;';
+				ELSE
+					q:= q||'
+						)AS sub
+					)
+					SELECT ST_Difference(tg.geom, ag.geom ) AS geom
+					FROM the_geom AS tg, all_geom AS ag;';
+				END IF;
+
+				EXECUTE q INTO buffered_geom USING i_geom,signe ;
 			return  ;
 			END ;
 		$BODY$
 		LANGUAGE plpgsql IMMUTABLE;
 
 	---testing
-	SELECT ST_AsText(rc_variableBuffer(geom ))
+	SELECT ST_AsText(rc_variableBuffer(geom ,+1))
 	FROM ST_GeomFromtext('LINESTRINGM(0 0 1, 10 0 2, 20 20 3 )') AS geom;
+
+	SELECT ST_AsText(rc_variableBuffer(geom ,-1))
+	FROM ST_GeomFromtext('POLYGONM((0 0 1, 10 0 2, 10 10 3, 0 0 1 ))') AS geom;
+
 
 /*
 	with the_geom AS (
