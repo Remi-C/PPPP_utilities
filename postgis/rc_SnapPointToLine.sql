@@ -75,6 +75,37 @@
 		--FROM ST_MakePoint(1,1) AS point, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line
 
 
+	DROP FUNCTION IF EXISTS public.rc_SnapPointToLineEfficient(geometry(point), geometry(linestring) , tolerance double precision );
+	CREATE FUNCTION public.rc_SnapPointToLineEfficient(INOUT point geometry(point), IN line geometry(linestring) ,IN tolerance double precision ) AS
+		$BODY$
+		-- This function snap a point to a line : if under a given tolerance distance 
+		--	else, if the line is close enough, take the closest point on line (projection)
+		--	else, return the original point
+		DECLARE  
+		_cpoint geometry(point);
+		
+		BEGIN 
+			--projecting the ponint :
+			_cpoint := ST_ClosestPoint(line,point) ;
+
+			IF ST_DWithin(_cpoint, point,tolerance) = TRUE THEN 
+				point := _cpoint;
+				RETURN ;
+			ELSE 
+				RETURN ;
+			END IF;  
+
+			 
+			RETURN;
+		END ;
+		$BODY$
+		LANGUAGE plpgsql IMMUTABLE;
+
+		--DROP TABLE IF EXISTS temp_test_snappointtoline;
+		--CREATE TABLE temp_test_snappointtoline AS 
+		--SELECT point, line, 1 AS tolerance, public.rc_SnapPointToLineEfficient(point  , line  , 1   ) AS spoint 
+		--FROM ST_MakePoint(1,1) AS point, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line
+
 
 
 		DROP FUNCTION IF EXISTS public.rc_SnapLineToLine(line_to_snap geometry, line geometry , tolerance double precision,tolerance_vertex double precision);
@@ -111,3 +142,27 @@
 		FROM ST_GeomFromText('LINESTRING(0.1 0, 1 10, 0.1 100)') AS line1, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line2;
 
 		 
+
+
+			DROP FUNCTION IF EXISTS public.rc_SnapLineToLineEfficient(line_to_snap geometry, line geometry , tolerance float);
+	CREATE FUNCTION public.rc_SnapLineToLineEfficient(INOUT line_to_snap geometry, line geometry , tolerance float ) AS
+		$BODY$
+		-- This function snap all the points of a line ot another line , if the other line is not too far 
+		DECLARE   
+		BEGIN
+				WITH d_lines AS (
+					SELECT dmp.geom, dmp.path As line_path
+					FROM ST_Dump(ST_CollectionExtract(line_to_snap,2)) AS dmp
+				)
+				,snapped_lines AS (
+					SELECT ST_Makeline(rc_SnapPointToLineEfficient(dmp.geom,line,tolerance) ORDER BY dmp.path ASC) AS slines 
+					FROM d_lines, ST_DumpPoints( geom) AS dmp 
+					GROUP BY line_path 
+				)SELECT ST_Collect(slines) INTO line_to_snap
+				FROM snapped_lines
+				LIMIT 1;
+		 
+			RETURN;
+		END ;
+		$BODY$
+		LANGUAGE plpgsql IMMUTABLE;
