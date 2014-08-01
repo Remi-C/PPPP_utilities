@@ -11,10 +11,10 @@
 --
 -------------------------------------------- 
 
+/*
 
-
-	DROP FUNCTION IF EXISTS rc_createLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text);
-	CREATE OR REPLACE FUNCTION rc_createLane(
+	DROP FUNCTION IF EXISTS public.rc_createLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text);
+	CREATE OR REPLACE FUNCTION public.rc_createLane(
 		chaussee_geom geometry
 		, chaussee_axis geometry
 		, lane_number integer
@@ -119,8 +119,8 @@
 
 
 
-	DROP FUNCTION IF EXISTS rc_cleanLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text );
-	CREATE OR REPLACE FUNCTION rc_cleanLane(
+	DROP FUNCTION IF EXISTS public.rc_cleanLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text );
+	CREATE OR REPLACE FUNCTION public.rc_cleanLane(
 		chaussee_geom geometry
 		, chaussee_axis geometry
 		, lane_number integer
@@ -146,9 +146,9 @@
 	LANGUAGE plpgsql VOLATILE;
 
 
-	DROP FUNCTION IF EXISTS rc_groupLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text,OUT lane geometry(multipolygon)
+	DROP FUNCTION IF EXISTS public.rc_groupLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text,OUT lane geometry(multipolygon)
 		,OUT lane_position integer[]);
-	CREATE OR REPLACE FUNCTION rc_groupLane(
+	CREATE OR REPLACE FUNCTION public.rc_groupLane(
 		chaussee_geom geometry
 		, chaussee_axis geometry
 		, lane_number integer
@@ -215,3 +215,117 @@
 	DROP TABLE IF EXISTS public.test_symdif;
 	CREATE TABLE public.test_symdif AS
 	SELECT 1 AS id,  rc_SymDif(rc_Dilate(ST_GeomFromText('LINESTRING(650814.2 6861324.8 ,650807.6 6861313,650750.3 6861219.1 )'),9) ,public.rc_Dilate(ST_GeomFromText('LINESTRING(650814.2 6861324.8 ,650807.6 6861313,650750.3 6861219.1 )'),5)) AS geom;
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+	
+	DROP FUNCTION IF EXISTS public.rc_generate_lane_marking(  road_axis geometry(LINESTRING), lane_number integer,lane_width float );
+	CREATE OR REPLACE FUNCTION public.rc_generate_lane_marking(
+		road_axis geometry(LINESTRING), lane_number integer,lane_width float)
+	  RETURNS TABLE (lane_separator geometry,  lane_position integer,  lane_side TEXT, lane_center_axe GEOMETRY(linestring)) AS
+	$BODY$
+	--this function compute the markings separating the lane as well as lane center axe
+	--Hypothesis are that lane are "symmetric" and of same size, and that lanes form a spatial arrangemnt of chaussee 
+	DECLARE  
+	i_init integer = lane_number%2; 
+	i integer = i_init; 
+	temp_left_axis geometry(linestring);
+	temp_right_axis geometry(linestring);
+	temp_left_separator geometry(linestring);
+	temp_right_separator geometry(linestring); 
+	BEGIN 	
+
+		
+		IF lane_number <1 
+		THEN--there is a mistake in lane number, doing nothing and warning
+			RAISE NOTICE 'mistake in number of wanted lane, you said (%), it should be an integer >= 1',lane_number; 
+			RETURN ;
+		ELSIF lane_number=1
+		THEN	--easy : nothing to do 
+			--RAISE NOTICE ' only one lane to make, so no lane to make ! ';
+			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axe := road_axis ;
+			RETURN NEXT ;
+			RETURN ;
+		ELSIF lane_number = 2
+		THEN 
+			lane_separator := road_axis; lane_position := 2;lane_side := 'left' ;lane_center_axe := ST_OffsetCurve(road_axis,lane_width/2) ;
+			RETURN NEXT ;
+			lane_separator := road_axis; lane_position := 2;lane_side := 'right' ;lane_center_axe := ST_OffsetCurve(road_axis,-lane_width/2) ;
+			RETURN NEXT ;
+			RETURN;
+		END IF;
+ 
+ 
+		 
+		IF lane_number %2 = 1
+		THEN --odd case
+				-- D1 is a lane : creating this lane
+				-- Di-2 <- Buffer (Axe_road, lane_width/2)
+				-- L1 <- Di-2
+			temp_left_axis:= road_axis;
+			temp_right_axis:=ST_Reverse(road_axis);
+			temp_left_separator := ST_OffsetCurve(road_axis,lane_width/2) ;
+			temp_right_separator := ST_OffsetCurve(road_axis ,-lane_width/2) ;
+
+			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axe := temp_left_axis  ; 
+			RETURN NEXT;
+			
+		ELSIF lane_number %2 =0 --this check is not required
+		THEN
+			temp_left_axis :=  ST_OffsetCurve(road_axis,lane_width/2) ;
+			temp_right_axis :=  ST_OffsetCurve( road_axis ,-lane_width/2) ; 
+			temp_left_separator :=road_axis;
+			temp_right_separator := ST_Reverse(road_axis);
+
+			
+				lane_separator:= temp_left_separator ; lane_position:=  2;  lane_side := 'left' ;lane_center_axe:= temp_left_axis  ; RETURN NEXT ;
+				lane_separator:= temp_right_separator ; lane_position:=  2;  lane_side := 'right' ;lane_center_axe:= temp_right_axis  ; RETURN NEXT ;
+				  
+		END IF;
+
+		-- --trying to unificate things
+		FOR i IN (i_init+2)..lane_number-2 BY 2 
+		LOOP --looping on the number of lane to make, starting at L2 or L3, because L0 (line) or L1 (a lane) are made at initiation
+			RAISE NOTICE 'i : %',i;
+			
+			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); --((i%2)*2-1)*lane_width) ;
+			temp_left_separator := ST_OffsetCurve(  temp_left_separator  , lane_width) ; --  ((i%2)*2-1) * lane_width) ;
+			
+			
+			temp_right_axis := ST_OffsetCurve(temp_right_axis,lane_width ); --(((i%2)=1)::int*2-1)*lane_width) ;
+			temp_right_separator := ST_OffsetCurve(temp_right_separator,lane_width) ; --(((i%2)=1)::int*2-1)*lane_width) ;
+			
+			lane_separator:=temp_left_separator   ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axe:= temp_left_axis    ;
+			RETURN NEXT ;
+			 
+			lane_separator:=temp_right_separator  ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axe:= temp_right_axis    ;
+			RETURN NEXT ;
+			 
+			
+		END LOOP;	
+		RETURN;	 
+		END; -- required for plpgsql
+		$BODY$
+	  LANGUAGE plpgsql IMMUTABLE STRICT;
+	
+	DROP TABLE IF EXISTS public.temp_test_lane; 
+	CREATE TABLE  public.temp_test_lane AS 
+	SELECT  row_number() over() as gid, lane_separator  as lane_separator , lane_position, lane_side,  lane_center_axe  as lane_center_axe
+	FROM  public.rc_generate_lane_marking(
+			road_axis:= ST_GeomFromText('Linestring(0 0, 10 0 , 20  0)')
+			, lane_number:=5
+			,lane_width:=2.2)
+	
+
+
+			
