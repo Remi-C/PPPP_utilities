@@ -10,9 +10,11 @@
 ------------- 
 
 
-DROP FUNCTION IF EXISTS rc_scale_geom_local(  igeom GEOMETRY, scale float);
-CREATE OR REPLACE FUNCTION rc_scale_geom_local(
-	  igeom GEOMETRY, scale float
+DROP FUNCTION IF EXISTS rc_scale_centered(  igeom GEOMETRY, center GEOMETRY(Point), scale float);
+CREATE OR REPLACE FUNCTION rc_scale_centered(
+	igeom GEOMETRY
+	, center GEOMETRY(Point)
+	, scale float
 	)  RETURNS GEOMETRY AS
 $BODY$
 	--@brief : this function scale a geometry with a scaling centerd on the centroid of the geom
@@ -22,28 +24,30 @@ $BODY$
 
 		DECLARE  
 		BEGIN  
-		RETURN ST_Translate(
+		 
+			RETURN 
+			ST_Translate(
 						ST_Scale(
 							ST_translate(
-								igeom
-								, -ST_X(centroid)
-								,-ST_Y(centroid)
-								, COALESCE( -ST_Z(centroid) ,0) --we use the coalesce to avoid null input
+								geom
+								, -ST_X(center)
+								,-ST_Y(center)
+								, COALESCE( -ST_Z(center) ,0) --we use the coalesce to avoid null input
 								) 
-						, scale
-						,scale
-						,scale)  
-						,ST_X(centroid)
-						,ST_Y(centroid)
-						, COALESCE( ST_Z(centroid),0)
+						, sca
+						,sca
+						,sca)  
+						,ST_X(center)
+						,ST_Y(center)
+						, COALESCE( ST_Z(center),0)
 					 )
-			FROM ST_Centroid(igeom) as centroid  ;
+			FROM (SELECT igeom AS geom, center as centroid, scale as sca) AS inp   ;
 			 
 		END ;
 $BODY$
  LANGUAGE plpgsql IMMUTABLE ;
  
-	SELECT ST_AsText( rc_scale_geom_local(geom, 0.5::float) ) 
+	SELECT ST_AsText( rc_scale_centered(geom, ST_Centroid(geom) , 0.5::float) ) 
 	FROM ST_GeomFromText('LINESTRING(20 10, 30 40 )') AS geom ;
 
 -- 
@@ -68,5 +72,4 @@ $BODY$
 -- 			 )
 -- 			)
 -- 	FROM the_geom, ST_Centroid(geom) as centroid  ;
-
-  
+ 
