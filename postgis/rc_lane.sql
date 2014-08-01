@@ -279,7 +279,8 @@
 
 			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axe := temp_left_axis  ; 
 			RETURN NEXT;
-			
+			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); 
+			temp_right_axis := ST_OffsetCurve(temp_right_axis,lane_width );
 		ELSIF lane_number %2 =0 --this check is not required
 		THEN
 			temp_left_axis :=  ST_OffsetCurve(road_axis,lane_width/2) ;
@@ -288,22 +289,17 @@
 			temp_right_separator := ST_Reverse(road_axis);
 
 			
-				lane_separator:= temp_left_separator ; lane_position:=  2;  lane_side := 'left' ;lane_center_axe:= temp_left_axis  ; RETURN NEXT ;
-				lane_separator:= temp_right_separator ; lane_position:=  2;  lane_side := 'right' ;lane_center_axe:= temp_right_axis  ; RETURN NEXT ;
+				--lane_separator:= temp_left_separator ; lane_position:=  2;  lane_side := 'left' ;lane_center_axe:= temp_left_axis  ; RETURN NEXT ;
+				--lane_separator:= temp_right_separator ; lane_position:=  2;  lane_side := 'right' ;lane_center_axe:= temp_right_axis  ; RETURN NEXT ;
 				  
 		END IF;
 
 		-- --trying to unificate things
-		FOR i IN (i_init+2)..lane_number-2 BY 2 
+		FOR i IN (i_init+2)..lane_number  BY 2 
 		LOOP --looping on the number of lane to make, starting at L2 or L3, because L0 (line) or L1 (a lane) are made at initiation
 			RAISE NOTICE 'i : %',i;
 			
-			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); --((i%2)*2-1)*lane_width) ;
-			temp_left_separator := ST_OffsetCurve(  temp_left_separator  , lane_width) ; --  ((i%2)*2-1) * lane_width) ;
 			
-			
-			temp_right_axis := ST_OffsetCurve(temp_right_axis,lane_width ); --(((i%2)=1)::int*2-1)*lane_width) ;
-			temp_right_separator := ST_OffsetCurve(temp_right_separator,lane_width) ; --(((i%2)=1)::int*2-1)*lane_width) ;
 			
 			lane_separator:=temp_left_separator   ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axe:= temp_left_axis    ;
 			RETURN NEXT ;
@@ -311,7 +307,10 @@
 			lane_separator:=temp_right_separator  ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axe:= temp_right_axis    ;
 			RETURN NEXT ;
 			 
-			
+			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); --((i%2)*2-1)*lane_width) ;
+			temp_left_separator := ST_OffsetCurve(  temp_left_separator  , lane_width) ; --  ((i%2)*2-1) * lane_width) ; 
+			temp_right_axis := ST_OffsetCurve(temp_right_axis,lane_width ); --(((i%2)=1)::int*2-1)*lane_width) ;
+			temp_right_separator := ST_OffsetCurve(temp_right_separator,lane_width) ; --(((i%2)=1)::int*2-1)*lane_width) ;
 		END LOOP;	
 		RETURN;	 
 		END; -- required for plpgsql
@@ -323,7 +322,7 @@
 	SELECT  row_number() over() as gid, lane_separator  as lane_separator , lane_position, lane_side,  lane_center_axe  as lane_center_axe
 	FROM  public.rc_generate_lane_marking(
 			road_axis:= ST_GeomFromText('Linestring(0 0, 10 0 , 20  0)')
-			, lane_number:=5
+			, lane_number:=4
 			,lane_width:=2.2)
 	
 
