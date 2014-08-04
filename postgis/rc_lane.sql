@@ -136,7 +136,7 @@
 		BEGIN 	
 
 			RETURN QUERY
-			SELECT DISTINCT ON (lane_position, lane_ordinality) dmp.geom AS lane, f.lane_position, (row_number()over(partition by f.lane_position ORDER BY dmp.path ASC))::int AS lane_ordinality
+			SELECT DISTINCT ON (lane_position, lane_ordinality) dmp.geom AS lane, f.lane_position, (row_number()over(partition by f.lane_position ORDER BY ST_Envelope(dmp.geom) ASC))::int AS lane_ordinality
 			FROM rc_createLane(chaussee_geom  , chaussee_axis , lane_number ,lane_width ,snapping_precison ,buffer_opt  ) AS f
 				,st_dump(f.lane) AS dmp 
 			WHERE ST_Area(dmp.geom)>0.1 ;
@@ -232,7 +232,8 @@
 	DROP FUNCTION IF EXISTS public.rc_generate_lane_marking(  road_axis geometry(LINESTRING), lane_number integer,lane_width float );
 	CREATE OR REPLACE FUNCTION public.rc_generate_lane_marking(
 		road_axis geometry(LINESTRING), lane_number integer,lane_width float)
-	  RETURNS TABLE (lane_separator geometry,  lane_position integer,  lane_side TEXT, lane_center_axe GEOMETRY(linestring)) AS
+	  RETURNS TABLE (lane_position integer,lane_side TEXT, lane_ordinality INT, lane_surface GEOMETRY(POLYGON),  lane_center_axis GEOMETRY(linestring) ,lane_separator geometry) AS
+	  
 	$BODY$
 	--this function compute the markings separating the lane as well as lane center axe
 	--Hypothesis are that lane are "symmetric" and of same size, and that lanes form a spatial arrangemnt of chaussee 
@@ -253,14 +254,17 @@
 		ELSIF lane_number=1
 		THEN	--easy : nothing to do 
 			--RAISE NOTICE ' only one lane to make, so no lane to make ! ';
-			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axe := road_axis ;
+			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axis := road_axis ;lane_ordinality :=1 ; 
+			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			RETURN ;
 		ELSIF lane_number = 2
 		THEN 
-			lane_separator := road_axis; lane_position := 2;lane_side := 'left' ;lane_center_axe := ST_OffsetCurve(road_axis,lane_width/2) ;
+			lane_separator := road_axis; lane_position := 2;lane_side := 'left' ;lane_center_axis := ST_OffsetCurve(road_axis,lane_width/2) ;lane_ordinality :=1 ; 
+			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
-			lane_separator := road_axis; lane_position := 2;lane_side := 'right' ;lane_center_axe := ST_OffsetCurve(road_axis,-lane_width/2) ;
+			lane_separator := road_axis; lane_position := 2;lane_side := 'right' ;lane_center_axis := ST_OffsetCurve(road_axis,-lane_width/2) ;lane_ordinality :=2 ; 
+			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			RETURN;
 		END IF;
@@ -277,7 +281,8 @@
 			temp_left_separator := ST_OffsetCurve(road_axis,lane_width/2) ;
 			temp_right_separator := ST_OffsetCurve(road_axis ,-lane_width/2) ;
 
-			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axe := temp_left_axis  ; 
+			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axis := temp_left_axis  ; lane_ordinality :=1 ; 
+			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT;
 			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); 
 			temp_right_axis := ST_OffsetCurve(temp_right_axis,lane_width );
@@ -289,8 +294,8 @@
 			temp_right_separator := ST_Reverse(road_axis);
 
 			
-				--lane_separator:= temp_left_separator ; lane_position:=  2;  lane_side := 'left' ;lane_center_axe:= temp_left_axis  ; RETURN NEXT ;
-				--lane_separator:= temp_right_separator ; lane_position:=  2;  lane_side := 'right' ;lane_center_axe:= temp_right_axis  ; RETURN NEXT ;
+				--lane_separator:= temp_left_separator ; lane_position:=  2;  lane_side := 'left' ;lane_center_axis:= temp_left_axis  ; RETURN NEXT ;
+				--lane_separator:= temp_right_separator ; lane_position:=  2;  lane_side := 'right' ;lane_center_axis:= temp_right_axis  ; RETURN NEXT ;
 				  
 		END IF;
 
@@ -301,10 +306,12 @@
 			
 			
 			
-			lane_separator:=temp_left_separator   ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axe:= temp_left_axis    ;
+			lane_separator:=temp_left_separator   ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axis:= temp_left_axis    ;lane_ordinality :=1 ; 
+			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			 
-			lane_separator:=ST_Reverse(temp_right_separator ) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axe:= ST_Reverse(temp_right_axis  )  ;
+			lane_separator:=ST_Reverse(temp_right_separator ) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axis:= ST_Reverse(temp_right_axis  )  ;lane_ordinality :=2 ; 
+			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			 
 			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); --((i%2)*2-1)*lane_width) ;
@@ -319,8 +326,9 @@
 	
 	DROP TABLE IF EXISTS public.temp_test_lane; 
 	CREATE TABLE  public.temp_test_lane AS 
-	SELECT  row_number() over() as gid, lane_separator  as lane_separator , lane_position, lane_side,  lane_center_axe  as lane_center_axe
+	SELECT  row_number() over() as gid, *
+		--,ST_AsText(lane_center_axis), st_astext(lane_separator)
 	FROM  public.rc_generate_lane_marking(
 			road_axis:= ST_GeomFromText('Linestring(0 0, 10 10 , 20  0 , 40 10 , 60 0)')
-			, lane_number:=3
-			,lane_width:=2.2); 
+			, lane_number:=4
+			,lane_width:=2.2);  
