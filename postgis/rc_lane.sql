@@ -304,7 +304,7 @@
 			lane_separator:=temp_left_separator   ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axe:= temp_left_axis    ;
 			RETURN NEXT ;
 			 
-			lane_separator:=temp_right_separator  ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axe:= temp_right_axis    ;
+			lane_separator:=ST_Reverse(temp_right_separator ) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axe:= ST_Reverse(temp_right_axis  )  ;
 			RETURN NEXT ;
 			 
 			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); --((i%2)*2-1)*lane_width) ;
@@ -321,10 +321,6 @@
 	CREATE TABLE  public.temp_test_lane AS 
 	SELECT  row_number() over() as gid, lane_separator  as lane_separator , lane_position, lane_side,  lane_center_axe  as lane_center_axe
 	FROM  public.rc_generate_lane_marking(
-			road_axis:= ST_GeomFromText('Linestring(0 0, 10 0 , 20  0)')
-			, lane_number:=4
-			,lane_width:=2.2)
-	
-
-
-			
+			road_axis:= ST_GeomFromText('Linestring(0 0, 10 10 , 20  0 , 40 10 , 60 0)')
+			, lane_number:=3
+			,lane_width:=2.2); 
