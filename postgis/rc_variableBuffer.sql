@@ -7,19 +7,35 @@
 ------------------------------
 
 
-DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry,signe int );
-		CREATE FUNCTION public.rc_variableBuffer(i_geom geometry ,signe int, OUT buffered_geom geometry)
+DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry,signe int, TEXT );
+		CREATE FUNCTION public.rc_variableBuffer(i_geom geometry ,signe int,style TEXT DEFAULT '', OUT buffered_geom geometry)
 			RETURNS geometry AS
 		$BODY$
 			--@brief this function computes a variable buffer given a geometry and a raidus in M dimension of each point
+			--@parameter : the geometry to be buffered, each point must have a M coordinate indicating the radius
+			--@parameter : the signe determinate if this is dilatation or erosion. + 1 = dilation, -1 = erosion
+			--@parameter : stlyle : same kind of style that the buffer function. Only endcap=flat allowed. 
+			--@return a geometry resulting of a varibale buffer on each point, plus interpolated buffer for line between points
 			--@WARNING : only dilatation , doesn't do erosion
 			--@WARNING : very naive implementation.
 			--Idea from Mathieu B.
 			DECLARE  
 			 segs geometry;
 			 q text; 
+			style_ar text[];
+			_endcap text;
+			i INT;
 			BEGIN
-				
+
+			--trying to figgure what 's in the string arg :
+			IF style IS NOT NULL AND style !='' THEN
+				style_ar :=   regexp_split_to_array(regexp_replace(style,'\\s+',''),'[,=]'); --removing whitespace, cutting by = and ,
+				FOR i in 1 .. (array_length(style_ar ,1)-1)  BY 2
+					LOOP
+					IF style_ar[i] ILIKE 'endcap' THEN _endcap :=  style_ar[i+1]; END IF;
+					END LOOP; 
+			END IF ; 
+			
 				q:='WITH the_geom AS (
 					SELECT $1 AS geom
 				), dump AS (
@@ -41,9 +57,16 @@ DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry,signe int );
 				,all_geom AS (
 					SELECT ST_Union(geom) as geom
 					FROM (
+
+					'; 
+				IF _endcap NOT ILIKE 'flat' THEN --we don't need flat end , so we put to result the buffered points
+					q:=q||'
 						SELECT geom
 						FROM buf_pts
 						UNION ALL 
+					' ; END IF ;
+				q:=q||
+					'
 						SELECT geom
 						FROM trapezoid';
 					
@@ -65,7 +88,7 @@ DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry,signe int );
 					SELECT ST_Difference(tg.geom, ag.geom ) AS geom
 					FROM the_geom AS tg, all_geom AS ag;';
 				END IF;
-
+				--RAISE EXCEPTION '%',q ;
 				EXECUTE q INTO buffered_geom USING i_geom,signe ;
 			return  ;
 			END ;
@@ -73,12 +96,14 @@ DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry,signe int );
 		LANGUAGE plpgsql IMMUTABLE;
 
 	---testing
-	SELECT ST_AsText(rc_variableBuffer(geom ,+1))
+	SELECT ST_AsText(rc_variableBuffer(geom ,+1,'endcap=flat,quadseg=12'))
 	FROM ST_GeomFromtext('LINESTRINGM(0 0 1, 10 0 2, 20 20 3 )') AS geom;
 
 	SELECT ST_AsText(rc_variableBuffer(geom ,-1))
 	FROM ST_GeomFromtext('POLYGONM((0 0 1, 10 0 2, 10 10 3, 0 0 1 ))') AS geom;
 
+
+	
 
 /*
 	with the_geom AS (
