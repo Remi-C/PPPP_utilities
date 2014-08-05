@@ -10,15 +10,13 @@
 SET search_path TO  bdtopo_topological, topology, public ;
  
 
-
+DROP FUNCTION IF EXISTS rc_CleanEdge_geom(toponame character varying, IN  iedge_id integer, INOUT igeom GEOMETRY, IN tolerance FLOAT  );
   
-CREATE OR REPLACE FUNCTION public.rc_CleanEdge_geom(toponame character varying, IN  iedge_id integer, IN igeom GEOMETRY, IN tolerance FLOAT DEFAULT 0.01 )  
-RETURNS BOOLEAN AS
+CREATE OR REPLACE FUNCTION public.rc_CleanEdge_geom(toponame character varying, IN  iedge_id integer, INOUT igeom GEOMETRY, IN tolerance FLOAT DEFAULT 0.01 )   AS
 $BODY$
 	--@brief given a precision , for an edge in edge_data (we use the geom that is provided), snap the start/end point to node if it is within the correct distance
 DECLARE 
-r record;
-result geometry; 
+r record; 
 q text;
 BEGIN
 
@@ -33,19 +31,13 @@ BEGIN
 		WHERE ed.edge_id = $1 ;';
 
 	EXECUTE q INTO r USING iedge_id, igeom; 
-	
-	result := igeom; 
-	IF ST_DWithin(r.start_point ,r.start_node_geom , tolerance) THEN result:= ST_SetPoint(result, 0, r.start_node_geom);
+	 
+	IF ST_DWithin(r.start_point ,r.start_node_geom , tolerance) THEN igeom:= ST_SetPoint(igeom, 0, r.start_node_geom);
 	END IF;
-	IF ST_DWithin( r.end_point ,r.end_node_geom , tolerance) THEN result:= ST_SetPoint(result, r.npoints, r.end_node_geom);
-	END IF;
-
-	if ST_Equals(r.geom, result) = FALSE THEN
-	UPDATE edge_data AS ed SET (geom)  =(result)
-	WHERE ed.edge_id = iedge_id; 
-	RETURN TRUE; 
+	IF ST_DWithin( r.end_point ,r.end_node_geom , tolerance) THEN igeom:= ST_SetPoint(igeom, r.npoints, r.end_node_geom);
 	END IF; 
-	RETURN FALSE; 
+	
+	RETURN ; 
 END
 $BODY$
   LANGUAGE plpgsql VOLATILE ;
