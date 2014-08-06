@@ -229,9 +229,9 @@
 
 
 	
-	DROP FUNCTION IF EXISTS public.rc_generate_lane_marking(  road_axis geometry(LINESTRING), lane_number integer,lane_width float );
+	DROP FUNCTION IF EXISTS public.rc_generate_lane_marking(  road_axis geometry, lane_number integer,lane_width float );
 	CREATE OR REPLACE FUNCTION public.rc_generate_lane_marking(
-		road_axis geometry(LINESTRING), lane_number integer,lane_width float)
+		road_axis geometry , lane_number integer,lane_width float)
 	  RETURNS TABLE (lane_position integer,lane_side TEXT, lane_ordinality INT, lane_surface GEOMETRY(POLYGON),  lane_center_axis GEOMETRY(linestring) ,lane_separator geometry) AS
 	  
 	$BODY$
@@ -244,8 +244,8 @@
 	temp_right_axis geometry(linestring);
 	temp_left_separator geometry(linestring);
 	temp_right_separator geometry(linestring); 
-	BEGIN 	
-
+	BEGIN 	 
+		road_axis := ST_GeometryN(road_axis,1);
 		
 		IF lane_number <1 
 		THEN--there is a mistake in lane number, doing nothing and warning
@@ -302,7 +302,7 @@
 		-- --trying to unificate things
 		FOR i IN (i_init+2)..lane_number  BY 2 
 		LOOP --looping on the number of lane to make, starting at L2 or L3, because L0 (line) or L1 (a lane) are made at initiation
-			RAISE NOTICE 'i : %',i;
+		--	RAISE NOTICE 'i : %',i;
 			
 			
 			
