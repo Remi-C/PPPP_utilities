@@ -89,12 +89,11 @@
 
 				_temp_table_name :=  rc_generate_pixel_table(i_p,_pixel_size, dimensions )::text ;
 
-				--RAISE EXCEPTION 'hey : _sql : %',_sql;
 			-- file raster with info :
 				--for each patch dimension
 				FOR dim IN SELECT value  FROM (SELECT * FROM rc_unnest_with_ordinality(dimensions)) AS sub ORDER BY ordinality ASC
 				LOOP
-					--RAISE NOTICE ' in da loop %', dim ;
+					RAISE NOTICE ' in da loop %', dim ;
 					SELECT rc_Patch2RasterBand_arar(i_p,quote_ident(dim),o_r,_pixel_size, _temp_table_name)  INTO o_r;
  
 				END LOOP;  
