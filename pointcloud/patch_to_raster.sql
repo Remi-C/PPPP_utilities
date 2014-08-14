@@ -88,6 +88,7 @@
 			--create a temp table with the patch points and attributes, image indexed style (matrice of pixels with attributes)
 
 				_temp_table_name :=  rc_generate_pixel_table(i_p,_pixel_size, dimensions )::text ;
+
 				--RAISE EXCEPTION 'hey : _sql : %',_sql;
 			-- file raster with info :
 				--for each patch dimension
