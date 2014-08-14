@@ -30,8 +30,8 @@
 
 	
 
-	DROP FUNCTION IF EXISTS rc_Patch2Raster_arar(IN i_p PCPATCH,OUT o_r RASTER ,IN dimensions TEXT[]) ;
-	CREATE OR REPLACE FUNCTION  rc_Patch2Raster_arar(IN i_p PCPATCH,  OUT o_r RASTER  ,IN dimensions TEXT[]) AS
+	DROP FUNCTION IF EXISTS rc_Patch2Raster_arar(IN i_p PCPATCH,OUT o_r RASTER ,IN dimensions TEXT[],IN pixel_size FLOAT) ;
+	CREATE OR REPLACE FUNCTION  rc_Patch2Raster_arar(IN i_p PCPATCH,  OUT o_r RASTER  ,IN dimensions TEXT[], IN pixel_size FLOAT) AS
 	$BODY$
 		--@brief this function convert a pointcloud patch to a postgis raster 
 		--@param the patch to convert
@@ -49,7 +49,7 @@
 					--call rc_Patch2RasterBand ( =  add band,file band ) 
 			--return patch
 		DECLARE
-			_pixel_size FLOAT = 0.02;
+			_pixel_size FLOAT := pixel_size;
 			bbox_p GEOMETRY := i_p::geometry;
 			_min_x float := ST_XMin (bbox_p);
 			_min_y float := ST_YMin (bbox_p);
@@ -75,8 +75,8 @@
 				--set pixel size, --set raster localisation
 				o_r := ST_MakeEmptyRaster( 
 					_n_pix_x ,_n_pix_y  --we round and make sure we always include any points
-					,upperleftx:=rc_round(ST_XMin (bbox_p), _pixel_size)-1*_pixel_size/2
-					,upperlefty:=rc_round(ST_YMin (bbox_p), _pixel_size)-1*_pixel_size/2 
+					,upperleftx:=rc_round(ST_XMin (bbox_p), _pixel_size)-1.0*_pixel_size/2
+					,upperlefty:=rc_round(ST_YMin (bbox_p), _pixel_size)-1.0*_pixel_size/2 
 						--translating of pixel_size/2 to have the point in center of pixels
 					,scalex:=_pixel_size , scaley:=_pixel_size 
 					, skewx:=0 ,skewy:=0 
@@ -204,7 +204,7 @@
 				_sql := _sql ||
 				'
 				WITH patch  AS (
-					SELECT $1 AS pa,0.02::double precision as pixel_size  
+					SELECT $1 AS pa,'||pixel_size||'::double precision as pixel_size  
 				)
 				,r_points AS (
 						SELECT rc_round(PC_Get(pt,''x'')::double precision,pixel_size)::real AS coord_x
