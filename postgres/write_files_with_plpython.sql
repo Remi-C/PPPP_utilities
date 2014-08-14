@@ -10,7 +10,7 @@ f.close() # new addition (ensures file is closed after writing)
 return param_filepath
 $$ LANGUAGE plpythonu;
 
-DROP FUNCTION IF EXISTS write_file_texte (param_bytes bytea, param_filepath text, chmod character varying (4));
+DROP FUNCTION IF EXISTS write_file_texte (param_bytes text, param_filepath text, chmod character varying (4));
  CREATE OR REPLACE FUNCTION write_file_texte (param_bytes text, param_filepath text, chmod character varying (4))
 RETURNS text
 AS $$
