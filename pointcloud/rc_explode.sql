@@ -37,12 +37,18 @@
 
 
 DROP FUNCTION IF EXISTS public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint);
-		CREATE OR REPLACE FUNCTION  public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint)
+		CREATE OR REPLACE FUNCTION  public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint DEFAULT 0)
 		RETURNS table(ordinality bigint , point pcpoint ) AS
 		$BODY$
 		--this function is a wrapper around pc_explode to limit the number of points it returns	
 		DECLARE
+		numpoints INT :=  PC_NumPoints(a_patch) ;
 		BEGIN
+			if n <=0 OR n>numpoints then --we have to put this protection or calling with a really big limit could make the server crash 
+					--+ it is pointless to have a limit bigger than nb of returned rows
+				n := numpoints ;
+			END IF; 
+			
 			RETURN QUERY 
 				SELECT generate_series(1, n), PC_Explode(a_patch)
 				LIMIT n;
