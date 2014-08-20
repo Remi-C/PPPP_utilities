@@ -1,4 +1,4 @@
----------------------------------------------
+﻿---------------------------------------------
 --Copyright Remi-C  08/2014
 --
 --
@@ -28,17 +28,17 @@
 		return;
 		END;
 		$BODY$
-		LANGUAGE plpgsql STRICT VOLATILE;
+		LANGUAGE plpgsql STRICT IMMUTABLE;
 
-	SELECT public.rc_ExplodeN(patch, 10)
-	FROM acquisition_tmob_012013.riegl_pcpatch_space
-	WHERE gid=120;
+-- 	SELECT public.rc_ExplodeN(patch, 10)
+-- 	FROM acquisition_tmob_012013.riegl_pcpatch_space
+-- 	WHERE gid=120;
 
 
 
 DROP FUNCTION IF EXISTS public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint);
 		CREATE OR REPLACE FUNCTION  public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint)
-		RETURNS table(num bigint , point pcpoint ) AS
+		RETURNS table(ordinality bigint , point pcpoint ) AS
 		$BODY$
 		--this function is a wrapper around pc_explode to limit the number of points it returns	
 		DECLARE
@@ -49,7 +49,7 @@ DROP FUNCTION IF EXISTS public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint)
 		return;
 		END;
 		$BODY$
-		LANGUAGE plpgsql STRICT VOLATILE;
+		LANGUAGE plpgsql STRICT IMMUTABLE;
 
 
 		
