@@ -254,16 +254,16 @@
 		ELSIF lane_number=1
 		THEN	--easy : nothing to do 
 			--RAISE NOTICE ' only one lane to make, so no lane to make ! ';
-			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axis := road_axis ;lane_ordinality :=1 ; 
+			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axis := ST_GeometryN(road_axis,1) ;lane_ordinality :=1 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			RETURN ;
 		ELSIF lane_number = 2
 		THEN 
-			lane_separator := road_axis; lane_position := 2;lane_side := 'left' ;lane_center_axis := ST_OffsetCurve(road_axis,lane_width/2) ;lane_ordinality :=1 ; 
+			lane_separator := road_axis; lane_position := 2;lane_side := 'left' ;lane_center_axis := ST_GeometryN(ST_OffsetCurve(road_axis,lane_width/2),1) ;lane_ordinality :=1 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
-			lane_separator := road_axis; lane_position := 2;lane_side := 'right' ;lane_center_axis := ST_OffsetCurve(road_axis,-lane_width/2) ;lane_ordinality :=2 ; 
+			lane_separator := road_axis; lane_position := 2;lane_side := 'right' ;lane_center_axis := ST_GeometryN(ST_OffsetCurve(road_axis,-lane_width/2),1) ;lane_ordinality :=2 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			RETURN;
@@ -277,21 +277,21 @@
 				-- Di-2 <- Buffer (Axe_road, lane_width/2)
 				-- L1 <- Di-2
 			temp_left_axis:= road_axis;
-			temp_right_axis:=ST_Reverse(road_axis);
-			temp_left_separator := ST_OffsetCurve(road_axis,lane_width/2) ;
-			temp_right_separator := ST_OffsetCurve(road_axis ,-lane_width/2) ;
+			temp_right_axis:=ST_GeometryN(ST_Reverse(road_axis),1);
+			temp_left_separator := ST_GeometryN(ST_OffsetCurve(road_axis,lane_width/2),1) ;
+			temp_right_separator := ST_GeometryN(ST_OffsetCurve(road_axis ,-lane_width/2),1) ;
 
-			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axis := temp_left_axis  ; lane_ordinality :=1 ; 
+			lane_separator := NULL; lane_position := 1;lane_side := 'center' ;lane_center_axis := ST_GeometryN(temp_left_axis,1)  ; lane_ordinality :=1 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT;
-			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); 
-			temp_right_axis := ST_OffsetCurve(temp_right_axis,lane_width );
+			temp_left_axis := ST_GeometryN(ST_OffsetCurve(temp_left_axis, lane_width),1); 
+			temp_right_axis := ST_GeometryN(ST_OffsetCurve(temp_right_axis,lane_width ),1);
 		ELSIF lane_number %2 =0 --this check is not required
 		THEN
-			temp_left_axis :=  ST_OffsetCurve(road_axis,lane_width/2) ;
-			temp_right_axis :=  ST_OffsetCurve( road_axis ,-lane_width/2) ; 
+			temp_left_axis :=  ST_GeometryN(ST_OffsetCurve(road_axis,lane_width/2),1) ;
+			temp_right_axis :=  ST_GeometryN(ST_OffsetCurve( road_axis ,-lane_width/2),1) ; 
 			temp_left_separator :=road_axis;
-			temp_right_separator := ST_Reverse(road_axis);
+			temp_right_separator := ST_GeometryN(ST_Reverse(road_axis),1);
 
 			
 				--lane_separator:= temp_left_separator ; lane_position:=  2;  lane_side := 'left' ;lane_center_axis:= temp_left_axis  ; RETURN NEXT ;
@@ -306,18 +306,18 @@
 			
 			
 			
-			lane_separator:=temp_left_separator   ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axis:= temp_left_axis    ;lane_ordinality :=1 ; 
+			lane_separator:=ST_GeometryN(temp_left_separator ,1)  ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axis:= ST_GeometryN(temp_left_axis ,1)   ;lane_ordinality :=1 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			 
-			lane_separator:=ST_Reverse(temp_right_separator ) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axis:= ST_Reverse(temp_right_axis  )  ;lane_ordinality :=2 ; 
+			lane_separator:=ST_GeometryN(ST_Reverse(temp_right_separator ),1) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axis:= ST_GeometryN(ST_Reverse(temp_right_axis  ),1)  ;lane_ordinality :=2 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			 
-			temp_left_axis := ST_OffsetCurve(temp_left_axis, lane_width); --((i%2)*2-1)*lane_width) ;
-			temp_left_separator := ST_OffsetCurve(  temp_left_separator  , lane_width) ; --  ((i%2)*2-1) * lane_width) ; 
-			temp_right_axis := ST_OffsetCurve(temp_right_axis,lane_width ); --(((i%2)=1)::int*2-1)*lane_width) ;
-			temp_right_separator := ST_OffsetCurve(temp_right_separator,lane_width) ; --(((i%2)=1)::int*2-1)*lane_width) ;
+			temp_left_axis := ST_GeometryN(ST_OffsetCurve(temp_left_axis, lane_width),1); --((i%2)*2-1)*lane_width) ;
+			temp_left_separator := ST_GeometryN(ST_OffsetCurve(  temp_left_separator  , lane_width),1) ; --  ((i%2)*2-1) * lane_width) ; 
+			temp_right_axis := ST_GeometryN(ST_OffsetCurve(temp_right_axis,lane_width ),1); --(((i%2)=1)::int*2-1)*lane_width) ;
+			temp_right_separator := ST_GeometryN(ST_OffsetCurve(temp_right_separator,lane_width),1) ; --(((i%2)=1)::int*2-1)*lane_width) ;
 		END LOOP;	
 		RETURN;	 
 		END; -- required for plpgsql
