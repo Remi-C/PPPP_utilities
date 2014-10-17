@@ -29,4 +29,10 @@ nx.draw(G)
  
 cc = sorted(nx.connected_components(G), key = len, reverse=True) ; 
 
-cc
+result = list() ;  
+for idx, val in enumerate(cc):
+    print idx, val
+    for n_val in val:
+        result.append((n_val, idx)) ;
+         
+        
