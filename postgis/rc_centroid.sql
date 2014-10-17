@@ -47,4 +47,31 @@ $BODY$
  
 	SELECT ST_AsText( geom )
 FROM st_geomfromtext('circularstring(0 0 , 1 1, 2 0)') as geom ;  
+
+
+
+		--redifining a centroid function for 3D : rc_ST_3DCentroid
+
+		----
+		--Version plpgsql :
+		CREATE OR REPLACE FUNCTION rc_3DCentroid(geom geometry) RETURNS geometry
+		AS $$
+		--This function is a very dirty workaround to imitate a st_centroid_like function behaving correctly in 3D
+		--WARNING  : this is very simplified version : everything is converted to point and then an average is computed for x, y z .
+		DECLARE 
+		BEGIN
+			--getting the srid of the input geoemtry
+			
+			RETURN (WITH points_in_geom AS (
+				SELECT (ST_DumpPoints(geom)).geom AS geom, ST_SRID(geom) as srid	
+			)
+			SELECT ST_SetSRID(ST_MakePoint(avg(ST_X(p.geom)),avg(ST_Y(p.geom)),avg(ST_Z(p.geom))),min(srid)) AS geom
+			FROM points_in_geom AS p)
+			;
+		END;
+		$$ LANGUAGE plpgsql;
+		
+		--trying the function :
+		SELECT rc_3DCentroid(ST_Union(s.segment)) --80sec : s'accelere fortement au fur et à mesure
+		FROM segments As s;
  
