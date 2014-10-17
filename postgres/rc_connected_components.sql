@@ -18,8 +18,8 @@ SET SEED TO 0.08;
 DROP TABLE IF  EXISTS adjacencies;
 CREATE TABLE adjacencies AS 
 	WITH adj  AS (
-		SELECT s AS gid1, ARRAY[(round(random()*1000 ))::int  , (round(random()*1000 ))::int] AS gid2
-		FROM generate_series(1,1000) AS s 
+		SELECT s AS gid1, ARRAY[(round(random()*10000 ))::int  , (round(random()*10000 ))::int] AS gid2
+		FROM generate_series(1,10000) AS s 
 	)
 	--,filtered_adj AS (
 	SELECT DISTINCT ON (LEAST(gid2[1],gid2[2]),GREATEST(gid2[1],gid2[2]) ) 
@@ -359,29 +359,56 @@ ORDER BY  -- total_time DESC  ,
 
 
 
+--the python way !
+CREATE EXTENSION IF NOT EXISTS plpythonu;
 
-	With temp_cc AS (
-	SELECT  array_agg(adj ORDER BY adj ASC) as adjs, ccid
-	FROM (
-		SELECT  adj[1], ccid
-		FROM adjacencies
-		UNION
-		SELECT adj[2], ccid
-		FROM adjacencies
-		) AS sub
-		GROUP BY ccid
-	)
-	,up aS (
-		SELECT a.adj, a.ccid, min(temp_cc.ccid) as u_ccid
-		FROM adjacencies as a
-			INNER JOIN temp_cc ON ( a.adj && temp_cc.adjs  AND temp_cc.ccid < a.ccid  )
-		GROUP BY  a.id, a.adj ,a.ccid 
-	)
-	,upd AS (
-		UPDATE adjacencies  AS a SET ccid = u_ccid 
-		FROM up
-		WHERE up.adj = a.adj AND  up.u_ccid != a.ccid
-		RETURNING 1 
-	)
-	SELECT count(*) INTO modified_ccid 
-	FROM upd; 
+
+
+  
+DROP FUNCTION IF EXISTS rc_py_ccomponents ( int[], INT[] );
+CREATE FUNCTION rc_py_ccomponents ( 
+ node1 int[], node2 INT[] 
+	) 
+RETURNS TABLE( node int, ccomponents INT )   
+AS $$
+"""
+Tis function takes pairs of nodes of a network as input. 
+one pair is an edge of the graph
+we want to find the connected components
+
+require networkx
+"""
+#importing needed modules
+import numpy as np ;
+import plpy ;
+import networkx as nx;  
+
+#converting the 1D array to numpy array
+n1 = np.array(node1) ; 
+n2 = np.array(node2) ;  
+
+edge = np.column_stack( (n1,n2) );
+  
+G=nx.Graph() 
+G.add_edges_from(edge)
+#nx.draw(G)
+cc = sorted(nx.connected_components(G), key = len, reverse=True) ; 
+result = list() ;  
+for idx, val in enumerate(cc): 
+    for n_val in val:
+        result.append((n_val, idx)) ;
+
+return result ; 
+$$ LANGUAGE plpythonu IMMUTABLE STRICT; 
+
+
+WITH input_transform AS (
+	SELECT array_agg(adj[1] ORDER BY id ASC) as node1, array_agg(adj[2] ORDER BY id ASC)  as node2
+	FROM adjacencies  
+)
+SELECT f.*
+FROM input_transform, rc_py_ccomponents(node1,node2) as f ;
+
+ 
+
+
