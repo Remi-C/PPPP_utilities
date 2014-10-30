@@ -50,3 +50,56 @@
 		,ST_MakeEnvelope(-axis_1/2.0 ,-axis_2/2.0, axis_1/2.0, axis_2/2.0) AS bbox
 		,ST_Rotate(bbox, radians(angle)) as bbox_rot
 		,ST_Astext(ST_translate(bbox_rot, x_center, y_center, z_center))  ;
+
+
+
+
+
+
+-- Function: trajectory.rc_cuttrajectoryintoextractparis140616(integer, integer)
+
+ DROP FUNCTION IF EXISTS public.rc_BboxOrientedFromGeom(i_geom geometry); 
+CREATE OR REPLACE FUNCTION public.rc_BboxOrientedFromGeom(i_geom geometry, OUT angle float, out l1 float, out l2 float,  out obbox geometry(polygon))
+  AS
+$BODY$
+		--@brief : this function takes a geom and computes its oriented bbox, that is the mnimal area rectangle containing the geom
+		DECLARE      
+		BEGIN 	   
+
+		
+		WITH convex_hull AS (
+			SELECT ST_ConvexHull(i_geom) AS ch,ST_Centroid(i_geom) AS centroid  
+		)
+		,segments AS (
+			SELECT  dmp.geom AS geom,ch,centroid, angle.angle
+			FROM ST_ConvexHull(i_geom) AS ch
+				,ST_Centroid(i_geom) AS centroid 
+				, rc_DumpSegments(ST_ExteriorRing(ch) ) AS dmp 
+				,ST_Azimuth(ST_StartPoint(dmp.geom),ST_EndPoint(dmp.geom)) AS angle
+		)  
+		,areas AS (
+			SELECT s.angle
+				, ST_XMax(box)-ST_XMin(box) AS l1
+				, ST_YMax(box)-ST_YMin(box) AS l2   
+				,   area,   s.centroid 
+				,box
+			FROM segments AS s
+				,Box2D(ST_Rotate(ch, s.angle,s.centroid)) AS box
+				, ST_Area(box) as area
+			ORDER BY area ASC , l1 ASC, l2 ASC
+			LIMIT 1 
+		)
+		 
+		SELECT a.angle, a.l1,a.l2, obbox.obbox  INTO angle, l1,l2,obbox
+		FROM  areas AS a
+			, ST_Rotate(ST_Centroid(box),  -a.angle ,  centroid) aS rot_bbox_center
+			,rc_BboxOrientedFromAxis(ST_X(rot_bbox_center), ST_Y(rot_bbox_center), 0 , a.l1,a.l2, - a.angle * 180/3.14)  AS obbox ;
+	 
+		
+	RETURN  ;
+END ; 
+	$BODY$
+  LANGUAGE plpgsql VOLATILE STRICT ;
+
+-- SELECT f.*, ST_AsText(obbox)
+-- FROM ST_Geomfromtext('POLYGON((0 0 , 1 0 , 2 2 , 1 1,  0 1, -1 1  , 0 0))' )as geom, public.rc_BboxOrientedFromGeom(geom) AS f;
