@@ -22,9 +22,16 @@
 		--this function is a wrapper around pc_explode to limit the number of points it returns	
 		DECLARE
 		BEGIN
+			IF n<=0 THEN 
+			
+			RETURN QUERY 
+				SELECT PC_Explode(a_patch) ;
+
+			ELSE 
 			RETURN QUERY 
 				SELECT PC_Explode(a_patch)
 				LIMIT n;
+			END IF; 
 		return;
 		END;
 		$BODY$
@@ -90,12 +97,13 @@ $BODY$
 CREATE OR REPLACE FUNCTION rc_exploden_grid(a_patch pcpatch, n bigint,voxel_size float)
   RETURNS SETOF pcpoint AS
 $BODY$
-		--this function is a wrapper around pc_explode to limit the number of points it returns	
+		--this function is a wrapper around pc_explode to limit the number of points it returns
+		--ig there are 	
 		DECLARE
 		BEGIN
-			IF PC_NumPoints(a_patch) <= n THEN 
+			IF PC_NumPoints(a_patch) <= n OR n<=0 THEN 
 			RETURN QUERY SELECT * FROM rc_ExplodeN( a_patch , n );
-			ELSE  
+			ELSE   
 			RETURN QUERY 
 				SELECT DISTINCT ON (  (pc_get(pt,'x')/voxel_size)::int ,  (pc_get(pt,'y')/voxel_size)::int, (pc_get(pt,'z')/voxel_size)::int )*
 				FROM PC_Explode(a_patch) AS pt 
@@ -107,38 +115,5 @@ $BODY$
   LANGUAGE plpgsql IMMUTABLE STRICT
   COST 100
   ROWS 1000; 
-
-		
-		SELECT --DISTINCT ON (    ( (pc_get(pt,'x')/voxel_size)::int ,  (pc_get(pt,'y')/voxel_size)::int, (pc_get(pt,'z')/voxel_size)::int ) *
-			rps.gid , (pc_get(pt,'x')/0.01)::int ,  (pc_get(pt,'y')/0.01)::int, (pc_get(pt,'z')/0.01)::int
-				,pc_get(pt,'x')
-				,pc_get(pt,'y')
-				,pc_get(pt,'z')
-		FROM tmob_20140616.riegl_pcpatch_space as rps, PC_Explode(patch) AS pt
-		WHERE rps.gid = 1539
-			--AND PC_NumPoints(patch) > 100
-
-			SELECT St_Astext(
-					ST_Snaptogrid(
-						ST_Union(
-							ST_Force2D(
-								pt::geometry
-								)
-							)
-						,0.001)
-					) AS geom
-			FROM tmob_20140616.riegl_pcpatch_space as rps, rc_exploden_grid(patch, 9000,0.05)AS pt
-			WHERE rps.gid = 32399
-
-
-			DROP TABLE IF EXISTS temp_test_grid ;
-			CREATE TABLE temp_test_grid AS 
-			SELECT row_number() over() AS id,  pt::geometry
-			FROM tmob_20140616.riegl_pcpatch_space as rps, rc_exploden_grid(patch, 30000,0.01)AS pt
-			WHERE rps.gid = 6082
-			LIMIT 1
-
-
-			SELECT gid
-			FROM tmob_20140616.riegl_pcpatch_space as rps 
-			WHERE PC_NumPoints(patch) BETWEEN 100000 AND 110000
+ 
+ 
