@@ -32,6 +32,6 @@
 
 	----
 	--time index on riegl
-		CREATE INDEX acquisition_tmob_012013_riegl_pcpatch_space_patch_gist_range_gps_time
-			ON acquisition_tmob_012013.riegl_pcpatch_space
-			USING GIST (  rc_compute_range_for_a_patch(patch,'gps_time')); 
+-- 		CREATE INDEX acquisition_tmob_012013_riegl_pcpatch_space_patch_gist_range_gps_time
+-- 			ON acquisition_tmob_012013.riegl_pcpatch_space
+-- 			USING GIST (  rc_compute_range_for_a_patch(patch,'gps_time')); 
