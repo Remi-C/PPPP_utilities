@@ -174,15 +174,20 @@ FROM my_function('first_query'::regclass) f(trange numrange) ;
 	ORDER BY trange ASC;
 
 
-DROP FUNCTION IF EXISTS rc_interval_overlap(trange1 numrange, trange2 numrange) ;
-	CREATE OR REPLACE FUNCTION rc_interval_overlap(trange1 numrange, trange2 numrange) RETURNS boolean
+DROP FUNCTION IF EXISTS rc_interval_overlap(trange1 numrange, trange2 numrange , tolerancy numeric) ;
+	CREATE OR REPLACE FUNCTION rc_interval_overlap(trange1 numrange, trange2 numrange, tolerancy numeric DEFAULT 0) RETURNS boolean
 	AS $$
 	--this function decides if 2 interval should be merged or not
 	--you can customize this to allow for small distances, etc etc.
 	--Warning : take care of 'empty' case
 	--default : same as operator &&
+	DECLARE
+	 tr_1 numrange;
+	 tr_2 numrange;
 	BEGIN
-	  RETURN trange1 && trange2;
+	 tr_1 = numrange(lower(trange1)-tolerancy,  upper(trange1)+tolerancy);
+	 tr_2 = numrange(lower(trange2)-tolerancy,  upper(trange2)+tolerancy);
+	  RETURN tr_1 && tr_2; 
 	END;
 	$$ LANGUAGE plpgsql;
 		
@@ -303,7 +308,7 @@ DROP FUNCTION IF EXISTS rc_compute_interval_union_simplified(data_table_curs ref
 			LOOP 
 				--iteration_number:=iteration_number+1;
 				
-				EXECUTE  'SELECT ' || quote_ident(function_name_for_intersect_decision) || '('||quote_literal(union_result)||'.trange2 ,'||quote_literal(next_row)||'.trange2 ) ;'; --USING union_result, next_row INTO are_intersecting;
+				EXECUTE  'SELECT ' || quote_ident(function_name_for_intersect_decision) || '('||quote_literal(union_result)||'.trange ,'||quote_literal(next_row)||'.trange ) ;'; --USING union_result, next_row INTO are_intersecting;
 				--if current row and next row intersect, update union_result
 				IF (are_intersecting = TRUE )--trying for intersection
 				THEN --case when SEASRunion result and next row do intersect
@@ -333,6 +338,19 @@ DROP FUNCTION IF EXISTS rc_compute_interval_union_simplified(data_table_curs ref
 	END;
 	$$ LANGUAGE plpgsql;
 
+	
+	BEGIN;
+	DECLARE cursor_on_asc_range CURSOR FOR  
+		SELECT numrange(lower(trange)-1,  upper(trange)+1) AS trange
+		FROM tmob_20140616.riegl_pcpatch_space
+			,rc_compute_range_for_a_patch(patch  , 'gps_time') as trange
+		WHERE ST_Intersects(patch::geometry, ST_Transform(ST_GeomFromText('POLYGON((651473 6861179,651465 6861181,651463 6861189,651465 6861197,651473 6861199,651480 6861197,651483 6861189,651480 6861181,651473 6861179))',931008),932012)) = TRUE  
+		 ORDER BY trange ASC  ;
+		 
+	
+	SELECT row_number() over() as frange_id,  * FROM  rc_compute_interval_union('cursor_on_asc_range'::refcursor , 'trange'::text ,  'rc_interval_overlap'::text , 'toto'::text) f(trange numrange)  ORDER BY trange ASC;
+	CLOSE cursor_on_asc_range;
+	END;
 
 
 
