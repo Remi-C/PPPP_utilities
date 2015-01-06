@@ -74,8 +74,10 @@ fig = P.figure()
 # create a new data-set
 x1,x2 = data1,data2
 
-n, bins, patches = P.hist([x1,x2], bins=nbins, normed=1, histtype='bar',  
-                            label=labels, log=use_log_y )
+n, bins, patches = P.hist([x1,x2], bins=nbins, normed=False, histtype='bar',  
+                            label=labels, log=use_log_y 
+                            , color=['Blue', 'Red'],
+                            )
 
 P.legend()
 
