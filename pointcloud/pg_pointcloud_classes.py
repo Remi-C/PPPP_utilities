@@ -88,6 +88,11 @@ class pcschema:
         return " pcid : %s \n, ndims : %s\n, \n\t dims: %s \n, srid : %s\n, namehash:%s\n, numpy_dtype:%s\n"\
             % (self.pcid, self.ndims, self.dims, self.srid, self.namehash, self.numpy_dtype)
 
+    def getNameIndex(self,name):
+        """This function loop trough dimension and return the dim number where the dim is"""
+        return [i for i,x in enumerate(self.namehash) if x.upper() ==  name.upper()]
+  
+  
     def parsexml(self, xml_schema):
         """parse the input wml string and fill schema class member with it"""
         #import xml.etree.ElementTree as ET
@@ -185,7 +190,7 @@ def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema):
 
     #getting offset and scales
     scales, offsets = mschema.construct_scales_offset()
-    print scales, offsets
+    #print scales, offsets
     #filling it
     for i in range(0, numpy_spec_dtype.shape[0]):
         for j in range(0, mschema.ndims):
@@ -248,9 +253,10 @@ def numpy_double_to_WKB_patch(numpy_double_patch, mschema):
 def create_GD_if_not_exists():
     """this function construct a Global Dictionnary if it doesn't exist"""
     if 'GD' not in globals():
-    #we are not executing in postgres, we need to emulate postgres global dict
+    #we are not executing in postgres, we need to emulate postgres global dict 
+        global GD        
         GD = {}
-        global GD
+        
 
 
 def create_schemas_if_not_exists():
