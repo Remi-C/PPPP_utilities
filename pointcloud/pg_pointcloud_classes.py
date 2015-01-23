@@ -91,8 +91,15 @@ class pcschema:
     def getNameIndex(self,name):
         """This function loop trough dimension and return the dim number where the dim is"""
         return [i for i,x in enumerate(self.namehash) if x.upper() ==  name.upper()]
-  
-  
+
+    
+    def getNamesIndexesDictionnary(self):
+        """this function output a dictionnary associatingthe index number to each name"""
+        namesIndexesDict = {}        
+        for i, dim in enumerate(self.dims):
+            namesIndexesDict[dim.name] = i
+        return namesIndexesDict
+
     def parsexml(self, xml_schema):
         """parse the input wml string and fill schema class member with it"""
         #import xml.etree.ElementTree as ET
@@ -392,6 +399,8 @@ def test_schema(schemas, connection_string):
     print np_points
         
     schema  = get_schema(1,schemas,connection_string)
+    name_index_dict = schema.getNamesIndexesDictionnary()
+    print name_index_dict['X']
     #print np_points
     numpy_double, schema = patch_numpy_to_numpy_double(np_points, schema)
     numpy_spec = numpy_double_to_numpy_spec(numpy_double, schema)
