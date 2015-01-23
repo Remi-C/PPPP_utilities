@@ -48,22 +48,48 @@ def translatePointArray(pt_arr, schema, pixel_size):
 def pointsToPixels(pixel_index_array, pt_xyz, pixel_size):
     """this function takes a list of points translated and assign the points index to a pixel array, depedning on 
 Z"""
-    #creating a temp Z buffer :
+    #creating a temp Z buffer  and an accum buffer
     import numpy as  np
     import math
     z_buf = np.zeros(pixel_index_array.shape, dtype = double);
     z_buf = (z_buf+1) * float("inf")
+    accum = np.zeros(pixel_index_array.shape, dtype = int32);
+    
     print z_buf
     for i in range(0, pt_xyz.shape[0]):
         #finding the pixel coordinates of this point floor(x/pixel_size)
         x_pixel_index = math.floor(pt_xyz[i,0]/pixel_size)
         y_pixel_index = math.floor(pt_xyz[i,1]/pixel_size)
         if pt_xyz[i,2] < z_buf[y_pixel_index,x_pixel_index]:
+            accum[y_pixel_index,x_pixel_index] += 1
             z_buf[y_pixel_index,x_pixel_index] = pt_xyz[i,2]
             pixel_index_array[y_pixel_index,x_pixel_index] = i
     
-    return pixel_index_array
+    return pixel_index_array, accum
 
+def onePointToBandsArray(one_point, dim_name_index_dictionnary):
+    """this is a custom function that will indicates how to compute the bands"""
+    import numpy as np 
+    print dim_name_index_dictionnary
+    dnd = dim_name_index_dictionnary
+    #for this application, we are interested in this :
+    #z-z_origin , reflectance, echo_range, deviation, accum
+ 
+    band_array = np.zeros(1,dtype = [
+        ('relative_height',np.float32)
+        ,('reflectance',np.float32)
+        ,('echo_range',np.float32)
+        ,('deviation',np.float32)
+        #,('accumulation',np.int32)
+        ])
+    band_array[0][0] = one_point[dnd['z']] - one_point[dnd['z_origin']]
+    band_array[0][1] = one_point[dnd['reflectance']]
+    band_array[0][2] = one_point[dnd['echo_range']]
+    band_array[0][3] = one_point[dnd['deviation']]
+    #band_array[0][0] = one_point[dnd['accum']]
+    return band_array
+    
+    
 
 def testModule():
     import numpy as np
@@ -72,13 +98,17 @@ def testModule():
     
     pixel_index_array, pt_xy = translatePointArray(pt_arr, schema, pixel_size)
     
-    pixel_index_array = pointsToPixels(pixel_index_array, pt_xy, pixel_size)
+    pixel_index_array, accum  = pointsToPixels(pixel_index_array, pt_xy, pixel_size)
     print pixel_index_array
     import matplotlib;
     import pylab as pl 
-    
     plt.imshow(pixel_index_array)
     
+    nameIndex = schema.getNamesIndexesDictionnary()
+    #Now we construct the final array (3D), with in 3D the values we want to write in band.
+    #getting the array type returned by the custom function
+    test_band = onePointToBandsArray(pt_arr[0],nameIndex)
+    print "test_abnd : %s , \n shape : %s \n, dtype : %s" % (test_band, test_band.shape , test_band.dtype)
     #use https://pcjericks.github.io/py-gdalogr-cookbook/raster_layers.html#create-raster-from-array
     #    
     
