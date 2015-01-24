@@ -22,8 +22,9 @@ def translatePointArray(pt_arr, schema, pixel_size):
     x_min = np.nanmin(pt_xyz[:, 0], axis=0)[0]
     y_max = np.nanmax(pt_xyz[:, 1], axis=0)[0]
     y_min = np.nanmin(pt_xyz[:, 1], axis=0)[0]
+    bottom_left = [x_min - (x_min % pixel_size), y_min - (y_min % pixel_size)]
 
-    print x_max,x_min,y_max,y_min
+    #print x_max,x_min,y_max,y_min
     #translate points
     #removing ceil(x_min, y_min)
     pt_xyz[:, 0] -= x_min - (x_min % pixel_size)
@@ -37,14 +38,14 @@ def translatePointArray(pt_arr, schema, pixel_size):
     x_pix_number = math.ceil(x_max / pixel_size)
     y_pix_number = math.ceil(y_max / pixel_size)
     
-    print "pixel number on x :%s , y : %s" % (x_pix_number, y_pix_number)
+    #print "pixel number on x :%s , y : %s" % (x_pix_number, y_pix_number)
 
     #create a numpy array out of this
     pixel_index_array = np.zeros([y_pix_number, x_pix_number], dtype=np.int)
     pixel_index_array = pixel_index_array * float('NaN')
-    return pixel_index_array, pt_xyz
+    return pixel_index_array, pt_xyz, bottom_left
 
-
+#del GD
 def pointsToPixels(pixel_index_array, pt_xyz, pixel_size):
     """this function takes a list of points translated and assign the points index to a pixel array, depedning on 
 Z"""
@@ -55,7 +56,7 @@ Z"""
     z_buf = (z_buf+1) * float("inf")
     accum = np.zeros(pixel_index_array.shape, dtype = int32);
     
-    print z_buf
+    #print z_buf
     for i in range(0, pt_xyz.shape[0]):
         #finding the pixel coordinates of this point floor(x/pixel_size)
         x_pixel_index = math.floor(pt_xyz[i,0]/pixel_size)
@@ -70,7 +71,7 @@ Z"""
 def onePointToBandsArray(one_point, dim_name_index_dictionnary):
     """this is a custom function that will indicates how to compute the bands"""
     import numpy as np 
-    print dim_name_index_dictionnary
+    #print dim_name_index_dictionnary
     dnd = dim_name_index_dictionnary
     #for this application, we are interested in this :
     #z-z_origin , reflectance, echo_range, deviation, accum
@@ -80,37 +81,77 @@ def onePointToBandsArray(one_point, dim_name_index_dictionnary):
         ,('reflectance',np.float32)
         ,('echo_range',np.float32)
         ,('deviation',np.float32)
-        #,('accumulation',np.int32)
+        ,('accumulation',np.int32)
         ])
     band_array[0][0] = one_point[dnd['z']] - one_point[dnd['z_origin']]
     band_array[0][1] = one_point[dnd['reflectance']]
     band_array[0][2] = one_point[dnd['echo_range']]
     band_array[0][3] = one_point[dnd['deviation']]
-    #band_array[0][0] = one_point[dnd['accum']]
+    band_array[0][4] = one_point[dnd['accumulation']]
     return band_array
+
+
+        
+        
+
+def print_matrix_band(matrix, band_name):
+    """facility function to print one band of the matrix rperesenting the image"""
+    import matplotlib
+    import pylab as pl 
+    #plt.imshow(pixel_index_array, origin='lower')
+    plt.imshow(matrix[:][:][band_name], origin='lower', interpolation='none') # note : origin necessary to get the image in correct order
+
+
+def constructing_image_matrix(pt_arr, pixel_index_array, accum, schema, onePointToBandsArray):
+    """this functions takes the list of points, and the matrix of index,\
+    and the function to compute band, and create and fill the final image matrix"""
+    nameIndex = schema.getNamesIndexesDictionnary()
+    #modifying the nameInde to ad an 'accum' at the last position
+    nameIndex['accumulation'] = pt_arr[0].shape
+   
+    #creating an augmented point with added attribute 'accum'
+    augmented_point = np.append(pt_arr[0],accum[0,0] )
+    test_band = onePointToBandsArray(augmented_point, nameIndex)
+    #now we have the type of each dim of band
+    
+     #Now we construct the final array (3D), with in 3D the values we want to write in band.
+    #getting the array type returned by the custom function
+    image_matrix = np.zeros(pixel_index_array.shape , dtype = test_band.dtype)
+    
+    #filling this matrix with actual values
+    for x in range(0, image_matrix.shape[1]):
+        for y in range(0, image_matrix.shape[0]):
+            if np.isnan(pixel_index_array[y,x])==False:
+                image_matrix[y,x] = onePointToBandsArray(\
+                    np.append(pt_arr[pixel_index_array[y,x]], accum[y,x]) 
+                    , nameIndex)
+    #print_matrix_band(image_matrix,'reflectance')
+    return image_matrix
+
+def patchToNumpyArr(pt_arr, schema, pixel_size):
+    """main function converting a double array representing points to a matrix representing a multiband image"""
+    import numpy_to_gdal as n2g; 
+    #prepare data stgructure for computing and prepare points
+    pixel_index_array, pt_xy, bottom_left = translatePointArray(pt_arr, schema, pixel_size)
+    #put points into pixel
+    pixel_index_array, accum  = pointsToPixels(pixel_index_array, pt_xy, pixel_size) 
     
     
+    image_matrix = constructing_image_matrix(pt_arr, pixel_index_array, accum, schema, onePointToBandsArray)
+    #creating an object to store all meta data
+    #band_name = 
+    multi_band_image = n2g.numpy_multi_band_image(\
+        image_matrix, bottom_left, pixel_size, image_matrix[0, 0].dtype.names)
+    
+    #use https://pcjericks.github.io/py-gdalogr-cookbook/raster_layers.html#create-raster-from-array
+    #    
 
 def testModule():
     import numpy as np
     pixel_size = 0.04
     pt_arr, schema = getTestPoints()
+    patchToNumpyArr(pt_arr, schema, pixel_size)
     
-    pixel_index_array, pt_xy = translatePointArray(pt_arr, schema, pixel_size)
-    
-    pixel_index_array, accum  = pointsToPixels(pixel_index_array, pt_xy, pixel_size)
-    print pixel_index_array
-    import matplotlib;
-    import pylab as pl 
-    plt.imshow(pixel_index_array)
-    
-    nameIndex = schema.getNamesIndexesDictionnary()
-    #Now we construct the final array (3D), with in 3D the values we want to write in band.
-    #getting the array type returned by the custom function
-    test_band = onePointToBandsArray(pt_arr[0],nameIndex)
-    print "test_abnd : %s , \n shape : %s \n, dtype : %s" % (test_band, test_band.shape , test_band.dtype)
-    #use https://pcjericks.github.io/py-gdalogr-cookbook/raster_layers.html#create-raster-from-array
-    #    
     
 
 def getTestPoints():
@@ -128,12 +169,14 @@ def getTestPoints():
     conn = psy.connect(connection_string)  
     cur = conn.cursor()  
     cur.execute("""
-    SELECT pc_uncompress(patch)
+    SELECT gid, pc_uncompress(patch)
     FROM acquisition_tmob_012013.riegl_pcpatch_space   
-    WHERE PC_NumPoints(patch) between 1000 and 1200
+    WHERE PC_NumPoints(patch) between 100 and 200
     LIMIT 1 
-    """);  
-    b_patch = cur.fetchone()[0]
+    """); 
+    result = cur.fetchone()
+    print result[0]
+    b_patch = result[1]
     conn.commit()  
     cur.close()
     conn.close()
