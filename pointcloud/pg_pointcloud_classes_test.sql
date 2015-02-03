@@ -41,8 +41,7 @@ for i in range (0,npoints):
 
 wkb_patch = pg_pointcloud_classes.numpy_double_to_WKB_patch(
 	points_double
-	, pg_pointcloud_classes.get_schema(pcid, GD['rc']['schemas'], [])
-	, pcid)
+	, pg_pointcloud_classes.get_schema(pcid, GD['rc']['schemas'], []) ) 
 
 #plpy.notice(GD['rc']['schemas']) 
 ##testing the other way :
@@ -57,4 +56,10 @@ $$ LANGUAGE plpythonu;
 
 
 SELECT  test_global_dict_python() ;
+
+
+SELECT patch
+FROM acquisition_tmob_012013.riegl_pcpatch_space   
+WHERE PC_NumPoints(patch) between 1000 and 1200
+LIMIT 1 
  
