@@ -128,7 +128,7 @@ def constructing_image_matrix(pt_arr, pixel_index_array, accum, schema, onePoint
     #print_matrix_band(image_matrix,'reflectance')
     return image_matrix
 
-def patchToNumpyArr(pt_arr, schema, pixel_size):
+def patchToNumpyMatrix(pt_arr, schema, pixel_size):
     """main function converting a double array representing points to a matrix representing a multiband image"""
     import numpy_to_gdal as n2g; 
     #prepare data stgructure for computing and prepare points
@@ -140,23 +140,26 @@ def patchToNumpyArr(pt_arr, schema, pixel_size):
     image_matrix = constructing_image_matrix(pt_arr, pixel_index_array, accum, schema, onePointToBandsArray)
     #creating an object to store all meta data
     #band_name = 
-    multi_band_image = n2g.numpy_multi_band_image(\
+    multi_band_image = n2g.numpy_multi_band_image()
+    multi_band_image.setAttributes(\
         image_matrix, bottom_left, pixel_size, image_matrix[0, 0].dtype.names)
     
-    #use https://pcjericks.github.io/py-gdalogr-cookbook/raster_layers.html#create-raster-from-array
-    #    
+    return multi_band_image
 
 def testModule():
     import numpy as np
+    import numpy_to_gdal as n2g
+    reload(n2g)
     pixel_size = 0.04
     pt_arr, schema = getTestPoints()
-    patchToNumpyArr(pt_arr, schema, pixel_size)
+    multi_band_image = patchToNumpyMatrix(pt_arr, schema, pixel_size)
     
-    
+    #using the conversion to gdal
+    n2g.test_module(multi_band_image)
 
 def getTestPoints():
     import psycopg2 as psy
-    import pg_pointcloud_classes as pc
+    import pg_pointcloud_classes as pc 
     connection_string = """dbname=test_pointcloud user=postgres password=postgres port=5433"""
     if 'GD' not in globals():        
         global GD        

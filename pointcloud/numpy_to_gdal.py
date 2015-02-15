@@ -11,42 +11,60 @@ import numpy as np
 
 
 class numpy_multi_band_image:
-    """this classes old the various meta data about the points that are being converted to multi band image"""
-    def __init__(self, pixel_matrix, bottom_left_coordinates, pixel_size, band_name):
+    """this classes hold the various meta data about the points that are being converted to multi band image"""
+    def __init__(self):
         """constructor"""
-        import numpy as np
-        self.pixel_matrix = pixel_matrix
-        self.bottom_left_coordinates = bottom_left_coordinates
-        self.pixel_size = pixel_size
-        self.band_name = band_name
+        self.pixel_matrix = []
+        self.bottom_left_coordinates = []
+        self.pixel_size = 0.0
+        self.band_name = []
 
-def array2raster(newRasterfn,rasterOrigin,pixelWidth,pixelHeight,array):
 
-    cols = array.shape[1]
-    rows = array.shape[0]
-    originX = rasterOrigin[0]
-    originY = rasterOrigin[1]
+    def setAttributes(self, pixel_matrix_, bottom_left_coordinates_, pixel_size_, band_name_):
+        self.pixel_matrix = pixel_matrix_
+        self.bottom_left_coordinates = bottom_left_coordinates_
+        self.pixel_size = pixel_size_
+        self.band_name = band_name_
 
-    driver = gdal.GetDriverByName('GTiff')
-    outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Byte)
-    outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
+
+def matrix_to_band(numpy_multi_band_image):
+     """add a band to """   
+    
+def array2raster(image_path,nmbi):
+    cols = nmbi.pixel_matrix.shape[1]
+    rows = nmbi.pixel_matrix.shape[0]
+    originX = nmbi.bottom_left_coordinates[0]
+    originY = nmbi.bottom_left_coordinates[1]
+
+    driver = gdal.GetDriverByName('VRT')
+    #driver = gdal.GetDriverByName('JPEG2000')
+    print "driver : %s " % driver
+    
+    outRaster = driver.Create(image_path, cols, rows, 1,gdal.GDT_Int32) # len(nmbi.band_name)
+    outRaster.SetGeoTransform((originX, nmbi.pixel_size, 0, originY, 0,  nmbi.pixel_size))
+    outRasterSRS = osr.SpatialReference()
+    outRasterSRS.ImportFromEPSG(3057)
+    outRaster.SetProjection(outRasterSRS.ExportToWkt())
+    
+    outRaster.AddBand(gdal.GDT_Int32)
+    outRaster.AddBand(gdal.GDT_Int32)
+    outRaster.AddBand(gdal.GDT_Int32)
+    
+    
     outband = outRaster.GetRasterBand(1)
     outband.WriteArray(array)
-    outRasterSRS = osr.SpatialReference()
-    outRasterSRS.ImportFromEPSG(4326)
+    
     outRaster.SetProjection(outRasterSRS.ExportToWkt())
     outband.FlushCache() 
+   
 
-
-def main(newRasterfn,rasterOrigin,pixelWidth,pixelHeight,array):
-    reversed_arr = array[::-1] # reverse array so the tif looks like the array
-    array2raster(newRasterfn,rasterOrigin,pixelWidth,pixelHeight,reversed_arr) # convert array to raster
-
-def test_module():
+def test_module(multi_band_image):
     rasterOrigin = (-123.25745,45.43013)
-    pixelWidth = 10
-    pixelHeight = 10
-    newRasterfn = '/tmp/test.tif'
+    pixelWidth = multi_band_image.pixel_size
+    pixelHeight = multi_band_image.pixel_size
+    image_path = '/tmp/test.tif'
+    
+    print multi_band_image.pixel_matrix.dtype.type
     #creating 
     array = np.array([[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                       [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -58,6 +76,9 @@ def test_module():
                       [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                       [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                       [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
-    main(newRasterfn,rasterOrigin,pixelWidth,pixelHeight,array)
+     # reverse array so the tif looks like the array
+    multi_band_image.pixel_matrix = multi_band_image.pixel_matrix[::-1]
+    array2raster(image_path,multi_band_image) # convert array to raster
+     
     
-test_module()
+#test_module()
