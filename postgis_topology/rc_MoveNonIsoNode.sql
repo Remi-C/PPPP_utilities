@@ -8,15 +8,15 @@
 
 
   
-DROP FUNCTION IF EXISTS rc_MoveNonIsoNode_edges(varchar, int, geometry(point)); 
-CREATE OR REPLACE FUNCTION rc_MoveNonIsoNode_edges( IN _atopology  varchar ,INOUT _node_id INT , IN _new_node_geom geometry(point)
+DROP FUNCTION IF EXISTS topology.rc_MoveNonIsoNode_edges(varchar, int, geometry(point)); 
+CREATE OR REPLACE FUNCTION topology.rc_MoveNonIsoNode_edges( IN _atopology  varchar ,INOUT _node_id INT , IN _new_node_geom geometry(point)
 	)
   RETURNS int AS
 $BODY$
 		--@brief this function udpate all the edges of a node we want to move . Such node move must not change topology !
 		--@WARNING: there is no check about new edge geom, or preservation of correct topology.
 		DECLARE 
-		BEGIN 
+		BEGIN  
 			--update the outgoing edges by setting the first point of their geom
 			EXECUTE format('UPDATE %s.edge_data AS ed SET geom = ST_SetPoint(ed.geom, 0 , $1) WHERE ed.start_node = $2 ',_atopology) USING _new_node_geom, _node_id ; 
 			--update the incoming edge by setting the last point of their geom
@@ -32,20 +32,29 @@ LANGUAGE plpgsql VOLATILE;
 
 
   
-DROP FUNCTION IF EXISTS rc_MoveNonIsoNode(varchar, int, geometry(point)); 
-CREATE OR REPLACE FUNCTION rc_MoveNonIsoNode( IN _atopology  varchar ,INOUT _node_id INT , IN _new_node_geom geometry(point)
+DROP FUNCTION IF EXISTS topology.rc_MoveNonIsoNode(varchar, int, geometry ); 
+CREATE OR REPLACE FUNCTION topology.rc_MoveNonIsoNode( IN _atopology  varchar ,INOUT _node_id INT , IN _new_node_geom geometry 
 	)
   RETURNS int AS
 $BODY$
 		--@brief this function move a node and udpate all the edges of this node accordingly. Such node move must not change topology !
 		--@WARNING: there is no check about new edge geom, or preservation of correct topology.
 		DECLARE 
+			_topology_precision float := 0 ; 
+			_face_id int := -1;  
 		BEGIN 
+			SELECT precision into _topology_precision
+			FROM topology.topology
+			WHERE name = _atopology  ;   
+			--find the new face of the node :
+			SELECT  topology.getfacebypoint(_atopology , _new_node_geom,  _topology_precision ) INTO _face_id ; 
+			_face_id := COALESCE(_face_id, 0); 
+			
 			--moving the node
-			EXECUTE format('UPDATE %s.node AS n SET geom = $1 WHERE n.node_id = $2 ',_atopology) USING _new_node_geom, _node_id ; 
+			EXECUTE format('UPDATE %s.node AS n SET (containing_face,geom) = ($2,$3) WHERE n.node_id = $1 ',_atopology) USING _node_id, _face_id, _new_node_geom ; 
 			
 			--updating the edges 
-			PERFORM rc_MoveNonIsoNode_edges(_atopology, _node_id, _new_node_geom) ; 
+			PERFORM topology.rc_MoveNonIsoNode_edges(_atopology, _node_id, _new_node_geom) ; 
 			return; 
 		END ;
 	$BODY$
