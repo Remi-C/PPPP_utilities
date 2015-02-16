@@ -5,4 +5,6 @@
 *.qgis
 #ignore big maquette files
 __mixed/maquette_OGR_Spread/*
+#ignore python compile file
+*.pyc
 
