@@ -36,8 +36,8 @@ $BODY$
 	DECLARE     
 	BEGIN  
 	IF TG_OP = 'DELETE' THEN  
-		SELECT f.deleted_edge_id , f.deleted_edge_geom INTO NEW.edge_id, NEW.edge_geom
-		FROM topology.rc_DeleteEdgeSafe(TG_TABLE_SCHEMA::text,NEW.edge_id,NEW.edge_geom)   as f ; 
+		SELECT f.deleted_edge_id , f.deleted_edge_geom INTO OLD.edge_id, OLD.edge_geom
+		FROM topology.rc_DeleteEdgeSafe(TG_TABLE_SCHEMA::text,OLD.edge_id,OLD.edge_geom)   as f ; 
 		 
 		RETURN NULL ; 
 		--returN NEW;
@@ -56,9 +56,9 @@ $BODY$
 	
 	IF TG_OP = 'UPDATE' THEN 
 		--update/insert case
-		NEW.node_geom = ST_Force3D(NEW.node_geom) ;  --safeguard against qgis
-		SELECT f.moved_node_id , f.moved_node_geom INTO NEW.node_id, NEW.node_geom
-		FROM topology.rc_MoveEdgeSafe(TG_TABLE_SCHEMA::text, NEW.node_id,NEW.node_geom)   as f ;  
+		NEW.edge_geom = ST_Force3D(NEW.edge_geom) ;  --safeguard against qgis
+		SELECT f.moved_edge_id , f.moved_edge_geom INTO NEW.edge_id, NEW.edge_geom
+		FROM topology.rc_MoveEdgeSafe(TG_TABLE_SCHEMA::text, NEW.edge_id,NEW.edge_geom)   as f ;  
 		 
 		RETURN NULL ; 
 		--returN NEW;
@@ -90,8 +90,7 @@ $BODY$
 	DECLARE    
 		_topology_precision float := 0 ; 
 		_first_node record;  
-		_second_node record;
-		_second_node_geom geometry; 
+		_second_node record; 
 		_e_geom geometry ;
 	BEGIN    
 		SELECT precision into _topology_precision
@@ -123,8 +122,8 @@ $BODY$
 	$BODY$
   LANGUAGE plpgsql VOLATILE;
 			
-DROP FUNCTION IF EXISTS topology.rc_MoveEdgeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry  )  ;
-CREATE OR REPLACE FUNCTION topology.rc_MoveEdgeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry  )  AS
+DROP FUNCTION IF EXISTS topology.rc_MoveEdgeSafe(topology_name text , INOUT moved_edge_id int , INOUT moved_edge_geom geometry  )  ;
+CREATE OR REPLACE FUNCTION topology.rc_MoveEdgeSafe(topology_name text , INOUT moved_edge_id int , INOUT moved_edge_geom geometry  )  AS
 $BODY$  
 	/**
 	@brief this function safely move a edge within a topology 
@@ -142,8 +141,8 @@ $BODY$
   LANGUAGE plpgsql VOLATILE; 
 
 			
-DROP FUNCTION IF EXISTS topology.rc_DeleteEdgeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  ;
-CREATE OR REPLACE FUNCTION topology.rc_DeleteEdgeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  AS
+DROP FUNCTION IF EXISTS topology.rc_DeleteEdgeSafe(topology_name text , INOUT deleted_edge_id int , INOUT deleted_edge_geom geometry  )  ;
+CREATE OR REPLACE FUNCTION topology.rc_DeleteEdgeSafe(topology_name text , INOUT deleted_edge_id int , INOUT deleted_edge_geom geometry  )  AS
 $BODY$  
 	/**
 	@brief this function safely delete an edge from a topology. 
@@ -152,7 +151,7 @@ $BODY$
 	*/ 
 	DECLARE  
 	BEGIN     	  
-		SELECT ST_RemEdgeModFace(topology_name,deleted_node_id)  INTO deleted_node_id ; 
+		SELECT ST_RemEdgeModFace(topology_name,deleted_edge_id)  INTO deleted_edge_id ; 
 		return ; 
 	END ;
 	$BODY$
