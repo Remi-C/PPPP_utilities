@@ -20,6 +20,10 @@ $BODY$
 		_e_id int[];
 		_edge_id int:= edge_id ;
 	BEGIN     	  
+		-- chack that the proposed geometry is simple
+		IF ST_IsSImple(edge_geom) = FALSE OR ST_IsValid(edge_geom) = FALSE THEN
+			RAISE EXCEPTION 'ERROR : the given edge % is not valid or self intersect (not simple)\n',edge_id ;
+		END IF; 
 		-- check that new geom doesn't cross any edge (except OLD self)
 		SELECT array_agg(ed.edge_id ORDER BY ed.edge_id ASC) INTO _e_id
 		FROM bdtopo_topological.edge_data as ed 
@@ -53,4 +57,4 @@ SELECT topology.rc_CheckNewEdgeGeom('bdtopo_topological'::text
 	,-1::int
 	,0.1::float
 	)
-*/
+ */
