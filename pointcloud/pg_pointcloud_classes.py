@@ -4,7 +4,7 @@ Created on Wed Jan 21 15:44:26 2015
 
 @author: remi
 """
-
+GD = {}
 from xml.etree.ElementTree import TreeBuilder
 
 
@@ -79,6 +79,8 @@ class pcschema:
         self.srid = 0
         self.namehash = []
         self.numpy_dtype = []
+        self.srid = 0
+        self.srtext = None
 
     def __repr__(self):
         return " pcid : %s \n, ndims : %s\n, \n\t dims: %s \n, srid : %s\n, namehash:%s\n, numpy_dtype:%s\n"\
@@ -307,21 +309,28 @@ def get_schema(pcid, schemas, connection_string):
         #use DBAPI to get the schema with given pcid
         print "getting the schema of pcid : %s from within database (DBAPI)\n" % pcid
         plpy.notice("getting the schema of pcid : "+str(pcid)+" from within database (DBAPI)\n")
-        query = """SELECT srid,schema FROM pointcloud_formats WHERE pcid = %d""" % pcid
+        query = """SELECT pf.srid, pf.schema, srs.srtext
+            FROM pointcloud_formats as pf 
+                LEFT OUTER JOIN public.spatial_ref_sys AS srs ON (srs.srid = pf.srid)
+            WHERE pcid = %d""" % pcid 
         result_query = plpy.execute(query, 1)  
         schema_xml = result_query[0]['schema']
         srid = int(result_query[0]['srid'])
-        
+        srtext = result_query[0]['srtext']
     else:
         #use psycopg2 api to get the schema
         import psycopg2
         print "getting the schema of pcid : %s from outside database (PSYCOPG2)\n" % pcid
         conn = psycopg2.connect(connection_string)
         cur = conn.cursor() 
-        cur.execute("""SELECT srid, schema FROM pointcloud_formats WHERE pcid = %s""", [pcid])
+        cur.execute("""SELECT pf.srid, pf.schema, srs.srtext
+            FROM pointcloud_formats as pf 
+                LEFT OUTER JOIN public.spatial_ref_sys AS srs ON (srs.srid = pf.srid)
+            WHERE pcid = %s""", [pcid])
         result_query = cur.fetchone()
         schema_xml = result_query[1] 
         srid = int(result_query[0])
+        srtext = result_query[2]
         conn.commit()
         cur.close()
         conn.close()
@@ -331,6 +340,7 @@ def get_schema(pcid, schemas, connection_string):
     pc_schema.parsexml(schema_xml)
     pc_schema.pcid = pcid
     pc_schema.srid = srid
+    pc_schema.srtext = srtext
     schemas[str(pcid)] = pc_schema
 
     return pc_schema

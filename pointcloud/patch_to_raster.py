@@ -7,7 +7,6 @@ Created on Fri Jan 23 16:38:01 2015
 import pg_pointcloud_classes as pc
 reload(pc)
 
-
 def translatePointArray(pt_arr, schema, pixel_size):
     """this function simply extract X,Y,Z and translate x and y and compute and allocate pixel array"""
     import numpy as np
@@ -79,15 +78,15 @@ def onePointToBandsArray(one_point, dim_name_index_dictionnary):
     band_array = np.zeros(1,dtype = [
         ('relative_height',np.float32)
         ,('reflectance',np.float32)
-        ,('echo_range',np.float32)
-        ,('deviation',np.float32)
-        ,('accumulation',np.int32)
+        #,('echo_range',np.float32)
+        #,('deviation',np.float32)
+        ,('accumulation',np.uint16)
         ])
     band_array[0][0] = one_point[dnd['z']] - one_point[dnd['z_origin']]
     band_array[0][1] = one_point[dnd['reflectance']]
-    band_array[0][2] = one_point[dnd['echo_range']]
-    band_array[0][3] = one_point[dnd['deviation']]
-    band_array[0][4] = one_point[dnd['accumulation']]
+    #band_array[0][2] = one_point[dnd['echo_range']]
+    #band_array[0][3] = one_point[dnd['deviation']]
+    band_array[0][2] = one_point[dnd['accumulation']]
     return band_array
 
 
@@ -98,13 +97,17 @@ def print_matrix_band(matrix, band_name):
     """facility function to print one band of the matrix rperesenting the image"""
     import matplotlib
     import pylab as pl 
+
     #plt.imshow(pixel_index_array, origin='lower')
     plt.imshow(matrix[:][:][band_name], origin='lower', interpolation='none') # note : origin necessary to get the image in correct order
 
 
 def constructing_image_matrix(pt_arr, pixel_index_array, accum, schema, onePointToBandsArray):
     """this functions takes the list of points, and the matrix of index,\
-    and the function to compute band, and create and fill the final image matrix"""
+    and the function to compute band, and create and fill the final image matrix"""    
+    import numpy.ma as ma
+    import numpy as np
+    
     nameIndex = schema.getNamesIndexesDictionnary()
     #modifying the nameInde to ad an 'accum' at the last position
     nameIndex['accumulation'] = pt_arr[0].shape
@@ -117,6 +120,10 @@ def constructing_image_matrix(pt_arr, pixel_index_array, accum, schema, onePoint
      #Now we construct the final array (3D), with in 3D the values we want to write in band.
     #getting the array type returned by the custom function
     image_matrix = np.zeros(pixel_index_array.shape , dtype = test_band.dtype)
+    image_matrix = image_matrix.view(ma.MaskedArray)
+    image_matrix.mask = True
+    #setting the Nan value to min possible for int, or Nan for float
+    
     
     #filling this matrix with actual values
     for x in range(0, image_matrix.shape[1]):
@@ -141,8 +148,9 @@ def patchToNumpyMatrix(pt_arr, schema, pixel_size):
     #creating an object to store all meta data
     #band_name = 
     multi_band_image = n2g.numpy_multi_band_image()
+    print ' srtext : %s ' % schema.srtext
     multi_band_image.setAttributes(\
-        image_matrix, bottom_left, pixel_size, image_matrix[0, 0].dtype.names)
+        image_matrix, bottom_left, pixel_size, image_matrix[0, 0].dtype.names, schema.srtext)
     
     return multi_band_image
 
@@ -152,7 +160,8 @@ def testModule():
     reload(n2g)
     pixel_size = 0.04
     pt_arr, schema = getTestPoints()
-    multi_band_image = patchToNumpyMatrix(pt_arr, schema, pixel_size)
+    multi_band_image = patchToNumpyMatrix(pt_arr, schema, pixel_size) 
+    print 'here is the array band %s' % multi_band_image.pixel_matrix[1,1]
     
     #using the conversion to gdal
     n2g.test_module(multi_band_image)
@@ -173,12 +182,14 @@ def getTestPoints():
     cur = conn.cursor()  
     cur.execute("""
     SELECT gid, pc_uncompress(patch)
-    FROM acquisition_tmob_012013.riegl_pcpatch_space   
-    WHERE PC_NumPoints(patch) between 100 and 200
+    FROM --acquisition_tmob_012013.riegl_pcpatch_space 
+    benchmark_cassette_2013.riegl_pcpatch_space  
+    WHERE PC_NumPoints(patch) between 5000 and 10000
     LIMIT 1 
+    OFFSET 10
     """); 
     result = cur.fetchone()
-    print result[0]
+    print 'patch found : %s'% result[0]
     b_patch = result[1]
     conn.commit()  
     cur.close()
