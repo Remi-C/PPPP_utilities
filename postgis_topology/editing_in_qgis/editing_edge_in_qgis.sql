@@ -148,18 +148,28 @@ $BODY$
 		FROM topology.topology
 		WHERE name = topology_name  ;    
 
+		--check if start and/or end node have changed (doing it first before insert)
+		SELECT ed.start_node, ed.end_node  INTO _old_start_node_id, _old_end_node_id
+		FROM bdtopo_topological.edge_data as ed
+		WHERE ed.edge_id = moved_edge_id ; 
+		--RAISE EXCEPTION '_old_start_node_id %, _old_end_node_id % , geom : % %',_old_start_node_id, _old_end_node_id,ST_Astext(ST_StartPoint(moved_edge_geom)),ST_Astext(ST_EndPoint(moved_edge_geom))  ;
+
+
  
 		--inserting the first node if necessary
 		SELECT inserted_node_id as node_id, inserted_node_geom as geom INTO _first_node
 		FROM topology.rc_InsertNodeSafe(topology_name
 			,  rc_FindNextValue(topology_name, 'node', 'node_id')   
-			, ST_StartPoint(moved_edge_geom)); 
+			, ST_StartPoint(moved_edge_geom)
+			, moved_edge_id); 
 
 		--inserting the second node if necessary
 		SELECT inserted_node_id as node_id, inserted_node_geom as geom INTO _second_node
 		FROM topology.rc_InsertNodeSafe(topology_name
 			,  rc_FindNextValue(topology_name, 'node', 'node_id')   
-			, ST_EndPoint(moved_edge_geom)); 
+			, ST_EndPoint(moved_edge_geom)
+			,moved_edge_id); --last parameter allow to ignore the moved edge when tryign to insert node
+
 
 		--updating the edge geom, so it correctly begins and end on added node
 		_e_geom := rc_SetPoint(rc_SetPoint(moved_edge_geom,0, _first_node.geom),-1, _second_node.geom) ;
@@ -168,12 +178,8 @@ $BODY$
 
 		--check that new edge geom doesn't cross anything, is vvalid, etc
 		PERFORM topology.rc_CheckNewEdgeGeom( topology_name ,  _e_geom,moved_edge_id,  _first_node.node_id,  _second_node.node_id, _topology_precision ) ; 
-		
-		--check if start and/or end node have changed
-		SELECT ed.start_node, ed.end_node  INTO _old_start_node_id, _old_end_node_id
-		FROM bdtopo_topological.edge_data as ed
-		WHERE ed.edge_id = moved_edge_id ; 
 
+  
 		--if no topology change, simply update geom
 		IF _old_start_node_id = _first_node.node_id AND _old_end_node_id = _second_node.node_id THEN 
 			--the topology of this edge didn't change, simply update it's geom
@@ -187,8 +193,8 @@ $BODY$
 			WHERE ed.edge_id  = moved_edge_id;
 
 			--recompute edge_linking and face_linking for old node and new node;
-			SELECT array_agg(edge_id) INTO  _node_to_update
-			FROM (SELECT _first_node.node_id UNION  SELECT _second_node.node_id UNION SELECT _old_start_node_id UNION SELECT _old_end_node_id ) as sub; 
+			SELECT array_agg(node_id) INTO  _node_to_update
+			FROM (SELECT _first_node.node_id UNION  SELECT _second_node.node_id UNION SELECT _old_start_node_id UNION SELECT _old_end_node_id ) as sub;  
 			PERFORM topology.rc_RecomputeEdgeAndFaceLinking(topology_name, _node_to_update) ; 
 			
 		END IF ;
