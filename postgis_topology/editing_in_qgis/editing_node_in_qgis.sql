@@ -92,7 +92,7 @@ $BODY$
 		--update/insert case
 		NEW.node_geom = ST_Force3D(NEW.node_geom) ;  --safeguard against qgis
 		SELECT f.inserted_node_id , f.inserted_node_geom INTO NEW.node_id, NEW.node_geom
-		FROM topology.rc_InsertNodeSafe(TG_TABLE_SCHEMA::text, NEW.node_id,NEW.node_geom)   as f ; 
+		FROM topology.rc_InsertNodeSafe(TG_TABLE_SCHEMA::text, NEW.node_id,NEW.node_geom,dont_update_face:= FALSE)   as f ; 
 		 
 		RETURN NULL ;  
 	END IF ; --end of insert dealing
@@ -179,8 +179,8 @@ $BODY$
 		END IF ;
 
 		-- normal insert, add isolated node :
-		IF dont_update_face = TRUE THEN 
-			-- find face :
+		IF dont_update_face = FALSE THEN 
+			-- find face : 
 			SELECT  topology.getfacebypoint(topology_name , new_geom,  _topology_precision ) INTO _face_id ; 
 		ELSE --we don(t want to update the face 
 			_face_id := 0 ;
