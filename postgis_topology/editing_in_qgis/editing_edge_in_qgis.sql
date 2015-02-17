@@ -58,7 +58,7 @@ $BODY$
 		--update/insert case
 		NEW.edge_geom = ST_Force3D(NEW.edge_geom) ;  --safeguard against qgis
 		SELECT f.moved_edge_id , f.moved_edge_geom INTO NEW.edge_id, NEW.edge_geom
-		FROM topology.rc_MoveEdgeSafe(TG_TABLE_SCHEMA::text, NEW.edge_id,NEW.edge_geom)   as f ;  
+		FROM topology.rc_MoveEdgeSafe(TG_TABLE_SCHEMA::text, OLD.edge_id,NEW.edge_geom)   as f ;  
 		 
 		RETURN NULL ; 
 		--returN NEW;
