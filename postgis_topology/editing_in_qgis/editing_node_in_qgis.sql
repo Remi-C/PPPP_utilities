@@ -122,13 +122,13 @@ EXECUTE PROCEDURE rc_edit_node_topology();
  
 
 
-DROP FUNCTION IF EXISTS topology.rc_InsertNodeSafe(topology_name text , new_node_id int ,new_geom geometry , OUT inserted_node_id int, OUT inserted_node_geom geometry)  ;
-CREATE OR REPLACE FUNCTION topology.rc_InsertNodeSafe(topology_name text , new_node_id int ,new_geom geometry , OUT inserted_node_id int, OUT inserted_node_geom geometry)  AS
+DROP FUNCTION IF EXISTS topology.rc_InsertNodeSafe(topology_name text , new_node_id int ,new_geom geometry , IN edge_to_ignore INT ,IN dont_update_face BOOLEAN,  OUT inserted_node_id int, OUT inserted_node_geom geometry)  ;
+CREATE OR REPLACE FUNCTION topology.rc_InsertNodeSafe(topology_name text , new_node_id int ,new_geom geometry , IN edge_to_ignore INT default NULL,IN dont_update_face BOOLEAN DEFAULT FALSE, OUT inserted_node_id int, OUT inserted_node_geom geometry)  AS
 $BODY$  
 	/**
 	@brief this function safely add a node to a topology.
 		If the node already exist, we return the existing node
-		If the node is close to an existing edge, we split the edge
+		If the node is close to an existing edge, we split the edge (except if we must ignore this edge)
 		if the node is isolated, we add it (with correct face)
 	*/ 
 	DECLARE    
@@ -161,6 +161,7 @@ $BODY$
 		SELECT ed.edge_id INTO _t_node_id 
 		FROM bdtopo_topological.edge_data AS ed
 		WHERE ST_DWITHIN(ed.geom,new_geom,_topology_precision ) = TRUE
+			AND ed.edge_id <> edge_to_ignore  
 		ORDER BY  ST_Distance(ed.geom,new_geom) ASC
 		LIMIT 1 ; 
 
@@ -178,8 +179,12 @@ $BODY$
 		END IF ;
 
 		-- normal insert, add isolated node :
-		-- find face :
-		SELECT  topology.getfacebypoint(topology_name , new_geom,  _topology_precision ) INTO _face_id ; 
+		IF dont_update_face = TRUE THEN 
+			-- find face :
+			SELECT  topology.getfacebypoint(topology_name , new_geom,  _topology_precision ) INTO _face_id ; 
+		ELSE --we don(t want to update the face 
+			_face_id := 0 ;
+		END IF;
 		-- find next value : 
 		IF new_node_id IS NULL OR new_node_id<=0 THEN 
 			new_node_id := public.rc_FindNextValue('bdtopo_topological', 'node', 'node_id') ;
