@@ -189,7 +189,7 @@ $BODY$
 		ELSE 
 		--else : update start and/or end , recompute edgelinking and face for concerned nodes.
 			--RAISE EXCEPTION 'udpating with change of topology, not supported yet\n' ; 
-			UPDATE bdtopo_topological.edge_data AS ed SET (start_node, end_node) = (_first_node.node_id, _second_node.node_id)
+			UPDATE bdtopo_topological.edge_data AS ed SET (start_node, end_node, geom) = (_first_node.node_id, _second_node.node_id, _e_geom)
 			WHERE ed.edge_id  = moved_edge_id;
 
 			--recompute edge_linking and face_linking for old node and new node;
