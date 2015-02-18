@@ -168,22 +168,31 @@ $BODY$
 
 			delete face_to_delete.
 				Try to delete, an error in relation means something went wrong.
+				--exclude face 0 , that should always exist
 			 
 	*/ 
 	DECLARE     
 		_q TEXT; 
 		_r record; 
-		_face_ids_to_delete INT[] ; 
-		_edges_in_non_face_ring TEXT[]; 
+		_faces_to_delete INT[] ; 
+		_edges_in_non_face_ring TEXT[] ; 
 		_updated_edges INT[] ; 
+		_inserted_face INT[] ; 
 	BEGIN     	  
 		RAISE NOTICE 'edges to update : %', edges_to_update  ;
 
 		--create new face, update edge left and right face when dealing with regular face (ie non-flat face)
-		SELECT topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name  , edges_to_update)
-		INTO _face_ids_to_delete, _edges_in_non_face_ring, _updated_edges ;
+		SELECT * FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name  , edges_to_update)
+		INTO  _inserted_face,_updated_edges,  _faces_to_delete, _edges_in_non_face_ring ;    
 
-		--
+		--deal with flat face, that are within another face necessarly 
+		SELECT * FROM  topology.rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name
+			,   _inserted_face
+			, _edges_in_non_face_ring
+			,  _updated_edges
+			,  _faces_to_delete)  
+		INTO _updated_edges, _faces_to_delete;  
+		RAISE EXCEPTION '% %',_updated_edges, _faces_to_delete ;
 		
 		--recomputing edge_linking : 
 		--RAISE EXCEPTION 'not implemetned yet  % %', _face_ids_to_delete,  _new_face_edges_geom ;
@@ -197,7 +206,7 @@ LANGUAGE plpgsql VOLATILE;
 
 DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[] ) ;
 CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[],
-	OUT _updated_edges INT[], OUT _face_ids_to_delete INT[],OUT _edges_in_non_face_ring TEXT[] )
+	OUT inserted_face int[], OUT updated_edges INT[], OUT faces_to_delete INT[],OUT edges_in_non_face_ring TEXT[]  )
   AS
 $BODY$  
 	/**
@@ -215,9 +224,10 @@ $BODY$
 					collect the different face_id in the non-homogeneous cycle (aka face_to_delete)
 					update all face_id (left or right depending on the sign of s_edge_id) with new face 
 
-		@return _updated_edges : edge that have been modified (left_face and right_face column exclusively)
-		@return _face_ids_to_delete : list of faces that were used by updated edge. NOT safe to delete until flat-face have been dealt with and isolated_node too
-		@return _edges_in_non_face_ring : array of ring (array of edge) that for flat face. 
+		@return updated_edges : edge that have been modified (left_face and right_face column exclusively)
+		@return faces_to_delete : list of faces that were used by updated edge. NOT safe to delete until flat-face have been dealt with and isolated_node too
+		@return edges_in_non_face_ring : array of ring (array of edge) that for flat face. 
+		@return inserted_face : array of face_id that have been inserted
 	*/ 
 	DECLARE     
 		_q TEXT; 
@@ -332,10 +342,14 @@ $BODY$
 			RETURNING ed.edge_id  
 		)
 		SELECT --finale
-			(SELECT array_agg(face_id_to_delete)FROM face_id_to_delete) as face_ids_to_delete 
+			(SELECT array_agg(face_id) as inserted_face 
+				FROM 
+				(SELECT DISTINCT face_id FROM new_faces) AS sub
+			)  
+			, (SELECT array_agg(face_id )FROM face_id_to_delete)  
 			, ( --very compliated, because by default there is no (int[])[], so we use a (text)[], where text is in fact int[]
 				--grouping all ring
-				SELECT array_agg(sub2.edges_to_update::text) AS edges_to_update
+				SELECT array_agg(sub2.edges_to_update::text)  AS edges_to_update
 				FROM ( --grouping by ring
 					SELECT base_id, array_agg(edge_to_update )  as edges_to_update
 					FROM ( --getting list of edge in ring that are not proper face
@@ -345,23 +359,141 @@ $BODY$
 							AND r.base_id = rf.base_id
 					)  as sub
 					GROUP BY base_id )  as sub2
-			) as edges_in_non_face_ring
+			)  
 			, (--grouping
-				SELECT array_agg(edge_id) 
+				SELECT array_agg(edge_id) as edge_id
 				FROM --gettting together all update result. Union to avoid duplicates
 				(	SELECT * FROM update_edge_only_left_face
 					UNION SELECT * FROM update_edge_only_right_face
 					UNION SELECT * FROM update_edge_right_and_left 
 				)AS update_face  
-			) as updated_edges
-		INTO _face_ids_to_delete, _edges_in_non_face_ring, _updated_edges ;
-		 
+			)  
+		INTO  inserted_face,faces_to_delete, edges_in_non_face_ring, updated_edges ; 
+		--RAISE NOTICE '%',_r; 
 		RETURN   ;
 	END ;
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
 
 --121 , 122, 127
+ 
+ 
+
+DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name TEXT,   int[],  TEXT[] ,   INT[], INT[] ) ;
+CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name TEXT,  
+	 inserted_face int[],  edges_in_non_face_ring TEXT[]  ,  INOUT updated_edges INT[], INOUT faces_to_delete INT[] )
+  AS
+$BODY$  
+	/**
+	@brief given a topoology where node-edge likning is correct, and edge-edge linking also, update face-linking (left_face, ...)
+	@WARNING DONT USE THIS FUNCTION ALONE (also need to deal wit isolatednode, and delete old face_id)
+		deal with not_forming_face_ring
+				check in which face they are included
+					first check in which mbr
+					then for each mbr found, compute the face geom,
+					check in which face geom the not_forming_face_ring is
+					collect old face_id of the not_forming_face_ring
+					update face_id with containing face
+		@param edges_in_non_face_ring : array of ring (array of edge) that for flat face. 
+		@param inserted_face : array of face_id that have been inserted
+		@param updated_edges : edge that have been modified (left_face and right_face column exclusively) 
+		@param faces_to_delete : list of faces that were used by updated edge. NOT safe to delete until flat-face have been dealt with and isolated_node too
+		
+	*/ 
+	DECLARE     
+		_q TEXT; 
+		_r record;   
+	BEGIN     	   
+		--INTO  inserted_face,faces_to_delete, edges_in_non_face_ring, updated_edges ; 
+		 WITH result_on_non_flat_face AS ( --input
+		SELECT   inserted_face
+ 				 ,updated_edges
+				, faces_to_delete
+				, edges_in_non_face_ring::text[]
+		--FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface('bdtopo_topological'  , ARRAY[405,406,407,411,410] )
+		 )
+		 ,faces_to_delete AS (
+			SELECT face_to_delete
+			FROM result_on_non_flat_face as ro , unnest(ro.faces_to_delete)  as face_to_delete
+		 )
+		 , edge_ids As ( --unesting ring of edges
+		SELECT row_number() over() as ring_id, edge_ids::int[]
+		FROM result_on_non_flat_face as ro, unnest(ro.edges_in_non_face_ring)  as edge_ids
+		)
+		, edge_id AS ( --unesting edge within ring
+		SELECT ring_id, edge_id
+		FROM edge_ids, unnest(edge_ids) as edge_id
+		)
+		, edge_with_geom AS ( --join to get edge data from edge_data
+			SELECT ring_id, edge_id, ed.left_face, ed.right_face,  ed.geom
+			FROM edge_id
+				NATURAL JOIN bdtopo_topological.edge_data As ed
+		)
+		, old_face_id AS (
+			SELECT DISTINCT left_face as face_id
+			FROM edge_with_geom
+			UNION 
+			SELECT DISTINCT right_face as face_id
+			FROM edge_with_geom 
+			UNION SELECT unnest(ro.faces_to_delete)
+			FROM result_on_non_flat_face as ro
+		)
+		,geom_collected AS (--constructing a grouping of edge geom per ring
+			SELECT ring_id , ST_Collect(geom) AS edge_collected
+			FROM edge_with_geom
+			GROUP BY ring_id
+		)
+		 ,potential_faces AS (--getting potential face where the ring could potentially within, and that are not in the deleted list
+			--it is potential because we use bbox, but we must check with actual geometry
+			SELECT ring_id, edge_collected, face_id AS potential_face_id
+				,CASE --adding a security to alwys include 0 face, in case the ring is wihtin the universal face (0)
+					WHEN face_id<> 0 THEN ST_GetFaceGeometry('bdtopo_topological', face_id) 
+					ELSE ST_GeomFromtext('POLYGON EMPTY',ST_SRID(edge_collected)) 
+				END as face_geom
+			FROM geom_collected as gc, bdtopo_topological.face as f
+			WHERE (ST_Within(gc.edge_collected,f.mbr) OR  f.face_id = 0) --including 0 face
+				AND NOT EXISTS (
+					SELECT 1 
+					FROM faces_to_delete as ftd
+					WHERE ftd.face_to_delete = f.face_id
+					)
+		)
+		,exact_face AS ( --use the actual face geometry to perform the within test, include the 0 face in case there are no others
+			SELECT DISTINCT ON (ring_id) ring_id, potential_face_id --the disctinct and ORDER are essentials
+			FROM potential_faces
+				WHERE (ST_Within(edge_collected,face_geom) = TRUE OR potential_face_id = 0)
+				ORDER BY ring_id, potential_face_id DESC , ST_Area(face_geom) ASC
+		)
+		,preparing_update AS ( --listing edge with associated new face_id 
+			SELECT DISTINCT ON (ei.edge_id) ef.ring_id, ei.edge_id, potential_face_id --distinct is just a security
+			FROM exact_face as ef , edge_id as ei
+			WHERE ef.ring_id = ei.ring_id
+		)
+		, updating_edges AS ( --we update edge 
+			UPDATE bdtopo_topological.edge_data as ed SET (left_face,right_face)  = (potential_face_id, potential_face_id)
+			FROM preparing_update AS pu
+			WHERE ed.edge_id = pu.edge_id
+				AND (left_face != potential_face_id OR right_face!=potential_face_id) --no need to update if already OK
+			RETURNING ed.edge_id 
+		)
+		SELECT --finale, preparing output
+		(SELECT array_agg(edge_id) AS updated_edge_ids FROM --outputing updated edge, by merging previously updated with newly updated
+			(SELECT edge_id FROM updating_edges UNION SELECT unnest(ro.updated_edges)  as edge_id FROM result_on_non_flat_face as ro) AS sub
+		) AS updated_edges
+		,(SELECT array_agg(face_id) AS old_face_id  --updating the list of face_id to delete.
+			FROM old_face_id  as ofi
+			WHERE NOT EXISTS ( -- we don't want to delete a face id that was used by updated edge ! 
+				SELECT 1 
+				FROM exact_face as ef
+				WHERE ef.potential_face_id = ofi.face_id
+			)) AS old_face_id
+		INTO updated_edges, faces_to_delete ; 
+ 
+		RETURN   ;
+	END ;
+	$BODY$
+LANGUAGE plpgsql VOLATILE; 
+
 
 
 /*
@@ -371,22 +503,12 @@ LANGUAGE plpgsql VOLATILE;
  ST_GeomFromtext('LINESTRINGZ(-3952.33 20574.37 0,-3953.10 20572.09 0)',932011) 
  WHERE edge_id = 122; 
  */
+  
  
- /*
-  given a list of edge to update
-			compute the cicle for each edge
-			deduplicate the cycles
-			for each cycle, check if it forms a face or not
-				not_forming_face are separated to be dealt with later
-			for each cycle, check if the corresponding face_id (left or right depending on the sign) are homogenous (that is, all face_id in a cycle should be identical)
-				if homogeneous, do nothing
-				if not homogenous, 
-					create a new face corresponding to the cicle
-					collect the different face_id in the non-homogeneous cycle (aka face_to_delete)
-					update all face_id (left or right depending on the sign of s_edge_id) with new face
-*/
 
-	--WITH result_on_non_flat_face AS (
+
+	--DELETE FROM bdtopo_topological.face
+	--WHERE face_id = ANY (ARRAY[204,205,209,210, 211])
+
 	SELECT *
-	FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface('bdtopo_topological'  , ARRAY[405,406,407,411])
-	--)
+	FROM rc_RecomputeFaceLinking_fewedges('bdtopo_topological', ARRAY[420]);
