@@ -1,7 +1,7 @@
 ﻿----------
 -- Rémi-C , IGN THALES
 --02/2015
--- changing st_modedgesplit ot take into account precision
+-- function that tell if a edge sequence forms a true face or a flat face
 
 DROP FUNCTion if exists topology.rc_IsRingFace(s_edge_ids int[]) ;
 CREATE OR REPLACE FUNCTION topology.rc_IsRingFace(s_edge_ids int[])
@@ -33,10 +33,6 @@ $BODY$
   COST 100; 
 COMMENT ON FUNCTION topology.rc_IsRingFace(s_edge_ids int[]) IS 
 	'args: s_edge_ids - Return True or False depending on the fact that the given edge sequence (ring) forms a true face or not';
-	
- 
 
-
-	SELECT topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,390 ,-390 ,-391 ,-392 ]) ; 
-	SELECT topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,-393 ,-394 ,-392 ]) ; 
- 
+SELECT topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,390 ,-390 ,-391 ,-392 ]) ; 
+SELECT topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,-393 ,-394 ,-392 ]) ; 
