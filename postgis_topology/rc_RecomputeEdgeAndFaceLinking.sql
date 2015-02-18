@@ -37,7 +37,7 @@ $BODY$
 				-- if edge is coming to node, set next_left_edge
 				-- if edge is going out of node, set next_right_edge 
 		SELECT  topology.rc_RecomputeEdgeLinking(topology_name , nodes_to_update) into updated_edges ; 
-		SELECT  topology.rc_RecomputeFaceLinking_fewedges(topology_name , updated_edges) into updated_faces ; 
+		--SELECT  topology.rc_RecomputeFaceLinking_fewedges(topology_name , updated_edges) into updated_faces ; 
 	--RAISE EXCEPTION 'not implemetned yet %',updated_edges;
 		RETURN  ;
 	END ;
@@ -168,15 +168,60 @@ $BODY$
 
 			delete face_to_delete.
 				Try to delete, an error in relation means something went wrong.
-			
-			
-			
+			 
 	*/ 
 	DECLARE     
 		_q TEXT; 
 		_r record; 
-		_face_ids_to_delete INT[] ;
-		_new_face_edges_geom geometry[];
+		_face_ids_to_delete INT[] ; 
+		_edges_in_non_face_ring TEXT[]; 
+		_updated_edges INT[] ; 
+	BEGIN     	  
+		RAISE NOTICE 'edges to update : %', edges_to_update  ;
+
+		--create new face, update edge left and right face when dealing with regular face (ie non-flat face)
+		SELECT topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name  , edges_to_update)
+		INTO _face_ids_to_delete, _edges_in_non_face_ring, _updated_edges ;
+
+		--
+		
+		--recomputing edge_linking : 
+		--RAISE EXCEPTION 'not implemetned yet  % %', _face_ids_to_delete,  _new_face_edges_geom ;
+		RETURN  ARRAY[1,2];
+	END ;
+	$BODY$
+LANGUAGE plpgsql VOLATILE; 
+
+
+
+
+DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[] ) ;
+CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[],
+	OUT _updated_edges INT[], OUT _face_ids_to_delete INT[],OUT _edges_in_non_face_ring TEXT[] )
+  AS
+$BODY$  
+	/**
+	@brief given a topoology where node-edge likning is correct, and edge-edge linking also, update face-linking (left_face, ...)
+	@WARNING DONT USE THIS FUNCTION ALONE (also need to deal with flat-face, isolatednode, and delete old face_id)
+		givena list of edge to update
+			compute the cicle for each edge
+			deduplicate the cycles
+			for each cycle, check if it forms a face or not
+				not_forming_face are separated to be dealt with later
+			for each cycle, check if the corresponding face_id (left or right depending on the sign) are homogenous (that is, all face_id in a cycle should be identical)
+				if homogeneous, do nothing
+				if not homogenous, 
+					create a new face corresponding to the cicle
+					collect the different face_id in the non-homogeneous cycle (aka face_to_delete)
+					update all face_id (left or right depending on the sign of s_edge_id) with new face 
+
+		@return _updated_edges : edge that have been modified (left_face and right_face column exclusively)
+		@return _face_ids_to_delete : list of faces that were used by updated edge. NOT safe to delete until flat-face have been dealt with and isolated_node too
+		@return _edges_in_non_face_ring : array of ring (array of edge) that for flat face. 
+	*/ 
+	DECLARE     
+		_q TEXT; 
+		_r record;   
 	BEGIN     	  
 		RAISE NOTICE 'edges to update : %', edges_to_update  ;
 		
@@ -186,79 +231,132 @@ $BODY$
 		SELECT DISTINCT 
 			unnest(edges_to_update)  
 			AS edge_id
-		)
-		, rings AS ( --for each edge, geztting the ring it is in, (aka the face )
-			SELECT edge_id as base_id, f.sequence as ordinality, f.edge AS edge_id
+		) 
+		 ,rings AS  ( --for each edge, geztting the ring it is in, (aka the face ), but we don't want the same ring twice
+			SELECT DISTINCT ON (edge_id) edge_id as base_id, f.sequence as ordinality, f.edge AS edge_id
 			FROM edges_to_up, topology.GetRingEdges('bdtopo_topological',edge_id ) AS f 
-			ORDER BY base_id, ordinality, edge_id  
+			ORDER BY edge_id , base_id
+		)
+		,real_faces AS ( --check wether the ring form a real face (i.e not a flat face)
+			SELECT base_id, topology.rc_IsRingFace(array_agg(edge_id)) as is_this_ring_a_real_face
+			FROM rings
+			GROUP BY base_id 
 		)
 		, list_of_edge_faces AS ( --joingin the edge with edge table, to get sign and face_id of edge
 			SELECT r.base_id, r.ordinality, abs(r.edge_id) as edge_id, ed.left_face as face_id, geom as edge_geom, +1 as sign
 			FROM rings AS r
 				LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
 			WHERE r.edge_id >0 
-			UNION ALL 
+				--AND EXISTS --we don't take ring that dont form real face
+				--	(SELECT 1 FROM real_faces  as rf WHERE rf.base_id = r.base_id AND is_this_ring_a_real_face = TRUE)
+				UNION ALL 
 				SELECT r.base_id, r.ordinality, abs(r.edge_id) as edge_id , ed.right_face as face_id, geom as edge_geom, -1 as sign
-				FROM rings AS r
-					LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
-				WHERE r.edge_id <0    
+			FROM rings AS r
+				LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
+			WHERE r.edge_id <0    
+				--AND EXISTS --we don't take ring that dont form real face
+				--	(SELECT 1 FROM real_faces  as rf WHERE rf.base_id = r.base_id AND is_this_ring_a_real_face = TRUE)
 		) 
-		 , problematic_faces AS ( -- this is a list of ring with more than 1 face_id in it
+		, problematic_rings AS ( -- this is a list of ring with not homogeneous face_id
 			SELECT *
 			FROM (
 				SELECT base_id , count(*) as nb_of_different_face_id
 				FROM 
 				 ( 	SELECT base_id, face_id  
-					FROM list_of_edge_faces
-					GROUP BY base_id, face_id ) AS sub
+					FROM list_of_edge_faces as r 
+					WHERE   EXISTS --we don't take ring that dont form real face
+						(SELECT 1 FROM real_faces  as rf WHERE rf.base_id = r.base_id AND rf.is_this_ring_a_real_face = TRUE)
+					GROUP BY base_id, face_id 
+					) AS sub
 				GROUP BY base_id ) AS nb_distinct_values
 			WHERE nb_of_different_face_id> 1 
 			ORDER BY base_id
 		)
 		, face_id_to_delete AS (--here is the list of face_id to delete because they are used in non-unanimous ring
 			SELECT DISTINCT ON (face_id) face_id
-			FROM problematic_faces as pf
+			FROM problematic_rings as pf
 				LEFT OUTER JOIN list_of_edge_faces as le ON (pf.base_id = le.base_id)
 		)
-		 , new_face_mbr AS ( --computing the bbox of new face
-			SELECT base_id,  rc_FindNextValue('bdtopo_topological', 'face', 'face_id') as nv , ST_Envelope(ST_Collect(edge_geom) ) as mbr, ST_Collect(edge_geom)  as collection
+		, new_face_mbr AS ( --computing the bbox of new face
+			SELECT base_id
+				,  rc_FindNextValue('bdtopo_topological', 'face', 'face_id') as nv 
+				, ST_Envelope(ST_Collect(edge_geom) ) as mbr
+				--, ST_Collect(edge_geom)  as collection
+				--, ST_Astext(ST_GeometryN(ST_Polygonize(edge_geom),1) )AS face_geom
 			FROM list_of_edge_faces AS le 
-			WHERE EXISTS (SELECT 1 FROM problematic_faces AS pf WHERE pf.base_id  = le.base_id)
+			WHERE EXISTS (SELECT 1 FROM problematic_rings AS pf WHERE pf.base_id  = le.base_id)
 			GROUP BY base_id
 			ORDER BY base_id 
 		)
 		, new_faces as ( --inserting new faces  into face table
 			INSERT INTO bdtopo_topological.face (face_id, mbr) 
-			SELECT --rc_FindNextValue('bdtopo_topological', 'face', 'face_id') AS new_face_id,  
+			SELECT 
 				nv , mbr
 			FROm new_face_mbr AS pf  
 			RETURNING face_id 
 		)
 		 , prepare_edges_update AS (--getting together information to prpare edge update
 			SELECT nf.nv, lo.*
+				,  (count(*) over(PARTITION by edge_id) -1)::int::boolean AS need_update_left_and_right
+				--we need to separate case when needong to update BOTH, because several update of same row is forbiden in CTE
 			FROM new_face_mbr AS nf,
 				list_of_edge_faces as lo 
 			WHERE nf.base_id = lo.base_id  
-		)
-		,update_left_face AS ( --updating edge
+		) 
+		------
+		--NOTE : postgres limitation : can't update same things in several CTE, hence the need to do 3 separate update. 
+		------
+		,update_edge_only_left_face AS (  --updating left_face of edge with new face id
 			UPDATE bdtopo_topological.edge_data AS ed SET  left_face   = nv 
 			FROM prepare_edges_update AS pe
-			WHERE pe.edge_id  = ed.edge_id AND pe.sign <0
-			RETURNING ed.edge_id  
-		) 
-		,update_right_face AS ( --updating edge
-			UPDATE bdtopo_topological.edge_data AS ed SET  right_face   = nv 
-			FROM prepare_edges_update AS pe
 			WHERE pe.edge_id  = ed.edge_id AND pe.sign >0
+				AND need_update_left_and_right = FALSE
 			RETURNING ed.edge_id  
 		)
-		SELECT  (SELECT array_agg(face_id) face_ids_to_delete FROM face_id_to_delete) as face_ids_to_delete
-			 , (SELECT array_agg(collection) AS new_face_edges_geom FROM new_face_mbr) AS new_face_edges_geom
-		INTO _face_ids_to_delete,  _new_face_edges_geom ;
-		
-		--recomputing edge_linking : 
-		--RAISE EXCEPTION 'not implemetned yet  % %', _face_ids_to_delete,  _new_face_edges_geom ;
-		RETURN  ARRAY[1,2];
+		,update_edge_only_right_face AS (   --updating right_face of edge with new face id
+			UPDATE bdtopo_topological.edge_data AS ed SET  right_face   = nv 
+			FROM prepare_edges_update AS pe
+			WHERE pe.edge_id  = ed.edge_id AND pe.sign <0
+				AND need_update_left_and_right = FALSE
+			RETURNING ed.edge_id   
+		)
+		,update_edge_right_and_left AS( --updating both left_face and right_face of edge with new face id
+			UPDATE bdtopo_topological.edge_data AS ed SET (left_face,right_face )  = (face_ids[1],face_ids[2])
+			FROM ( --first grouping left and right face_id, so they are on one row
+				SELECT edge_id, array_agg(nv ORDER BY sign DESC) as face_ids
+				FROM prepare_edges_update
+				WHERE need_update_left_and_right = TRUE
+				GROUP BY edge_id
+			) AS sub
+			WHERE ed.edge_id = sub.edge_id
+			RETURNING ed.edge_id  
+		)
+		SELECT --finale
+			(SELECT array_agg(face_id_to_delete)FROM face_id_to_delete) as face_ids_to_delete 
+			, ( --very compliated, because by default there is no (int[])[], so we use a (text)[], where text is in fact int[]
+				--grouping all ring
+				SELECT array_agg(sub2.edges_to_update::text) AS edges_to_update
+				FROM ( --grouping by ring
+					SELECT base_id, array_agg(edge_to_update )  as edges_to_update
+					FROM ( --getting list of edge in ring that are not proper face
+						SELECT DISTINCT rf.base_id, abs(edge_id)  as edge_to_update
+						FROM real_faces  AS rf , rings as r
+						WHERE is_this_ring_a_real_face = FALSE
+							AND r.base_id = rf.base_id
+					)  as sub
+					GROUP BY base_id )  as sub2
+			) as edges_in_non_face_ring
+			, (--grouping
+				SELECT array_agg(edge_id) 
+				FROM --gettting together all update result. Union to avoid duplicates
+				(	SELECT * FROM update_edge_only_left_face
+					UNION SELECT * FROM update_edge_only_right_face
+					UNION SELECT * FROM update_edge_right_and_left 
+				)AS update_face  
+			) as updated_edges
+		INTO _face_ids_to_delete, _edges_in_non_face_ring, _updated_edges ;
+		 
+		RETURN   ;
 	END ;
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
@@ -266,100 +364,29 @@ LANGUAGE plpgsql VOLATILE;
 --121 , 122, 127
 
 
+/*
+
 
   UPDATE bdtopo_topological.edge_editing SET edge_geom = 
  ST_GeomFromtext('LINESTRINGZ(-3952.33 20574.37 0,-3953.10 20572.09 0)',932011) 
  WHERE edge_id = 122; 
-  
-  /*
-	WITH edges_to_up AS ( -- unnesting the list of edges to update
-		SELECT DISTINCT 
-			unnest(ARRAY[121,122,127]) 
-			--unnest(ARRAY[ 127]) 
-			AS edge_id
-	)
-	, rings AS ( --for each edge, geztting the ring it is in, (aka the face )
-		SELECT edge_id as base_id, f.sequence as ordinality, f.edge AS edge_id
-		FROM edges_to_up, topology.GetRingEdges('bdtopo_topological',edge_id ) AS f 
-		ORDER BY base_id, ordinality, edge_id  
-	)
-	, list_of_edge_faces AS ( --joingin the edge with edge table, to get sign and face_id of edge
-		SELECT r.base_id, r.ordinality, abs(r.edge_id) as edge_id, ed.left_face as face_id, geom as edge_geom, +1 as sign
-		FROM rings AS r
-			LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
-		WHERE r.edge_id >0 
-		UNION ALL 
-			SELECT r.base_id, r.ordinality, abs(r.edge_id) as edge_id , ed.right_face as face_id, geom as edge_geom, -1 as sign
-			FROM rings AS r
-				LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
-			WHERE r.edge_id <0   
-		UNION ALL --only for debug
-		SELECT 121, 0,121,2, NULL, 1
-		UNION ALL
-		SELECT 127, 0,121,3, NULL, 1
-	) 
-	 , problematic_faces AS ( -- this is a list of ring with more than 1 face_id in it
-		SELECT *
-		FROM (
-			SELECT base_id , count(*) as nb_of_different_face_id
-			FROM 
-			 ( 	SELECT base_id, face_id  
-				FROM list_of_edge_faces
-				GROUP BY base_id, face_id ) AS sub
-			GROUP BY base_id ) AS nb_distinct_values
-		WHERE nb_of_different_face_id> 1 
-		ORDER BY base_id
-	)
-	, face_id_to_delete AS (--here is the list of face_id to delete because they are used in non-unanimous ring
-		SELECT DISTINCT ON (face_id) face_id
-		FROM problematic_faces as pf
-			LEFT OUTER JOIN list_of_edge_faces as le ON (pf.base_id = le.base_id)
-	)
-	 , new_face_mbr AS ( --computing the bbox of new face
-		SELECT base_id,  rc_FindNextValue('bdtopo_topological', 'face', 'face_id') as nv , ST_Envelope(ST_Collect(edge_geom) ) as mbr, ST_Collect(edge_geom)  as collection
-		FROM list_of_edge_faces AS le 
-		WHERE EXISTS (SELECT 1 FROM problematic_faces AS pf WHERE pf.base_id  = le.base_id)
-		GROUP BY base_id
-		ORDER BY base_id 
-	)
-	, new_faces as ( --inserting new faces  into face table
-		INSERT INTO bdtopo_topological.face (face_id, mbr) 
-		SELECT --rc_FindNextValue('bdtopo_topological', 'face', 'face_id') AS new_face_id,  
-			nv , mbr
-		FROm new_face_mbr AS pf  
-		RETURNING face_id
-
--- 		SELECT 32 AS face_id
--- 		UNION 
--- 		SELECT 33 AS face_id
-	)
-	 , prepare_edges_update AS (--getting together information to prpare edge update
-		SELECT nf.nv, lo.*
-		FROM new_face_mbr AS nf,
-			list_of_edge_faces as lo 
-		WHERE nf.base_id = lo.base_id  
-	)
-	,update_left_face AS ( --updating edge
-		UPDATE bdtopo_topological.edge_data AS ed SET  left_face   = nv 
-		FROM prepare_edges_update AS pe
-		WHERE pe.edge_id  = ed.edge_id AND pe.sign <0
-		RETURNING ed.edge_id  
-	) 
-	,update_right_face AS ( --updating edge
-		UPDATE bdtopo_topological.edge_data AS ed SET  right_face   = nv 
-		FROM prepare_edges_update AS pe
-		WHERE pe.edge_id  = ed.edge_id AND pe.sign >0
-		RETURNING ed.edge_id  
-	)
-	SELECT 
-		(SELECT array_agg(face_id_to_delete)FROM face_id_to_delete) as face_ids_to_delete, (SELECT array_agg(collection) FROM new_face_mbr) 
-
--- 	DELETE FROM bdtopo_topological.face
--- 	WHERE face_id >= 25 ; 
-
-	
--- 	, to_update AS (
--- 		SELECT *
--- 		FROM list_of_edge_faces
--- 	) 
+ */
+ 
+ /*
+  given a list of edge to update
+			compute the cicle for each edge
+			deduplicate the cycles
+			for each cycle, check if it forms a face or not
+				not_forming_face are separated to be dealt with later
+			for each cycle, check if the corresponding face_id (left or right depending on the sign) are homogenous (that is, all face_id in a cycle should be identical)
+				if homogeneous, do nothing
+				if not homogenous, 
+					create a new face corresponding to the cicle
+					collect the different face_id in the non-homogeneous cycle (aka face_to_delete)
+					update all face_id (left or right depending on the sign of s_edge_id) with new face
 */
+
+	--WITH result_on_non_flat_face AS (
+	SELECT *
+	FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface('bdtopo_topological'  , ARRAY[405,406,407,411])
+	--)
