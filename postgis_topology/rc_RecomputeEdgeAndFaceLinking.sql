@@ -139,11 +139,38 @@ CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges(topology_na
 $BODY$  
 	/**
 	@brief given a topoology where node-edge likning is correct, and edge-edge linking also, update face-linking (left_face, ...)
-		--for each edge to update
-			compute cycle
-			get associated left_face and right_face
-			if all identical, do nothing
-			else , set all to minimum of face_id
+
+		givena list of edge to update
+			compute the cicle for each edge
+			deduplicate the cycles
+			for each cycle, check if it forms a face or not
+				not_forming_face are separated to be dealt with later
+			for each cycle, check if the corresponding face_id (left or right depending on the sign) are homogenous (that is, all face_id in a cycle should be identical)
+				if homogeneous, do nothing
+				if not homogenous, 
+					create a new face corresponding to the cicle
+					collect the different face_id in the non-homogeneous cycle (aka face_to_delete)
+					update all face_id (left or right depending on the sign of s_edge_id) with new face
+
+			deal with not_forming_face_ring
+				check in which face they are included
+					first check in which mbr
+					then for each mbr found, compute the face geom,
+					check in which face geom the not_forming_face_ring is
+					collect old face_id of the not_forming_face_ring
+					update face_id with containing face
+
+			Merge face_to_delete list
+				merge list from both sources (not_forming_face_ring and regular)
+
+			deal with isolated node
+				for all isolated node that are in the face_to_delete list, update the containing_face
+
+			delete face_to_delete.
+				Try to delete, an error in relation means something went wrong.
+			
+			
+			
 	*/ 
 	DECLARE     
 		_q TEXT; 
