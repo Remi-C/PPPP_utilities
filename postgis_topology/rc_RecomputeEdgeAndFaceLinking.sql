@@ -180,7 +180,7 @@ $BODY$
 		_inserted_face INT[] ; 
 	BEGIN     	  
 		RAISE NOTICE 'edges to update : %', edges_to_update  ;
-
+ 
 		--create new face, update edge left and right face when dealing with regular face (ie non-flat face)
 		SELECT * FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name  , edges_to_update)
 		INTO  _inserted_face,_updated_edges,  _faces_to_delete, _edges_in_non_face_ring ;    
@@ -192,10 +192,11 @@ $BODY$
 			,  _updated_edges
 			,  _faces_to_delete)  
 		INTO _updated_edges, _faces_to_delete;  
-		RAISE EXCEPTION '% %',_updated_edges, _faces_to_delete ;
-		
-		--recomputing edge_linking : 
-		--RAISE EXCEPTION 'not implemetned yet  % %', _face_ids_to_delete,  _new_face_edges_geom ;
+		--RAISE EXCEPTION '% %',_updated_edges, _faces_to_delete ;
+
+		--update isolated node : 
+
+		--delete face_to_delete from face table
 		RETURN  ARRAY[1,2];
 	END ;
 	$BODY$
