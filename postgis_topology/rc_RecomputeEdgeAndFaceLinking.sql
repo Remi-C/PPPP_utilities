@@ -195,6 +195,7 @@ $BODY$
 		--RAISE EXCEPTION '% %',_updated_edges, _faces_to_delete ;
 
 		--update isolated node : 
+			
 
 		--delete face_to_delete from face table
 		RETURN  ARRAY[1,2];
@@ -375,8 +376,6 @@ $BODY$
 	END ;
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
-
---121 , 122, 127
  
  
 
@@ -461,9 +460,10 @@ $BODY$
 		)
 		,exact_face AS ( --use the actual face geometry to perform the within test, include the 0 face in case there are no others
 			SELECT DISTINCT ON (ring_id) ring_id, potential_face_id --the disctinct and ORDER are essentials
+				, CASE WHEN ST_Area(face_geom) >0 THEN ST_Area(face_geom) ELSE NULL END  as area --we assign the NULL area to universal face 
 			FROM potential_faces
 				WHERE (ST_Within(edge_collected,face_geom) = TRUE OR potential_face_id = 0)
-				ORDER BY ring_id, potential_face_id DESC , ST_Area(face_geom) ASC
+				ORDER BY ring_id,area ASC NULLS LAST, potential_face_id ASC --null is for the universal face, that should be used in last resort
 		)
 		,preparing_update AS ( --listing edge with associated new face_id 
 			SELECT DISTINCT ON (ei.edge_id) ef.ring_id, ei.edge_id, potential_face_id --distinct is just a security
