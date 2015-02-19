@@ -10,8 +10,9 @@
  
 
 DROP FUNCTION IF EXISTS topology.rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[] )
- returnS VOID AS
+CREATE OR REPLACE FUNCTION topology.rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[],
+OUT updated_edges INT[], OUT updated_nodes INT[], OUT created_faces INT[] , OUT deleted_faces INT[] )
+ AS
 $BODY$  
 	/**
 	@brief given nodes in a topology, where only start_node and end_node are supposed to be correct, recompute edge linking (next_left, next_right..), and face-linking (left_face, ...)
@@ -20,24 +21,26 @@ $BODY$
 				--list edge clockwise order
 				-- if edge is coming to node, set next_left_edge
 				-- if edge is going out of node, set next_right_edge
-		--then recompute face-linking
-			--list all minimal edge cycles (aka future face) , and keep left and right face id
-			for each cycle :
-				-- in a cycle, if all edges agree on face name, it hasn't changed
-				--else, create  a new face, update edges.
+		--then recompute face-linking 
+			--for regular face, create new face if necessary, update
+			--for flat face, find in which regular face they are, update
 		--then update isolated node  face
+		--then delete useless face
 	*/ 
 	DECLARE  
-		updated_edges INT[] ; 
-		updated_faces INT[] ; 
+		_updated_edges INT[] ;  
+		-- _updated_nodes INT[] ;
+		-- _ created_faces INT[] ;
+		-- _deleted_faces INT[] ; 
 	BEGIN     	  
 		--recomputing edge_linking :
 		--for each node : 
 				--list edge clockwise order
 				-- if edge is coming to node, set next_left_edge
 				-- if edge is going out of node, set next_right_edge 
-		SELECT  topology.rc_RecomputeEdgeLinking(topology_name , nodes_to_update) into updated_edges ; 
-		--SELECT  topology.rc_RecomputeFaceLinking_fewedges(topology_name , updated_edges) into updated_faces ; 
+		SELECT  * FROM topology.rc_RecomputeEdgeLinking(topology_name , nodes_to_update) into updated_edges ; 
+		SELECT  * FROM topology.rc_RecomputeFaceLinking_fewedges(topology_name , updated_edges) into 
+		 updated_edges , updated_nodes,created_faces ,deleted_faces  ; 
 	--RAISE EXCEPTION 'not implemetned yet %',updated_edges;
 		RETURN  ;
 	END ;
@@ -134,8 +137,10 @@ LANGUAGE plpgsql VOLATILE;
 
 
 DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges(topology_name TEXT, edges_to_update INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges(topology_name TEXT, edges_to_update INT[] )
- returnS int[] AS
+CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges(topology_name TEXT, edges_to_update INT[],
+OUT updated_edges INT[], OUT updated_nodes INT[], OUT created_faces INT[] , OUT deleted_faces INT[]
+ )
+AS
 $BODY$  
 	/**
 	@brief given a topoology where node-edge likning is correct, and edge-edge linking also, update face-linking (left_face, ...)
@@ -179,6 +184,9 @@ $BODY$
 		_updated_edges INT[] ; 
 		_inserted_face INT[] ; 
 		_updated_nodes INT[] ; 
+		_deleted_faces INT[] ; 
+		_created_faces INT[]  ;
+		
 	BEGIN     	  
 		RAISE NOTICE 'edges to update : %', edges_to_update  ;
  
@@ -195,22 +203,30 @@ $BODY$
 		INTO _updated_edges, _faces_to_delete;  
 		--RAISE EXCEPTION '% %',_updated_edges, _faces_to_delete ;
 
-		--update isolated node : 
-		SELECT  * FROM rc_CorrectIsolatedNode(topology_name, isolated_node_to_update INT[], face_to_delete INT[]  )
+		--update isolated node :  
+		SELECT  * FROM topology.rc_CorrectIsolatedNode(topology_name,  NULL,  _faces_to_delete  )
 		INTO  _updated_nodes; 
-
+		--RAISE EXCEPTION '_updated_nodes %',_updated_nodes ; 
 		--delete face_to_delete from face table
-		RETURN  ARRAY[1,2];
+			--delete face that dont have edges anymore
+		SELECT * FROM topology.rc_DeleteUselessFace('bdtopo_topological') INTO _deleted_faces;
+		
+		updated_edges := _updated_edges ;
+		updated_nodes := _updated_nodes ;
+		created_faces := _inserted_face ;
+		deleted_faces := _deleted_faces ;
+
+		RETURN  ;
 	END ;
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
 
 
+	
 
 
-DROP FUNCTION IF EXISTS topology.rc_CorrectIsolatedNode(topology_name TEXT, isolated_node_to_update INT[], face_to_delete INT[]  ) ;
-CREATE OR REPLACE FUNCTION topology.rc_CorrectIsolatedNode(topology_name TEXT, isolated_node_to_update INT[], face_to_delete INT[], OUT updated_node INT[] )
-returnS boolean 
+DROP FUNCTION IF EXISTS topology.rc_CorrectIsolatedNode(topology_name TEXT, isolated_node_to_update INT[], faces_to_delete INT[]  ) ;
+CREATE OR REPLACE FUNCTION topology.rc_CorrectIsolatedNode(topology_name TEXT, isolated_node_to_update INT[], faces_to_delete INT[], OUT updated_node INT[] )
   AS
 $BODY$  
 	/**
@@ -228,16 +244,27 @@ $BODY$
 	BEGIN     	
 	  
 		WITH input_data AS ( --proxy to isolate input, and be able to test the query outside of function
-		SELECT ARRAY[1392,1393] as nodes_to_update 
-			, ARRAY[212,213,214] AS faces_to_delete
+		SELECT    faces_to_delete
+			,isolated_node_to_update
+		)
+		,isolated_node_to_update AS (
+			SELECT DISTINCT node_id
+			FROM input_data AS id, unnest(id.isolated_node_to_update) AS node_id
 		)
 		, faces_to_delete AS ( --listing the face to delete, which should not be used as new value
 			SELECT DISTINCT face_id --distinct is a security
-			FROM input_data, unnest(faces_to_delete) as face_id
+			FROM input_data AS id, unnest(id.faces_to_delete) as face_id
 		)
 		, nodes_to_update AS ( --list of node whose containing_face field we want to update
-			SELECT DISTINCT  node_id  --distinct is a security
-			FROM input_data, unnest(nodes_to_update) node_id
+			SELECT DISTINCT  node_id 
+			FROM (
+			SELECT node_id  --distinct is a security
+			FROM faces_to_delete as fd , bdtopo_topological.node AS n 
+			WHERE fd.face_id = n.containing_face 
+				OR n.containing_face = 0 -- inlcuding all isolated node in universal face, not optimal ! 
+			UNION
+			SELECT node_id 
+			FROM isolated_node_to_update) AS sub
 		)
 		 , nodes_with_geom AS ( --joing to topology to get the node geom
 			SELECT *
@@ -279,15 +306,55 @@ $BODY$
 			FROM exact_face
 			WHERE node.node_id = exact_face.node_id
 				AND node.containing_face <> exact_face.face_id --no need to update if value is already correct
-			RETURNING node_id
+			RETURNING node.node_id
 		)
 		SELECT array_agg(node_id) as updated_node FROM updating_node INTO updated_node ; 
-		RAISE EXCEPTION 'updated_node : %',updated_node ;
-		RETURN  true ;
+
+		--RAISE EXCEPTION 'updated_node : %',updated_node ;
+		RETURN  ;
 	END ;
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
 
+
+DROP FUNCTION IF EXISTS topology.rc_DeleteUselessFace(topology_name TEXT) ;
+CREATE OR REPLACE FUNCTION topology.rc_DeleteUselessFace(topology_name TEXT , OUT deleted_faces INT[])
+  AS
+$BODY$  
+	/**
+	@brief given a topoology, delete face that dont have edge
+	*/ 
+	DECLARE     
+		_q TEXT; 
+		_r record;   
+	BEGIN     
+	_q := format('
+		WITH faces_to_delete AS (
+			SELECT DISTINCT face_id
+			FROM %1$s.face as f
+			WHERE NOT EXISTS (
+				SELECT 1  
+				FROM %1$s.edge_data as ed
+				WHERE ed.left_face = f.face_id OR ed.right_face = f.face_id
+			)
+			AND face_id <>0
+		),
+		deleting AS (
+			DELETE FROM %1$s.face as f
+			USING faces_to_delete as d
+			WHERE f.face_id = d.face_id
+			RETURNING f.face_id
+		)
+		SELECT array_agg(face_id) FROM deleting', topology_name);
+		--RAISE EXCEPTION '%',_q ; 
+		EXECUTE _q INTO deleted_faces ;
+		RETURN  ;
+	END ;
+	$BODY$
+LANGUAGE plpgsql VOLATILE; 
+
+--SELECT topology.rc_CorrectIsolatedNode('bdtopo_topological'::text, ARRAY[212], NULL::int[] ) ;
+--SELECT topology.rc_DeleteUselessFace('bdtopo_topological');
 
 DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[] ) ;
 CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[],
@@ -596,67 +663,7 @@ LANGUAGE plpgsql VOLATILE;
 	SELECT *
 	FROM rc_RecomputeFaceLinking_fewedges('bdtopo_topological', ARRAY[405,406,411]);
 	*/
-	WITH input_data AS ( --proxy to isolate input, and be able to test the query outside of function
-		SELECT ARRAY[1392,1393] as nodes_to_update 
-			, ARRAY[212,213,214] AS faces_to_delete
-	)
-	, faces_to_delete AS ( --listing the face to delete, which should not be used as new value
-		SELECT DISTINCT face_id --distinct is a security
-		FROM input_data, unnest(faces_to_delete) as face_id
-	)
-	, nodes_to_update AS ( --list of node whose containing_face field we want to update
-		SELECT DISTINCT  node_id  --distinct is a security
-		FROM input_data, unnest(nodes_to_update) node_id
-	)
-	 , nodes_with_geom AS ( --joing to topology to get the node geom
-		SELECT *
-		FROM nodes_to_update
-			NATURAL JOIN bdtopo_topological.node
-	)
-	---- NOTE
-	-- we first find the potentoal face_id, then compute geometry once per face (and not several time), then use it.
-	-- This way we may avoid a lot of computing of face geometry, which is costly
-	----
-	, potential_face_id AS ( --getting the face potentially containing the node, (potentially because it is a bbox test)
-		SELECT node_id, geom as node_geom , face_id  
-		FROM nodes_with_geom as nw, bdtopo_topological.face as f
-		WHERE (ST_Within(nw.geom,f.mbr) OR  f.face_id = 0) --including 0 face(univerqal face) for all nodes
-			AND NOT EXISTS ( --dont include faces that will be deleted
-				SELECT 1 
-				FROM faces_to_delete as ftd
-				WHERE ftd.face_id = f.face_id
-				)
-	)
-	, potential_faces_geom AS(	--listing the potential face and finding their geometry
-		SELECT face_id
-			, CASE --adding a security to alwys include 0 face, in case the ring is wihtin the universal face (0)
-					WHEN face_id<> 0 THEN ST_GetFaceGeometry('bdtopo_topological', face_id) 
-					ELSE NULL -- ST_GeomFromtext('POLYGON EMPTY',ST_SRID(node_geom)) 
-			END as face_geom
-		FROM (SELECT DISTINCT ON (face_id) face_id  , node_geom FROM potential_face_id) as sub 
-	)
-	,exact_face AS (--finding containing face with real face geometry. Use universal face by default, safe for absence of universal face
-		SELECT DISTINCT ON (pi.node_id) pi.node_id, pi.face_id 
-			, ST_Area(face_geom) as area
-		FROM potential_face_id as pi
-			NATURAL JOIN potential_faces_geom as pg
-		ORDER BY  pi.node_id, area ASC NULLS LAST, (pi.face_id=0) DESC,  pi.face_id DESC
-			--complicated order by : getting prioritarly the smallest face (excluding NULL face), then  prioritary the 0 face if any, then the highest face id if theire where no universal face
-	) 
-	, updating_node AS(--update the node accordingly if necessary
-		UPDATE bdtopo_topological.node set containing_face = face_id
-		FROM exact_face
-		WHERE node.node_id = exact_face.node_id
-			AND node.containing_face <> exact_face.face_id --no need to update if value is already correct
-		RETURNING node_id
-	)
-	SELECT array_agg(node_id) as updated_node FROM updating_node 
-	
+	 
 
-
-	SELECT *, (i=0)::int
-	FROM (
-	SELECT 1  AS i
-	UNION SELECT 0 
-	) AS sub
-	ORDER BY (i=0) DESC
+-- SELECT *
+-- FROM  topology.rc_CorrectIsolatedNode('bdtopo_topological', NULL, ARRAY[212])  ;
