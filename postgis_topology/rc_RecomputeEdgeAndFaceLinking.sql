@@ -178,6 +178,7 @@ $BODY$
 		_edges_in_non_face_ring TEXT[] ; 
 		_updated_edges INT[] ; 
 		_inserted_face INT[] ; 
+		_updated_nodes INT[] ; 
 	BEGIN     	  
 		RAISE NOTICE 'edges to update : %', edges_to_update  ;
  
@@ -195,7 +196,8 @@ $BODY$
 		--RAISE EXCEPTION '% %',_updated_edges, _faces_to_delete ;
 
 		--update isolated node : 
-			
+		SELECT  * FROM rc_CorrectIsolatedNode(topology_name, isolated_node_to_update INT[], face_to_delete INT[]  )
+		INTO  _updated_nodes; 
 
 		--delete face_to_delete from face table
 		RETURN  ARRAY[1,2];
@@ -206,6 +208,87 @@ LANGUAGE plpgsql VOLATILE;
 
 
 
+DROP FUNCTION IF EXISTS topology.rc_CorrectIsolatedNode(topology_name TEXT, isolated_node_to_update INT[], face_to_delete INT[]  ) ;
+CREATE OR REPLACE FUNCTION topology.rc_CorrectIsolatedNode(topology_name TEXT, isolated_node_to_update INT[], face_to_delete INT[], OUT updated_node INT[] )
+returnS boolean 
+  AS
+$BODY$  
+	/**
+	@brief given a topoology where isolated_node may have wrong face ,correct the containing_face of this nodes. 
+
+	for all nodes as input
+		get the potential containing face (bbox intersection)
+		list the unique potential containing face, compute the true geom of potential containing face
+		assign the node to the smallest containing face,or universal face
+		
+	*/ 
+	DECLARE     
+		_q TEXT; 
+		_r record;   
+	BEGIN     	
+	  
+		WITH input_data AS ( --proxy to isolate input, and be able to test the query outside of function
+		SELECT ARRAY[1392,1393] as nodes_to_update 
+			, ARRAY[212,213,214] AS faces_to_delete
+		)
+		, faces_to_delete AS ( --listing the face to delete, which should not be used as new value
+			SELECT DISTINCT face_id --distinct is a security
+			FROM input_data, unnest(faces_to_delete) as face_id
+		)
+		, nodes_to_update AS ( --list of node whose containing_face field we want to update
+			SELECT DISTINCT  node_id  --distinct is a security
+			FROM input_data, unnest(nodes_to_update) node_id
+		)
+		 , nodes_with_geom AS ( --joing to topology to get the node geom
+			SELECT *
+			FROM nodes_to_update
+				NATURAL JOIN bdtopo_topological.node
+		)
+		---- NOTE
+		-- we first find the potentoal face_id, then compute geometry once per face (and not several time), then use it.
+		-- This way we may avoid a lot of computing of face geometry, which is costly
+		----
+		, potential_face_id AS ( --getting the face potentially containing the node, (potentially because it is a bbox test)
+			SELECT node_id, geom as node_geom , face_id  
+			FROM nodes_with_geom as nw, bdtopo_topological.face as f
+			WHERE (ST_Within(nw.geom,f.mbr) OR  f.face_id = 0) --including 0 face(univerqal face) for all nodes
+				AND NOT EXISTS ( --dont include faces that will be deleted
+					SELECT 1 
+					FROM faces_to_delete as ftd
+					WHERE ftd.face_id = f.face_id
+					)
+		)
+		, potential_faces_geom AS(	--listing the potential face and finding their geometry
+			SELECT face_id
+				, CASE --adding a security to alwys include 0 face, in case the ring is wihtin the universal face (0)
+						WHEN face_id<> 0 THEN ST_GetFaceGeometry('bdtopo_topological', face_id) 
+						ELSE NULL -- ST_GeomFromtext('POLYGON EMPTY',ST_SRID(node_geom)) 
+				END as face_geom
+			FROM (SELECT DISTINCT ON (face_id) face_id  , node_geom FROM potential_face_id) as sub 
+		)
+		,exact_face AS (--finding containing face with real face geometry. Use universal face by default, safe for absence of universal face
+			SELECT DISTINCT ON (pi.node_id) pi.node_id, pi.face_id 
+				, ST_Area(face_geom) as area
+			FROM potential_face_id as pi
+				NATURAL JOIN potential_faces_geom as pg
+			ORDER BY  pi.node_id, area ASC NULLS LAST, (pi.face_id=0) DESC,  pi.face_id DESC
+				--complicated order by : getting prioritarly the smallest face (excluding NULL face), then  prioritary the 0 face if any, then the highest face id if theire where no universal face
+		) 
+		, updating_node AS(--update the node accordingly if necessary
+			UPDATE bdtopo_topological.node set containing_face = face_id
+			FROM exact_face
+			WHERE node.node_id = exact_face.node_id
+				AND node.containing_face <> exact_face.face_id --no need to update if value is already correct
+			RETURNING node_id
+		)
+		SELECT array_agg(node_id) as updated_node FROM updating_node INTO updated_node ; 
+		RAISE EXCEPTION 'updated_node : %',updated_node ;
+		RETURN  true ;
+	END ;
+	$BODY$
+LANGUAGE plpgsql VOLATILE; 
+
+
 DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[] ) ;
 CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[],
 	OUT inserted_face int[], OUT updated_edges INT[], OUT faces_to_delete INT[],OUT edges_in_non_face_ring TEXT[]  )
@@ -214,6 +297,8 @@ $BODY$
 	/**
 	@brief given a topoology where node-edge likning is correct, and edge-edge linking also, update face-linking (left_face, ...)
 	@WARNING DONT USE THIS FUNCTION ALONE (also need to deal with flat-face, isolatednode, and delete old face_id)
+	@PERFORMANCE : this function is only efficient for few edges (because we use GetRingEdges for each edge).
+	For better performance (like call this function on the whole network, one would need to write an efficient way to return all rings (for isntance, looking for connected components in the network formed by union of (-edge_id, next_left_edge) UNION  (edge_id, next_right_edge) ))
 		givena list of edge to update
 			compute the cicle for each edge
 			deduplicate the cycles
@@ -504,12 +589,74 @@ LANGUAGE plpgsql VOLATILE;
  ST_GeomFromtext('LINESTRINGZ(-3952.33 20574.37 0,-3953.10 20572.09 0)',932011) 
  WHERE edge_id = 122; 
  */
-  
  
-
-
 	--DELETE FROM bdtopo_topological.face
 	--WHERE face_id = ANY (ARRAY[204,205,209,210, 211])
-
+	/*
 	SELECT *
-	FROM rc_RecomputeFaceLinking_fewedges('bdtopo_topological', ARRAY[420]);
+	FROM rc_RecomputeFaceLinking_fewedges('bdtopo_topological', ARRAY[405,406,411]);
+	*/
+	WITH input_data AS ( --proxy to isolate input, and be able to test the query outside of function
+		SELECT ARRAY[1392,1393] as nodes_to_update 
+			, ARRAY[212,213,214] AS faces_to_delete
+	)
+	, faces_to_delete AS ( --listing the face to delete, which should not be used as new value
+		SELECT DISTINCT face_id --distinct is a security
+		FROM input_data, unnest(faces_to_delete) as face_id
+	)
+	, nodes_to_update AS ( --list of node whose containing_face field we want to update
+		SELECT DISTINCT  node_id  --distinct is a security
+		FROM input_data, unnest(nodes_to_update) node_id
+	)
+	 , nodes_with_geom AS ( --joing to topology to get the node geom
+		SELECT *
+		FROM nodes_to_update
+			NATURAL JOIN bdtopo_topological.node
+	)
+	---- NOTE
+	-- we first find the potentoal face_id, then compute geometry once per face (and not several time), then use it.
+	-- This way we may avoid a lot of computing of face geometry, which is costly
+	----
+	, potential_face_id AS ( --getting the face potentially containing the node, (potentially because it is a bbox test)
+		SELECT node_id, geom as node_geom , face_id  
+		FROM nodes_with_geom as nw, bdtopo_topological.face as f
+		WHERE (ST_Within(nw.geom,f.mbr) OR  f.face_id = 0) --including 0 face(univerqal face) for all nodes
+			AND NOT EXISTS ( --dont include faces that will be deleted
+				SELECT 1 
+				FROM faces_to_delete as ftd
+				WHERE ftd.face_id = f.face_id
+				)
+	)
+	, potential_faces_geom AS(	--listing the potential face and finding their geometry
+		SELECT face_id
+			, CASE --adding a security to alwys include 0 face, in case the ring is wihtin the universal face (0)
+					WHEN face_id<> 0 THEN ST_GetFaceGeometry('bdtopo_topological', face_id) 
+					ELSE NULL -- ST_GeomFromtext('POLYGON EMPTY',ST_SRID(node_geom)) 
+			END as face_geom
+		FROM (SELECT DISTINCT ON (face_id) face_id  , node_geom FROM potential_face_id) as sub 
+	)
+	,exact_face AS (--finding containing face with real face geometry. Use universal face by default, safe for absence of universal face
+		SELECT DISTINCT ON (pi.node_id) pi.node_id, pi.face_id 
+			, ST_Area(face_geom) as area
+		FROM potential_face_id as pi
+			NATURAL JOIN potential_faces_geom as pg
+		ORDER BY  pi.node_id, area ASC NULLS LAST, (pi.face_id=0) DESC,  pi.face_id DESC
+			--complicated order by : getting prioritarly the smallest face (excluding NULL face), then  prioritary the 0 face if any, then the highest face id if theire where no universal face
+	) 
+	, updating_node AS(--update the node accordingly if necessary
+		UPDATE bdtopo_topological.node set containing_face = face_id
+		FROM exact_face
+		WHERE node.node_id = exact_face.node_id
+			AND node.containing_face <> exact_face.face_id --no need to update if value is already correct
+		RETURNING node_id
+	)
+	SELECT array_agg(node_id) as updated_node FROM updating_node 
+	
+
+
+	SELECT *, (i=0)::int
+	FROM (
+	SELECT 1  AS i
+	UNION SELECT 0 
+	) AS sub
+	ORDER BY (i=0) DESC
