@@ -43,13 +43,13 @@ $BODY$
 	 RETURN ; 
 	END ;
 	$BODY$
-LANGUAGE plpgsql VOLATILE; 
+LANGUAGE plpgsql ; 
 
 
 
 
-DROP FUNCTION IF EXISTS topology.rc_GetRingEdges_notworking( topology_name text, s_edge_id int) ;
-CREATE OR REPLACE FUNCTION topology.rc_GetRingEdges_notworking( topology_name text, s_edge_id int)
+DROP FUNCTION IF EXISTS topology.rc_GetRingEdges_backward( topology_name text, s_edge_id int) ;
+CREATE OR REPLACE FUNCTION topology.rc_GetRingEdges_backward( topology_name text, s_edge_id int)
 RETURNS TABLE (ordinality int, signed_edge_id INT)
  AS
 $BODY$  
@@ -58,7 +58,7 @@ $BODY$
 	DECLARE   
 		_q text ; 
 	BEGIN       
-_q := format('
+_q := format(
  WITH RECURSIVE edgering AS ( 
 	WITH input_edge_id AS (
 		SELECT %1$s  as signed_edge_id
@@ -84,7 +84,7 @@ _q := format('
 			ELSE p.edge_id END
 	)  --note : row_number is not safe here, it cannont guarantee the ordering
 	SELECT (row_number() over())::int as ordinality, signed_edge_id::int
-	FROM edgering ;',s_edge_id,topology_name);
+	FROM edgering ;,s_edge_id,topology_name);
 	RETURN QUERY EXECUTE _q; 
 	 RETURN ; 
 	END ;
@@ -104,56 +104,52 @@ $BODY$
 		_q text ; 
 		_exception_case BOOLEAN ; 
 	BEGIN   
-		SELECT (abs(next_left_edge) =  abs(s_edge_id) OR abs(next_right_edge) =  abs(s_edge_id) ) AND  s_edge_id<0  INTO _exception_case
-		FROM bdtopo_topological.edge_data as ed 
-		WHERE edge_id = abs(s_edge_id) ; 
+-- 		SELECT (abs(next_left_edge) =  abs(s_edge_id) OR abs(next_right_edge) =  abs(s_edge_id) ) AND  s_edge_id<0  INTO _exception_case
+-- 		FROM bdtopo_topological.edge_data as ed 
+-- 		WHERE edge_id = abs(s_edge_id) ; 
+-- 
+-- 		IF _exception_case = FALSE THEN
+-- 			RETURN QUERY SELECT * FROM topology.GetRingEdges(topology_name, s_edge_id) ; 
+-- 
+-- 		ELSE --huho, bug of GetRingEdges, need workaround
+-- 		RETURN QUERY 
+-- 			WITH inverted AS (
+-- 				SELECT f.sequence AS seq, -1*f.edge as i_edge
+-- 				FROM topology.GetRingEdges(topology_name, s_edge_id) as f 
+-- 			)
+-- 			SELECT  (row_number() over())::int , i_edge
+-- 			FROM inverted
+-- 			ORDER BY seq DeSC ; 
+-- 		END IF ; 
 
-		IF _exception_case = FALSE THEN
-			RETURN QUERY SELECT * FROM topology.GetRingEdges(topology_name, s_edge_id) ; 
-
-		ELSE --huho, bug of GetRingEdges, need workaround
-		RETURN QUERY 
-			WITH inverted AS (
-				SELECT f.sequence AS seq, -1*f.edge as i_edge
-				FROM topology.GetRingEdges(topology_name, s_edge_id) as f 
-			)
-			SELECT  (row_number() over())::int , i_edge
-			FROM inverted
-			ORDER BY seq DeSC ; 
-		END IF ; 
-
+	if s_edge_id <0 THEN 
+		RETURN QUERY SELECT * FROM topology.rc_GetRingEdges_backward(topology_name, s_edge_id) ; 
+	ELSE 
+		RETURN QUERY SELECT * FROM topology.GetRingEdges(topology_name, -1* s_edge_id) ;  
+	END IF ; 
 	 RETURN ; 
 	END ;
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
- 
-/*
-
- */
- 580
-581
-583
--583
--582
--580
-
-580
--580
--581
--583
-583
-582
-
-
+  
+ WITH input_data AS (
+	SELECT 598 AS s_edge_id
+	LIMIT 1 
+ )
+ SELECT array_agg(f.edge ORDER BY f.sequence ASC) 
+ FROM input_data, topology.rc_GetRingEdges( bdtopo_topological, s_edge_id)  as f
+{ -598, 598,  597, 596, 601,-601,595,600,-600,-594}
+{ -598,-594,-600, 600, 595,-601,601,596, 597, 598}
 
 
 /*
  WITH input_data AS (
-	SELECT -580 AS s_edge_id
+	SELECT 598 AS s_edge_id
 	LIMIT 1 
  )
- SELECT f.*
- FROM input_data, topology.rc_GetRingEdges( 'bdtopo_topological', s_edge_id)  as f
+ SELECT f.*, g.*
+ FROM input_data, topology.GetRingEdges( bdtopo_topological, s_edge_id)  as f
+	FULL OUTER JOIN topology.rc_GetRingEdges_backward( bdtopo_topological, -s_edge_id)  as g on (f.sequence = g.ordinality)
  ORDER BY ordinality ASC; 
 
 
@@ -165,7 +161,7 @@ LANGUAGE plpgsql VOLATILE;
 
 WITH ring AS (
 	SELECT array_agg(f.signed_edge_id ORDER BY f.ordinality) as ordered_s_edge_ids
-	FROM topology.rc_GetRingEdges('bdtopo_topological',580) as f
+	FROM topology.rc_GetRingEdges(bdtopo_topological,580) as f
 )
 SELECT topology.rc_SignedArea(ordered_s_edge_ids)
 FROM ring ;
@@ -173,11 +169,11 @@ FROM ring ;
 
 WITH ring1 AS (
 	SELECT  array_agg(f.edge ORDER BY f.sequence)  as ordered_s_edge_ids
-	FROM topology.GetRingEdges('bdtopo_topological',580) as f
+	FROM topology.GetRingEdges(bdtopo_topological,580) as f
 )
 , ring2 AS (
 	SELECT  array_agg(-1*f.edge ORDER BY f.sequence DESC)  as ordered_s_edge_ids
-	FROM topology.GetRingEdges('bdtopo_topological',580) as f
+	FROM topology.GetRingEdges(bdtopo_topological,580) as f
 )
 SELECT topology.rc_SignedArea(ring1.ordered_s_edge_ids) , topology.rc_SignedArea(ring2.ordered_s_edge_ids)
 FROM ring1,ring2 ;
@@ -186,11 +182,11 @@ FROM ring1,ring2 ;
 
 WITH ring1 AS (
 	SELECT  array_agg(f.edge ORDER BY f.sequence)  as ordered_s_edge_ids
-	FROM topology.rc_GetRingEdges('bdtopo_topological',580) as f
+	FROM topology.rc_GetRingEdges(bdtopo_topological,580) as f
 )
 , ring2 AS (
 	SELECT  array_agg(f.edge ORDER BY f.sequence)  as ordered_s_edge_ids
-	FROM topology.rc_GetRingEdges('bdtopo_topological',-580) as f
+	FROM topology.rc_GetRingEdges(bdtopo_topological,-580) as f
 )
 SELECT topology.rc_SignedArea(ring1.ordered_s_edge_ids) , topology.rc_SignedArea(ring2.ordered_s_edge_ids)
 FROM ring1,ring2 ;
@@ -205,7 +201,7 @@ FROM ring1,ring2 ;
 -589 : -491.547405002406	{589,588,591,-591,-590,-587,587}
 WITH ring AS (
 	SELECT  array_agg(f.edge ORDER BY f.sequence)  as ordered_s_edge_ids
-	FROM topology.rc_GetRingEdges('bdtopo_topological',589) as f
+	FROM topology.rc_GetRingEdges(bdtopo_topological,589) as f
 )
 SELECT topology.rc_SignedArea(ring.ordered_s_edge_ids) , ordered_s_edge_ids
 FROM ring ;
@@ -216,16 +212,27 @@ FROM ring ;
 
 SELECT *
 FROM bdtopo_topological.edge_data as ed
-WHERE ed.edge_id = 580
+WHERE ed.edge_id = 594
+
+-598
+-594
+595
+-601
+601
+596
+597
+598
 
 
+
+ 
  WITH RECURSIVE edgering AS ( 
 	WITH input_edge_id AS (
-		SELECT 580 as signed_edge_id
+		SELECT -598 as signed_edge_id
 		LIMIT 1
 	)
 	SELECT  signed_edge_id
-		, edge_id
+		, edge_id as edge_id
 		, next_left_edge
 		, next_right_edge  
 	FROM input_edge_id, bdtopo_topological.edge_data as ed
@@ -233,8 +240,8 @@ WHERE ed.edge_id = 580
 	UNION  
 		SELECT  CASE WHEN p.signed_edge_id = p.next_right_edge THEN -1*p.edge_id ELSE p.edge_id END
 			, ed.edge_id
-			, ed.next_left_edge
-			, ed.next_right_edge  
+			,  CASE WHEN p.signed_edge_id >0 THEN ed.next_left_edge ELSE ed.next_right_edge  END AS next_left_edge
+			,  CASE WHEN p.signed_edge_id >0 THEN ed.next_right_edge ELSE ed.next_left_edge END AS next_right_edge
 		FROM edgering AS p , bdtopo_topological.edge_data as ed
 		WHERE ed.next_left_edge = 
 			CASE WHEN p.signed_edge_id = p.next_right_edge THEN -1*p.edge_id
@@ -245,22 +252,43 @@ WHERE ed.edge_id = 580
 	)
 	SELECT *
 	FROM edgering
-		
-	SELECT 
-		CASE WHEN p.signed_edge_id < 0 
-			THEN p.next_right_edge  
-			ELSE p.next_left_edge END
-		, e.edge_id
-		, e.next_left_edge
-		, e.next_right_edge  
-	FROM  bdtopo_topological.edge_data e, edgering p 
-	WHERE e.edge_id = 
-		CASE WHEN p.signed_edge_id < 0
-		THEN abs(p.next_right_edge) 
-		ELSE abs(p.next_left_edge) 
-		END 
-	)
-	) 
-	SELECT row_number() over() as ordinality, signed_edge_id 
-	FROM edgering 
 
+
+
+		 
+
+SELECT *
+FROM bdtopo_topological.edge_data as ed
+WHERE ed.edge_id = 598
+
+
+-636
+-636
+636
+598
+597
+596
+601
+-601
+595
+-594
+-598
+
+
+
+
+
+ WITH RECURSIVE edgering AS (
+	SELECT  
+		636 as signed_edge_id
+		, edge_id
+		,   -1 * next_left_edge AS next_left_edge
+		,  -1 *next_right_edge AS next_right_edge
+	FROM 
+	     bdtopo_topological.edge_data WHERE edge_id = 
+	     abs(-636)
+      UNION 
+      SELECT CASE WHEN p.signed_edge_id < 0 THEN p.next_right_edge 
+      ELSE p.next_left_edge END, e.edge_id, e.next_left_edge, e.next_right_edge 
+      FROM   bdtopo_topological.edge_data e, edgering p WHERE e.edge_id = CASE WHEN p.signed_edge_id < 0 
+     THEN abs(p.next_right_edge) ELSE abs(p.next_left_edge) END ) SELECT * FROM edgering;
