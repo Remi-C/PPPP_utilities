@@ -4,9 +4,48 @@
 --------------
 
 
+--importing real data 
+
+
+--creating index
+CREATE INDEX ON lancover_polygons_2010 (ogc_fid);
+CREATE INDEX ON lancover_polygons_2010 (lc_class);
+CREATE INDEX ON lancover_polygons_2010 (mod_ty);
+CREATE INDEX ON lancover_polygons_2010 USING GIST(wkb_geometry);
+
+SELECT *
+FROM lancover_polygons_2010  
+LIMIT 1 
+SELECT lc_class, sum(st_numpoints(wkb_geometry)), count(*) 
+FROm lancover_polygons_2010
+GROUP BY lc_class 
+
+DROP TABLE IF EXISTS lancover_polygons_2010_dumped ;
+CREATE TABLE lancover_polygons_2010_dumped AS 
+SELECT ogc_fid, lc_class, dmp.path, dmp.geom
+FROM lancover_polygons_2010, ST_Dump(wkb_geometry) as dmp; 
+
+SELECT lc_class, count(*), sum(st_numpoints(geom)), sum(ST_NumInteriorRings(geom))
+FROm lancover_polygons_2010_dumped
+GROUP BY lc_class
+
+SELECT *,st_numpoints(geom),ST_NumInteriorRings(geom)
+FROM lancover_polygons_2010_dumped
+ORDER BY ST_NumInteriorRings(geom)
+DESC
+LIMIT 100
+
+
+SELECT ST_GeometryType(wkb_geometry)
+FROM lancover_polygons_2010
+WHERE ogc_fid = 103209 AND lc_class=  34
+
+
+
 --emulating a big geom, dumping it to points 
 --150 sec for 60000 as a parameter
 
+/*
 DROP TABLE IF EXISTS geom_dumped_rings ;
 CREATE TABLE geom_dumped_rings AS 
 WITH fake_input_geom AS (--creating a polygon with possibly very big number of points, for test
@@ -18,6 +57,14 @@ WITH fake_input_geom AS (--creating a polygon with possibly very big number of p
 	) 
 	SELECT dmp.path[1] as rid, dmp.geom
 	FROM  fake_input_geom, ST_DumpRings(geom) as dmp;
+*/
+CREATE TABLE geom_dumped_rings AS  
+	SELECT dmp.path[1] as rid, dmp.geom
+	FROM  lancover_polygons_2010, ST_DumpRings(ST_GeometryN(wkb_geometry,1)) as dmp 
+	WHERE ogc_fid = 103209 AND lc_class=  34
+
+	
+	
 
 CREATE INDEX ON geom_dumped_rings (rid) ; 
 CREATE INDEX ON geom_dumped_rings USING GIST(geom) ; 
@@ -34,8 +81,9 @@ CREATE TABLE geom_dumped_to_points AS
 		FROM extracted_points
 		WINDOW w AS (PARTITION BY p1 ORDER BY p2)
 	) 
-	SELECT p1,p2, ST_MakeLine(geom,n_point) as segment
+	SELECT p1,p2, ST_SetSRID(ST_MakeLine(geom,n_point),ST_SRID(geom)) as segment
 	FROM segment  ; 
+	--15sec
 	
 SELECT count(*)
 FROM geom_dumped_to_points ; 
@@ -48,17 +96,22 @@ CREATE INDEX ON geom_dumped_to_points USING GIST(segment);
 --creating a grid covering the area , with some indexes
 DROP TABLE IF EXISTS temp_grid ; 
 CREATE TABLE temp_grid AS 
-	WITH extent AS (
-		SELECT ST_Extent(segment) as ext
+	WITH srid AS(
+		SELECT ST_SRID(segment) AS srid
 		FROM geom_dumped_to_points
+		LIMIT 1 
 	)
-	SELECT row_number() over() as nid, f.square
-	FROM extent, CDB_RectangleGrid(ST_Buffer(ext,2), 0.4,0.4) as f(square);
+	,extent AS (
+		SELECT  ST_Extent(segment) as ext
+		FROM srid,geom_dumped_to_points 
+	)
+	SELECT row_number() over() as nid, ST_SetSRID(f.square,srid) as square
+	FROM extent, srid,CDB_RectangleGrid(ST_SetSRID(ext,srid), 1500,1500) as f(square);
 
 CREATE INDEX ON temp_grid (nid) ;
 CREATE INDEX ON temp_grid USING GIST(square) ;
---0.375
-
+--0.375 
+ 
  --getting the mapping between segment and grid
 DROP TABLE IF  EXISTS mapping_segment_square;  
 CREATE TABLE  mapping_segment_square AS 
@@ -76,7 +129,7 @@ CREATE TABLE  mapping_segment_square AS
 DROP TABLE IF  EXISTS cutted_square;  
 CREATE TABLE  cutted_square AS 	
 	WITH line_grouped AS ( --we group lines for each ring to form lines
-		SELECT  nid, square  ,  ST_Node( ST_LineMerge(ST_Collect( line )) )AS line
+		SELECT  nid, square  ,  ST_LineMerge(ST_Collect( line ))  AS line -- removed a st_node on line 
 		FROM mapping_segment_square
 		GROUP BY   nid,  square   
 	)
@@ -91,6 +144,8 @@ CREATE TABLE  cutted_square AS
 CREATE INDEX ON cutted_square (gid) ;
 CREATE INDEX ON cutted_square (nid) ;
 CREATE INDEX ON cutted_square USING GIST  (geom ) ;
+CREATE INDEX ON cutted_square USING GIST  (ST_PointOnSurface(geom) ) ;
+
 --4sec
 
 --prepare final result : 
@@ -150,19 +205,46 @@ CREATE TABLE full_square_within  AS
 -- 			AND ST_Area(ST_Intersection(cs.geom,gd.geom) )> 0.001
 -- 		AND gd.rid > 0   ; 
 
-
+ 
 
 DROP TABLE IF EXISTS cutted_square_within;  
 CREATE TABLE cutted_square_within AS 
 	--WITH cutted_square_within_exterior_ring AS ( 
-		SELECT DISTINCT  cs.gid , cs.geom
-		FROm cutted_square AS cs, geom_dumped_rings as gd
-		WHERE ST_Intersects(ST_PointOnSurface(cs.geom),gd.geom)=TRUE
-			AND gd.rid = 0
+		SELECT DISTINCT  cs.gid , cs.geom, 'within' as status
+		FROm cutted_square AS cs,geom_dumped_rings as gd 
+		WHERE ST_Intersects(gd.geom, ST_PointOnSurface(cs.geom) )=TRUE
+			AND ST_Intersects(gd.geom, cs.geom  ) = TRUE
+			AND gd.rid = 0; 
 			--AND ST_Area(ST_Intersection(cs.geom,gd.geom) )> 0.001 
-		EXCEPT  
+
+CREATE INDEX ON cutted_square_within(gid);
+CREATE INDEX ON cutted_square_within USING GIST(geom);
+ 
+DROP TABLE IF EXISTS cutted_square_maybe_within;  
+CREATE TABLE cutted_square_maybe_within AS 
+		SELECT cs.gid , cs.geom 
+		FROm cutted_square AS cs
+		EXCEPT 
 		SELECT  DISTINCT cs.gid , cs.geom
 		FROM cutted_square AS cs, geom_dumped_rings as gd
 		WHERE ST_Intersects(ST_PointOnSurface(cs.geom),gd.geom)=TRUE
 			--AND ST_Area(ST_Intersection(cs.geom,gd.geom) )> 0.001
 		AND gd.rid > 0   ; 
+
+CREATE INDEX ON cutted_square_within (gid);
+CREATE INDEX ON cutted_square_within USING GIST(geom);
+
+
+
+---------trying another approach : tesselation !
+DROP TABLE IF EXISTS tesselation;
+CREATE TABLE tesselation AS 
+SELECT row_number() over() as tid, rid, triangle
+FROM geom_dumped_rings
+
+DROP TABLE IF EXISTS tesselation;
+CREATE TABLE tesselation AS 
+SELECT ST_Tesselate( geom) AS triangle
+FROM  lancover_polygons_2010 
+	WHERE ogc_fid = 103209 AND lc_class=  34
+ 
