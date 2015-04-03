@@ -66,7 +66,7 @@ CREATE FUNCTION toto ()
 returns 
 """
 
-p = re.compile('![(DROP.*?)CREATE]', re.MULTILINE|re.DOTALL) #note : ;*? is the lazzy way
+p = re.compile('(DROP.*?)CREATE', re.MULTILINE|re.DOTALL) #note : ;*? is the lazzy way
 p.findall(test_header)
 
 
