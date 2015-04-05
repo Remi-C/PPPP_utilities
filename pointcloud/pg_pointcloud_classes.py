@@ -265,7 +265,7 @@ def create_GD_if_not_exists():
     #we are not executing in postgres, we need to emulate postgres global dict 
         global GD        
         GD = {}
-        
+    return GD  
 
 
 def create_schemas_if_not_exists():
@@ -274,7 +274,8 @@ def create_schemas_if_not_exists():
         GD['rc'] = dict()
     if 'schemas' not in GD['rc']:  # creating the schemas dict if necessary
         GD['rc']['schemas'] = dict()
-
+    
+    return GD['rc']['schemas']
 
 def executing_from_postgres():
     """this function returns True or False depending if it is executed from within postgres"""

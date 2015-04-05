@@ -10,9 +10,9 @@ import datetime ;
 import numpy as np;
 import pandas as pd
 import numexpr ;
-import bottlenec
+import bottleneck;
 
-file_path = '/media/sf_USB_storage/DATA/Donnees_IGN/Terr_Mob_2/riegl_sphere_ts/TerMob2_LAMB93_0011.ply' ; 
+file_path = '/media/sf_perso_PROJETS/sample_riegl_18_01.ply' ; 
 
 begin = datetime.datetime.now() ; 
 #load ply data 
@@ -24,7 +24,11 @@ print "was laoding 3 million points in %s" % (end_loading-begin) ;
 #creating a numpy array with all points and all dimensions
 numpy_arr_tmp = plydata.elements[0].data 
 numpy_arr =  numpy_arr_tmp[['x','y','z']]
-np_floor = np.floor(numpy_arr.view(np.float32).reshape(numpy_arr.shape + (-1,)) )
+np_floor = numpy_arr 
+
+
+np_floor = np.floor(np.array( numpy_arr_tmp[['x','y','z']].tolist()))
+ 
 #getting all dimension names :
 index_name = [] ; 
 for i in range(0,len(plydata.elements[0].properties)):
@@ -32,30 +36,46 @@ for i in range(0,len(plydata.elements[0].properties)):
 
 #grouping points into 1 m3 
 #creating a data frame from data 
+rounded_column_list = ('x_f','y_f','z_f') ; 
 df = pd.DataFrame(np_floor,columns=('x_f','y_f','z_f'))
-df.reset_index(level=1, inplace=True ) #creating a column index 
-df.set_index(['x_f','y_f','z_f'], inplace=True)  #indexing the data frame with x,y,z
-end_df = datetime.datetime.now() ;
+#df.reset_index(level=1, inplace=True ) #creating a column index 
+#df.set_index(['x_f','y_f','z_f'], inplace=True)  #indexing the data frame with x,y,z
+#end_df = datetime.datetime.now() ;
 print "df creation %s" % (end_df-end_loading) ;
 ##sort and gruop by
 #creating a function for the group by
-def floor_xyz(row):
-    return floor(row[0]),floor(row[1]),floor(row[2])
-    
-grouped = df.groupby(floor_xyz) #groupby
+df['x_f'][12]
+
+#def floor_xyz(row):
+#    return floor(row[0]),floor(row[1]),floor(row[2])
+
+grouped = df.groupby(rounded_column_list)
+#grouped = df.groupby(floor_xyz) #groupby
+
+grouped.first()
 
 end_grouped = datetime.datetime.now() ;
 print "grouping %s" % (end_grouped-end_df) ;
 
+
+i=0;
 patch = []; 
 for (x_f, y_f,z_f), group in grouped:
     #print x_f,y_f,z_f;
-    #print group
-    patch.append(plydata.elements[0].data[group['index'].values]) ;  
+    #print type(group), group
+    #print group.index.get_values()
+    i += 1
+    if i >3:
+        break
+    point_index = np.asarray(group.index.get_values())
+    #print point_index
+    patch.append(plydata.elements[0].data[point_index]) ;  
  
 end_patch = datetime.datetime.now() ;
 print "grouping %s" % (end_patch-end_grouped) ;
 
+
+sorted_points = np.sort(patch[1], axis=0, kind='quicksort', order=('GPS_time'))
 grouped.groups
 first_group = grouped.first()
 first_group.values 
@@ -63,31 +83,14 @@ first_group.reset_index(level=1, inplace=True,)
 first_group.set_index(['GPS_time'], inplace=True) 
 print first_group
 sorted_points = np.sort(numpy_arr, axis=0, kind='quicksort', order=('x','y','z'))
-sorted_points[['x','y','z']]; 
+sorted_points[['GPS_time','x','y','z']]; 
 
-
-plydata[0]
 
 plydata.elements[0].properties._get_name()
 type(len(plydata.elements[0].properties[0])
 
 
     
-    
-len(plydata.elements[1]._get_name())
-
-plydata.propertie
-
-
-
-
-
-
-
-
-
-
-
 
 
 #############
