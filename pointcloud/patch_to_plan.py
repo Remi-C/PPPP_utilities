@@ -43,13 +43,10 @@ def perform_1_ransac_segmentation(
     :return indices: the indices of the point in p that belongs to the feature
     :return model: the model of the feature
     """
-    import plpy
     import pcl
     #prepare segmentation
     seg = p.make_segmenter_normals(ksearch=_ksearch, searchRadius=_search_radius)
 
-    toto = p.calc_normals(10, 10)
-    plpy.notice(toto)
 
     seg.set_optimize_coefficients(True)
     seg.set_model_type(sac_model)
