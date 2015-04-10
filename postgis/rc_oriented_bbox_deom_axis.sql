@@ -68,14 +68,14 @@ $BODY$
 
 		
 		WITH convex_hull AS (
-			SELECT ST_ConvexHull(i_geom) AS ch,ST_Centroid(i_geom) AS centroid  
+			SELECT ST_CollectionExtract(ST_ConvexHull(i_geom),3) AS ch,ST_Centroid(i_geom) AS centroid  
 		)
 		,segments AS (
-			SELECT  dmp.geom AS geom,ch,centroid, angle.angle
-			FROM ST_ConvexHull(i_geom) AS ch
-				,ST_Centroid(i_geom) AS centroid 
+			SELECT  dmp.geom AS geom,convex_hull.ch,convex_hull.centroid, angle.angle
+			FROM convex_hull   
 				, rc_DumpSegments(ST_ExteriorRing(ch) ) AS dmp 
 				,ST_Azimuth(ST_StartPoint(dmp.geom),ST_EndPoint(dmp.geom)) AS angle
+				WHERE ST_IsEmpty(convex_hull.ch) = FALSE
 		)  
 		,areas AS (
 			SELECT s.angle
