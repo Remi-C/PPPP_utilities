@@ -323,6 +323,7 @@ def get_schema(pcid, schemas, connection_string):
         import psycopg2
         print "getting the schema of pcid : %s from outside database (PSYCOPG2)\n" % pcid
         conn = psycopg2.connect(connection_string)
+        conn.set_client_encoding('utf-8')
         cur = conn.cursor() 
         cur.execute("""SELECT pf.srid, pf.schema, srs.srtext
             FROM pointcloud_formats as pf 
