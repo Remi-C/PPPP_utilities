@@ -4,7 +4,7 @@
 
 	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for planes inside, then cylinder
 	--note that we could do the same to detect cylinder
-DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection_from_patch ( pcpatch,  INT,INT,  FLOAT,FLOAT,FLOAT,INT);
+DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection_from_patch ( pcpatch,  INT,INT, FLOAT, INT ,FLOAT,FLOAT,INT);
 CREATE FUNCTION rc_py_plane_and_cylinder_detection_from_patch (
 	uncompressed_pcpatch pcpatch
 	,plane_min_support_points INT DEFAULT 4
@@ -32,22 +32,24 @@ then iteratively finding plan in the cloud using ransac
 import numpy as np
 import pcl 
 import sys
-
-sys.path.insert(1, '/media/sf_perso_PROJETS/PPPP_utilities/pointcloud') 
+#reload(pcl)
+sys.path.insert(1, '/media/big2to/PPPP_utilities/pointcloud') 
 
 
 import patch_to_plan as ptp
-reload(ptp)
+#reload(ptp)
 import pg_pointcloud_classes as pgp
-reload(pgp)
-connection_string = """host=localhost dbname=test_pointcloud user=postgres password=postgres port=5433"""
-GD = pgp.create_GD_if_not_exists()
-pgp.create_schemas_if_not_exists()
+#reload(pgp)
+connection_string = """host=localhost dbname=test_pointcloud user=postgres password=postgres port=5432"""
+if 'rc' not in GD:  # creating the rc dict if necessary
+    GD['rc'] = dict()
+if 'schemas' not in GD['rc']:  # creating the schemas dict if necessary
+    GD['rc']['schemas'] = dict()
 
     
 #converting the (uncompressed) patch to numpy point cloud p
 p = ptp.patch_to_pcl(uncompressed_pcpatch, GD['rc']['schemas'], connection_string)
-
+#plpy.notice(p)
 #finding the plane 
 result , p_reduced = ptp.perform_N_ransac_segmentation(
 	    p
@@ -59,11 +61,13 @@ result , p_reduced = ptp.perform_N_ransac_segmentation(
 	    , plane_max_iterations
 	    , plane_distance_threshold) ;
 
-plpy.notice(p_reduced)
+#plpy.notice(p_reduced)
 
 return result ; 
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 
+
+/*
 WITH pa AS (
 	SELECT gid, pc_uncompress(patch) as u_patch , pc_numpoints(patch) --, * 
 	FROM benchmark_cassette_2013.riegl_pcpatch_space
@@ -92,4 +96,4 @@ FROM pa ,rc_py_plane_and_cylinder_detection_from_patch (
 -- 	WHERE gid = 4523
 -- )
 -- TO '/tmp/test_patch'
-
+*/
