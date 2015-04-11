@@ -315,7 +315,7 @@ def get_schema(pcid, schemas, connection_string):
                 LEFT OUTER JOIN public.spatial_ref_sys AS srs ON (srs.srid = pf.srid)
             WHERE pcid = %d""" % pcid 
         result_query = plpy.execute(query, 1)  
-        schema_xml = result_query[0]['schema']
+        schema_xml = (result_query[0]['schema']).encode('utf-8')
         srid = int(result_query[0]['srid'])
         srtext = result_query[0]['srtext']
     else:
@@ -329,7 +329,7 @@ def get_schema(pcid, schemas, connection_string):
                 LEFT OUTER JOIN public.spatial_ref_sys AS srs ON (srs.srid = pf.srid)
             WHERE pcid = %s""", [pcid])
         result_query = cur.fetchone()
-        schema_xml = result_query[1] 
+        schema_xml = (result_query[1]).encode('utf-8')
         srid = int(result_query[0])
         srtext = result_query[2]
         conn.commit()
