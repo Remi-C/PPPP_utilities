@@ -89,13 +89,12 @@ $BODY$
 			ORDER BY area ASC , l1 ASC, l2 ASC
 			LIMIT 1 
 		)
-		 
 		SELECT a.angle, a.l1,a.l2, obbox.obbox  INTO angle, l1,l2,obbox
 		FROM  areas AS a
 			, ST_Rotate(ST_Centroid(box),  -a.angle ,  centroid) aS rot_bbox_center
 			,rc_BboxOrientedFromAxis(ST_X(rot_bbox_center), ST_Y(rot_bbox_center), 0 , a.l1,a.l2, - a.angle * 180/3.14)  AS obbox ;
 	 
-		
+		obbox := ST_SetSRID(obbox,ST_SRID(i_geom)) ; 
 	RETURN  ;
 END ; 
 	$BODY$
