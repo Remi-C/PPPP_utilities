@@ -184,11 +184,11 @@ def load_points_clouds_files_into_base(path_to_file, num_processes):
 
 def load_points_clouds_files_into_base_test():
     path_to_file = "/media/sf_USB_storage/DATA/Donnees_IGN/TrafiPollu/goudron_decoupe"
-    num_processes = 2
+    num_processes = 1
     load_points_clouds_files_into_base(path_to_file, num_processes)
 
 
-load_points_clouds_files_into_base_test()
+#load_points_clouds_files_into_base_test()
 
 #import ply_to_patch as ptp  
 #path_to_file = "/media/sf_USB_storage/DATA/Donnees_IGN/TrafiPollu/goudron_decoupe/cloud_0.ply"
