@@ -190,20 +190,28 @@ def patch_string_buff_to_numpy(string_buf, schemas, connection_string):
     return np.frombuffer(binary_string, dtype=mschema.numpy_dtype, offset=1 + 4 + 4 + 4) ,  (mschema,endianness, compression, npoints) 
 
 
-def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema):
+def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True):
     """convert an input numpy point array with custom dtype to numpy with double[] dtype"""
     """ @FIXME : using a double loop is very lame, could be done with pure numpy"""
     import numpy as np
     #create result
     points_double = np.zeros((numpy_spec_dtype.shape[0], mschema.ndims), dtype=np.float64)
+    
+    if use_scale_offset == True: 
+        #getting offset and scales
+        scales, offsets = mschema.construct_scales_offset()
+        #print scales, offsets
+        #filling it
+        for i in range(0, numpy_spec_dtype.shape[0]):
+            for j in range(0, mschema.ndims):
+                points_double[i][j] = numpy_spec_dtype[i][j] * scales[j] + offsets[j]
 
-    #getting offset and scales
-    scales, offsets = mschema.construct_scales_offset()
-    #print scales, offsets
-    #filling it
-    for i in range(0, numpy_spec_dtype.shape[0]):
-        for j in range(0, mschema.ndims):
-            points_double[i][j] = numpy_spec_dtype[i][j] * scales[j] + offsets[j]
+           
+    if use_scale_offset == False: 
+        for i in range(0, numpy_spec_dtype.shape[0]):
+            for j in range(0, mschema.ndims):
+                points_double[i][j] = numpy_spec_dtype[i][j]
+    
     return points_double, mschema
 
 
@@ -228,7 +236,7 @@ def numpy_double_to_numpy_spec(numpy_double_array_2D, mschema):
     for i in range(0, numpy_double_array_2D.shape[0]):
         for j in range(0, mschema.ndims):
             numpy_spec[i][j] = (numpy_double_array_2D[i][j] - offsets[j])\
-            / scales[j]
+            / np.float(scales[j])
     return numpy_spec
 
 
@@ -255,7 +263,10 @@ def numpy_double_to_WKB_patch(numpy_double_patch, mschema):
     """This function uses as input a 2D numpy double array,
     and convert it to a text representing the patch as WKB
     """
+    import numpy as np
     numpy_spec = numpy_double_to_numpy_spec(numpy_double_patch, mschema)
+    np.set_printoptions(precision=16)
+    #print 'numpy_spec from double' , numpy_spec
     return numpy_spec_to_patch(numpy_spec, mschema)
 
 

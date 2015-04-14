@@ -186,7 +186,6 @@ def getTestPoints():
     benchmark_cassette_2013.riegl_pcpatch_space  
     WHERE PC_NumPoints(patch) between 5000 and 10000
     LIMIT 1 
-    OFFSET 10
     """); 
     result = cur.fetchone()
     print 'patch found : %s'% result[0]
