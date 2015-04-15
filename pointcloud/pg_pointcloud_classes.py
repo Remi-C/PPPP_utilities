@@ -308,7 +308,7 @@ def get_schema(pcid, schemas, connection_string):
 
     #trying to get the schema from GD
     if str(pcid) in schemas:
-        print "schema %s was in global dictionnary GD\n" % pcid
+        #print "schema %s was in global dictionnary GD\n" % pcid
         return schemas[str(pcid)]
         #if we get it, stop there
 
@@ -321,7 +321,7 @@ def get_schema(pcid, schemas, connection_string):
 
     if executing_in_postgres == True:
         #use DBAPI to get the schema with given pcid
-        print "getting the schema of pcid : %s from within database (DBAPI)\n" % pcid
+        #print "getting the schema of pcid : %s from within database (DBAPI)\n" % pcid
         plpy.notice("getting the schema of pcid : "+str(pcid)+" from within database (DBAPI)\n")
         query = """SELECT pf.srid, pf.schema, srs.srtext
             FROM pointcloud_formats as pf 
@@ -334,7 +334,7 @@ def get_schema(pcid, schemas, connection_string):
     else:
         #use psycopg2 api to get the schema
         import psycopg2
-        print "getting the schema of pcid : %s from outside database (PSYCOPG2)\n" % pcid
+        #print "getting the schema of pcid : %s from outside database (PSYCOPG2)\n" % pcid
         conn = psycopg2.connect(connection_string)
         conn.set_client_encoding('utf-8')
         cur = conn.cursor() 
