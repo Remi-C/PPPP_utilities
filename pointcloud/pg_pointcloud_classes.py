@@ -105,7 +105,7 @@ class pcschema:
     def parsexml(self, xml_schema):
         """parse the input wml string and fill schema class member with it"""
         #import xml.etree.ElementTree as ET
-        xml_schema = xml_schema.lstrip()#.decode('utf-8')
+        xml_schema = xml_schema.lstrip().encode("utf-8")
         root = parse_no_namespace(xml_schema)
         self.ndims = len(root.findall(".//dimension"))
 
