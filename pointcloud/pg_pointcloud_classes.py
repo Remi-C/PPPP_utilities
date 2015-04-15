@@ -336,11 +336,13 @@ def get_schema(pcid, schemas, connection_string):
         conn = psycopg2.connect(connection_string)
         conn.set_client_encoding('utf-8')
         cur = conn.cursor() 
-        cur.execute("""SELECT pf.srid, pf.schema, srs.srtext
+        cur.execute("""SELECT pf.srid, convert_to(pf.schema,'UTF8') as schema, srs.srtext
             FROM pointcloud_formats as pf 
                 LEFT OUTER JOIN public.spatial_ref_sys AS srs ON (srs.srid = pf.srid)
             WHERE pcid = %s""", [pcid])
         result_query = cur.fetchone()
+        print result_query[1]
+        result_query[1] = result_query[1].encode('utf-8')
         schema_xml = (result_query[1]).encode('utf-8')
         srid = int(result_query[0])
         srtext = result_query[2]
