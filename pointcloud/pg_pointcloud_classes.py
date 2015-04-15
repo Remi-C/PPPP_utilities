@@ -342,8 +342,8 @@ def get_schema(pcid, schemas, connection_string):
             WHERE pcid = %s""", [pcid])
         result_query = cur.fetchone()
         toto = str(result_query[1])
-        toto = toto.encode('utf-8')
-        schema_xml = toto
+        titi = unicode(toto, "UTF-8")
+        schema_xml = titi
         srid = int(result_query[0])
         srtext = result_query[2]
         conn.commit()
