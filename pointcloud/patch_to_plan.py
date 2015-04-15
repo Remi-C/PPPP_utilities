@@ -18,8 +18,7 @@ def patch_to_pcl(pgpatch, schemas, connection_string):
     y_column_indice = schema.getNameIndex('Y')
     z_column_indice = schema.getNameIndex('Z')
     pt_xyz = np_array[:, (x_column_indice, y_column_indice, z_column_indice)]
-    pt_xyz = pt_xyz.reshape(pt_xyz.shape[0], 3)
-    pt_xyz -= np.array((650000, 6860000, 0)) 
+    pt_xyz = pt_xyz.reshape(pt_xyz.shape[0], 3) 
     #convert numpy to points
     p = pcl.PointCloud()
     p.from_array(pt_xyz.astype(np.float32))
