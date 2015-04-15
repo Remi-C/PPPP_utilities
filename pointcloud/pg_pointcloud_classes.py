@@ -59,7 +59,9 @@ class pcdimension:
 
         tmp = dim.find('./description')
         if tmp != None:
-            self.description = str(tmp.text)
+            temp2 = str(tmp.text)
+            temp3 = unicode(temp2, "UTF-8")
+            self.description = temp3
         else:
             self.description = str("No description")
 
