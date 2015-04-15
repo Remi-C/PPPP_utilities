@@ -228,7 +228,4 @@ def only_loading_points_for_paris():
 #ptp.ply_to_patch(path_to_file,connection_string,pcid,writing_query)
 
 
-import pg_pointcloud_classes as pgp
-schemas = {}
-connection_string = "host=172.16.3.50 dbname=test_pointcloud user=postgres password=postgres port=5432"
-print pgp.get_schema(6, schemas, connection_string)
+import pg_pointcloud_classes as pgp ; schemas = {} ; connection_string = "host=172.16.3.50 dbname=test_pointcloud user=postgres password=postgres port=5432" ;print pgp.get_schema(6, schemas, connection_string)

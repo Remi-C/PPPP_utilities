@@ -341,9 +341,9 @@ def get_schema(pcid, schemas, connection_string):
                 LEFT OUTER JOIN public.spatial_ref_sys AS srs ON (srs.srid = pf.srid)
             WHERE pcid = %s""", [pcid])
         result_query = cur.fetchone()
-        print result_query[1]
-        result_query[1] = result_query[1].encode('utf-8')
-        schema_xml = (result_query[1]).encode('utf-8')
+        toto = str(result_query[1])
+        toto = toto.encode('utf-8')
+        schema_xml = toto
         srid = int(result_query[0])
         srtext = result_query[2]
         conn.commit()
