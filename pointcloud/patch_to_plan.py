@@ -19,7 +19,7 @@ def patch_to_pcl(pgpatch, schemas, connection_string):
     z_column_indice = schema.getNameIndex('Z')
     pt_xyz = np_array[:, (x_column_indice, y_column_indice, z_column_indice)]
     pt_xyz = pt_xyz.reshape(pt_xyz.shape[0], 3)
-    
+    pt_xyz -= np.array((650000, 6860000, 0))
     #convert numpy to points
     p = pcl.PointCloud()
     p.from_array(pt_xyz.astype(np.float32))
@@ -129,7 +129,7 @@ def perform_N_ransac_segmentation_test():
     max_plane_number = 10
     _ksearch = 10
     _search_radius = 0.5
-    sac_model = pcl.SACMODEL_NORMAL_PLANE
+    sac_model = pcl.SACMODEL_PLANE
     _distance_weight = 0.1
     _max_iterations = 100
     _distance_threshold = 0.01
@@ -152,7 +152,7 @@ def test_pcl(cloud):
     
     seg = cloud.make_segmenter_normals(ksearch=50)
     seg.set_optimize_coefficients(True)
-    seg.set_model_type(pcl.SACMODEL_NORMAL_PLANE)
+    seg.set_model_type(pcl.SACMODEL_PLANE)
     seg.set_normal_distance_weight(0.1)
     seg.set_method_type(pcl.SAC_RANSAC)
     seg.set_max_iterations(100)
@@ -162,7 +162,7 @@ def test_pcl(cloud):
     print(model)
     
     
-perform_N_ransac_segmentation_test()
+#perform_N_ransac_segmentation_test()
 
 
 
