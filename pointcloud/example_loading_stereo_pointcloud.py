@@ -137,13 +137,9 @@ def find_all_ply_files(path_to_file):
     
     return matches
     
-def load_one_file((path_to_file,connection_string,pcid,writing_query,additional_offset)):
-    import ply_to_patch as ptp
-    print path_to_file
-    print connection_string
-    print pcid
-    print writing_query
-    return ptp.ply_to_patch(path_to_file,connection_string,pcid,writing_query,additional_offset)
+def load_one_file((path_to_file,connection_string,pcid,writing_query,additional_offset,grouping_rules)):
+    import ply_to_patch as ptp 
+    return ptp.ply_to_patch(path_to_file,connection_string,pcid,writing_query,additional_offset,grouping_rules)
     
    
 def load_points_clouds_files_into_base(path_to_file, num_processes):
@@ -154,7 +150,7 @@ def load_points_clouds_files_into_base(path_to_file, num_processes):
     pcid = 10 
     writing_query = " INSERT INTO trafi_pollu.goudron (file_name, patch) VALUES (%s, %s::pcpatch(" + str(pcid) + ")) "
     additional_offset = np.array((650832.75,6860905.4,43,0,0,0), dtype = np.double) 
-    
+    grouping_rules = np.array((250.0,250.0,1.0)) 
     #connecting to database, 
     conn = psycopg2.connect(connection_string)
     cur = conn.cursor()
@@ -167,7 +163,7 @@ def load_points_clouds_files_into_base(path_to_file, num_processes):
     
     function_arg = [] 
     for path in point_file_paths:
-        function_arg.append([path,connection_string,pcid,writing_query,additional_offset])
+        function_arg.append([path,connection_string,pcid,writing_query,additional_offset,grouping_rules])
     
     print function_arg  
     
@@ -188,8 +184,41 @@ def load_points_clouds_files_into_base_test():
     load_points_clouds_files_into_base(path_to_file, num_processes)
 
 
-#load_points_clouds_files_into_base_test()
+def only_loading_points_for_paris():
+    import ply_to_patch as ptp
+    import psycopg2
+    import numpy as np
+    import multiprocessing as mp; 
+    import datetime 
+    import datetime
+    
+    print 'starting to work',datetime.datetime.now()
+    
+    path_to_file = "/media/sf_USB_storage/DATA/Donnees_IGN/paris_20140616"
+    num_processes = 1
 
+    connection_string = """host=172.16.3.50 dbname=test_pointcloud user=postgres password=postgres port=5432""" 
+    pcid = 6 
+    writing_query = " INSERT INTO tmob_20140616.riegl_pcpatch_space_int_test (file_name, patch) VALUES (%s, %s::pcpatch(" + str(pcid) + ")) "
+    additional_offset = np.array((0,0,0,0,0,0,0,650000,6860000,0,650000,6860000,0,0,0,0,0,0,0,0,0), dtype = np.double) 
+    grouping_rules = np.array((1.0,1.0,1.0)) 
+    #connecting to database,  
+    point_file_paths  = find_all_ply_files(path_to_file)
+    
+    function_arg = [] 
+    for path in point_file_paths:
+        function_arg.append([path,connection_string,pcid,writing_query,additional_offset,grouping_rules])
+    
+    #print function_arg  
+    
+    pool = mp.Pool(num_processes);
+    results = pool.map(load_one_file, function_arg) 
+    
+    print 'end of work',datetime.datetime.now()
+    print results
+
+#load_points_clouds_files_into_base_test()
+only_loading_points_for_paris()
 #import ply_to_patch as ptp  
 #path_to_file = "/media/sf_USB_storage/DATA/Donnees_IGN/TrafiPollu/goudron_decoupe/cloud_0.ply"
 #connection_string = """host=localhost dbname=test_pointcloud user=postgres password=postgres port=5433""" 

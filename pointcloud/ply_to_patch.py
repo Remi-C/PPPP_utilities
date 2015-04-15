@@ -39,6 +39,7 @@ def making_pgpatch(numpy_spec_patch,connection_string,pcid,writing_query,file_na
     """ this function takes an array of numpy spec array, and transform each into patch and send them to base"""
     import pg_pointcloud_classes as pgp
     import psycopg2
+    import datetime
     
     pgp.create_GD_if_not_exists()
     schemas = pgp.create_schemas_if_not_exists()
@@ -50,46 +51,55 @@ def making_pgpatch(numpy_spec_patch,connection_string,pcid,writing_query,file_na
     
     for spec_array in numpy_spec_patch:
         writing_pgpatch_to_base(spec_array,schema,conn, cur, writing_query,file_name, schemas,additional_offset)
-    print 'wrote ',spec_array.shape[0],' patches'
+    print '\t ',datetime.datetime.now(),', wrote ',spec_array.shape[0],' patches'
     return spec_array.shape[0]
     
-def grouping_ply_data(plydata):
+def grouping_ply_data(plydata, grouping_array):
     """convert a parsed ply file into numpy array of patch"""
     import numpy as np
-    
+    import datetime
+    print '\t\t creating reduced numpy array ', datetime.datetime.now()
     #np_floor = np.floor(np.array( plydata.elements[0].data[['x','y','z']].tolist()))
     #creating a numpy array with all points and all dimensions
     numpy_arr =  plydata.elements[0].data[['x','y','z']]
     numpy_arr = numpy_arr.view(np.float32).reshape(numpy_arr.shape + (-1,))
     
-    numpy_arr = numpy_arr[:]*np.array((250.0,250.0,1.0)) 
+    numpy_arr = numpy_arr[:]*np.array(grouping_array) 
     np_floor = np.floor( numpy_arr)    
-    
+    print '\t\t creating dataframe ', datetime.datetime.now()
     rounded_column_list = ('x_f','y_f','z_f') ; 
     df = pd.DataFrame(np_floor,columns=rounded_column_list)
-    
+    print '\t\t grouping points ', datetime.datetime.now()
     #grouping the points 
     grouped = df.groupby(rounded_column_list)
     #fabricating an array of arrays of poiints
+    print '\t\t fabricating vector of grouped points ', datetime.datetime.now()
     patch = []
     for (x_f, y_f,z_f), group in grouped:
         
         point_index = np.asarray(group.index.get_values())
         patch.append(plydata.elements[0].data[point_index])
+    
     return patch
 
 
-def ply_to_patch(ply_file_path,connection_string,pcid,writing_query,additional_offset):
+def ply_to_patch(ply_file_path,connection_string,pcid,writing_query,additional_offset,grouping_rules):
     """ This function read a ply file, group points into 1M3 patches, convert patches
     """
     from plyfile import PlyData
+    import datetime
+    
+    print '\t working on ply file : ',ply_file_path 
+    print '\t importing ply file ',datetime.datetime.now()
     plydata = PlyData.read(ply_file_path)
-    numpy_spec_patch = grouping_ply_data(plydata)
+    print '\t grouping points',datetime.datetime.now()
+    numpy_spec_patch = grouping_ply_data(plydata, grouping_rules)
     
     #to order the patch
     #sorted_points = np.sort(patch[1], axis=0, kind='quicksort', order=('GPS_time'))
 
-    #send patch to database
+    #send patch to database*
+    print '\t sending patch to database ply file ',datetime.datetime.now()
     return making_pgpatch( numpy_spec_patch, connection_string, pcid, writing_query, ply_file_path, additional_offset)
     
 
