@@ -48,7 +48,7 @@ def perform_1_ransac_segmentation(
     seg = p.make_segmenter_normals( searchRadius=_search_radius)
 
     seg.set_optimize_coefficients(True)
-    seg.set_method_type(pcl.SAC_RANSAC)
+    seg.set_method_type(pcl.SAC_RRANSAC)
     seg.set_model_type(sac_model)
     seg.set_normal_distance_weight(_distance_weight)  # Note : playing with this make the result more (0.5) or less(0.1) selective
     seg.set_max_iterations(_max_iterations)
@@ -162,7 +162,7 @@ def test_pcl(cloud):
     print(model)
     
     
-#perform_N_ransac_segmentation_test()
+perform_N_ransac_segmentation_test()
 
 
 
