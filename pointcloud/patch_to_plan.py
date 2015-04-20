@@ -6,7 +6,7 @@ Created on Sun Apr  5 18:35:15 2015
 """
 
 
-def patch_to_pcl(pgpatch, schemas, connection_string):
+def patch_to_pcl(pgpatch, schemas, connection_string, max_points=-1):
     import pcl
     import pg_pointcloud_classes as pgp
     import numpy as np
@@ -19,6 +19,9 @@ def patch_to_pcl(pgpatch, schemas, connection_string):
     z_column_indice = schema.getNameIndex('Z')
     pt_xyz = np_array[:, (x_column_indice, y_column_indice, z_column_indice)]
     pt_xyz = pt_xyz.reshape(pt_xyz.shape[0], 3) 
+    
+    if max_points > 0:
+        pt_xyz = pt_xyz[0: max_points]
     #convert numpy to points
     p = pcl.PointCloud()
     p.from_array(pt_xyz.astype(np.float32))

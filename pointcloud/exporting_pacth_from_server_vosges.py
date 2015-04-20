@@ -49,14 +49,14 @@ def exporting_pacth_from_server():
     
         
         
-    pool = mp.Pool(num_processes) 
-    results = pool.map(export_one_file, function_arg) 
+    #pool = mp.Pool(num_processes) 
+    #results = pool.map(export_one_file, function_arg) 
  
     #find files
-    #for file_name in file_names:
-    #    export_one_file((file_name,connection_string, gid_query,output_folder)
+    for file_name in file_names:
+        export_one_file((file_name,connection_string, gid_query,output_folder))
     
-    print datetime.now(),'end of the export process'
+    print datetime.now() , 'end of the export process'
     print 'duration ', datetime.now()-beginning
     return
         

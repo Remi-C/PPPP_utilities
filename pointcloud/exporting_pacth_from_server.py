@@ -12,11 +12,16 @@ def exporting_pacth_from_server():
     import psycopg2
     import multiprocessing as mp; 
     connection_string = """host=172.16.3.50 dbname=test_pointcloud user=postgres password=postgres port=5432""" 
-    num_processes  = 2
+    num_processes  = 8
     output_folder = '/tmp'
-    finding_file_names = """SELECT distinct file_name
+    finding_file_names = """
+    SELECT file_name FROM (
+    SELECT  file_name, sum(num_points) as s
     FROM tmob_20140616.riegl_pcpatch_space_int_proxy
-    LIMIT 4"""    
+    GROUP BY file_name
+    ORDER BY s ASC, file_name ASC
+    LIMIT 16
+    )"""    
     
     
     gid_query = """ 
