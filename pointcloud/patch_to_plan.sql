@@ -4,9 +4,10 @@
 
 	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for planes inside, then cylinder
 	--note that we could do the same to detect cylinder
-DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection_from_patch ( pcpatch,  INT,INT, FLOAT, INT ,FLOAT,FLOAT,INT);
+DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection_from_patch ( pcpatch, int,  INT,INT, FLOAT, INT ,FLOAT,FLOAT,INT);
 CREATE FUNCTION rc_py_plane_and_cylinder_detection_from_patch (
 	uncompressed_pcpatch pcpatch
+	,max_points_from_patch int
 	,plane_min_support_points INT DEFAULT 4
 	,plane_max_number INT DEFAULT 100
 	,plane_distance_threshold FLOAT DEFAULT 0.1
@@ -33,7 +34,8 @@ import numpy as np
 import pcl 
 import sys
 #reload(pcl)
-sys.path.insert(1, '/media/big2to/PPPP_utilities/pointcloud') 
+#sys.path.insert(1, '/media/big2to/PPPP_utilities/pointcloud') 
+sys.path.insert(1, '/home/remi/PPPP_utilities/pointcloud') 
 
 
 import patch_to_plan as ptp
@@ -48,7 +50,8 @@ if 'schemas' not in GD['rc']:  # creating the schemas dict if necessary
 
     
 #converting the (uncompressed) patch to numpy point cloud p
-p = ptp.patch_to_pcl(uncompressed_pcpatch, GD['rc']['schemas'], connection_string)
+p,numpy_xyz = ptp.patch_to_pcl(uncompressed_pcpatch, GD['rc']['schemas'], connection_string,max_points=max_points_from_patch)
+plpy.notice(np.array(numpy_xyz)[0])
 #plpy.notice(p)
 #finding the plane 
 result , p_reduced = ptp.perform_N_ransac_segmentation(
@@ -97,3 +100,79 @@ FROM pa ,rc_py_plane_and_cylinder_detection_from_patch (
 -- )
 -- TO '/tmp/test_patch'
 */
+
+
+
+
+
+
+	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for planes inside, then cylinder
+	--note that we could do the same to detect cylinder
+DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection_from_patch_no_pcl ( pcpatch, int,  INT, INT ,FLOAT,INT);
+CREATE FUNCTION rc_py_plane_and_cylinder_detection_from_patch_no_pcl (
+	uncompressed_pcpatch pcpatch
+	,max_points_from_patch int
+	,plane_min_support_points INT DEFAULT 10
+	,plane_max_number INT DEFAULT 100
+	,plane_distance_threshold FLOAT DEFAULT 0.1   
+	,plane_max_iterations INT DEFAULT 100 
+)
+RETURNS TABLE( support_point_index int[] , model FLOAT[4])   
+AS $$
+"""this function reads an uncmpressed patch and finds the plans in it with a ransac algorithm
+"""
+#importing needed modules
+import numpy as np 
+import sys
+#reload(pcl)
+#sys.path.insert(1, '/media/big2to/PPPP_utilities/pointcloud') 
+sys.path.insert(1, '/media/sf_E_RemiCura/PROJETS/PPPP_utilities/pointcloud') 
+
+
+import patch_to_plan as ptp
+#reload(ptp)
+import pg_pointcloud_classes as pgp
+#reload(pgp)
+connection_string = """host=localhost dbname=test_pointcloud user=postgres password=postgres port=5432"""
+if 'rc' not in GD:  # creating the rc dict if necessary
+    GD['rc'] = dict()
+if 'schemas' not in GD['rc']:  # creating the schemas dict if necessary
+    GD['rc']['schemas'] = dict()
+
+#convert uncpmpressed patch to numpy double array
+p = ptp.patch_to_points(uncompressed_pcpatch, GD['rc']['schemas'], connection_string,max_points=max_points_from_patch)
+#converting the (uncompressed) patch to numpy point cloud p 
+plpy.notice(np.array(p)[0]) 
+#plpy.notice(p)
+#finding the plane 
+result , p_reduced = ptp.perform_N_ransac_segmentation_no_pcl(
+	    p
+	    ,plane_min_support_points
+	    ,plane_max_number
+	    , plane_max_iterations
+	    , plane_distance_threshold) ;
+
+#plpy.notice(result)
+
+return result ; 
+$$ LANGUAGE plpythonu IMMUTABLE STRICT; 
+
+
+WITH pa AS (
+	SELECT gid, pc_uncompress(patch) as u_patch , pc_numpoints(patch)  
+	FROM benchmark_cassette_2013.riegl_pcpatch_space
+	WHERE  pc_numpoints(patch) BETWEEN 900 AND 1000 --1000 AND 5000 
+	LIMIT 1   
+)
+SELECT gid, r.*
+FROM pa ,rc_py_plane_and_cylinder_detection_from_patch_no_pcl (
+	u_patch
+	,max_points_from_patch := 500
+	,plane_min_support_points := 100
+	,plane_max_number := 10
+	,plane_distance_threshold := 0.1 
+	,plane_max_iterations := 100
+	) as r
+
+SELECT count(*)
+FROM generalisation.patches_for_generalisation 
