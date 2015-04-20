@@ -266,7 +266,7 @@ def test_pcl(cloud):
     
     
 #perform_N_ransac_segmentation_test()
-perform_N_ransac_segmentation_no_pcl_test()
+#perform_N_ransac_segmentation_no_pcl_test()
 
 
 
