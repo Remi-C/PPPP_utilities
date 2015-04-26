@@ -28,6 +28,7 @@ BEGIN
 		) as sub 
 		) as subsub
 		WHERE c >=2
+		AND face_id != 0 
 		LIMIT 1
 	', topo_name  ) ; 
 
