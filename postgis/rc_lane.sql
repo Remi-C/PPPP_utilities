@@ -263,7 +263,7 @@
 			lane_separator := road_axis; lane_position := 2;lane_side := 'left' ;lane_center_axis := ST_GeometryN(ST_OffsetCurve(road_axis,lane_width/2),1) ;lane_ordinality :=1 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
-			lane_separator := road_axis; lane_position := 2;lane_side := 'right' ;lane_center_axis := ST_GeometryN(ST_OffsetCurve(road_axis,-lane_width/2),1) ;lane_ordinality :=2 ; 
+			lane_separator := road_axis; lane_position := 2;lane_side := 'right' ;lane_center_axis := ST_GeometryN(ST_Reverse(ST_OffsetCurve(road_axis,-lane_width/2)),1) ;lane_ordinality :=2 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			RETURN;
@@ -309,10 +309,16 @@
 			lane_separator:=ST_GeometryN(temp_left_separator ,1)  ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axis:= ST_GeometryN(temp_left_axis ,1)   ;lane_ordinality :=i-1 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
-			 
-			lane_separator:=ST_GeometryN(ST_Reverse(temp_right_separator ),1) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axis:= ST_GeometryN(ST_Reverse(temp_right_axis  ),1)  ;lane_ordinality :=i ; 
-			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
+
+			IF i%2 = 0 THEN 
+				lane_separator:=ST_GeometryN(ST_Reverse(temp_right_separator ),1) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axis:= ST_GeometryN(ST_Reverse(temp_right_axis  ),1)  ;lane_ordinality :=i ; 
+				lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
+			ELSE
+				lane_separator:=ST_GeometryN(ST_Reverse(temp_right_separator ),1) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axis:= ST_GeometryN(ST_Reverse(temp_right_axis  ),1)  ;lane_ordinality :=i ; 
+				lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
+			END IF ; 
 			RETURN NEXT ;
+			
 			 
 			temp_left_axis := ST_GeometryN(ST_OffsetCurve(temp_left_axis, lane_width),1); --((i%2)*2-1)*lane_width) ;
 			temp_left_separator := ST_GeometryN(ST_OffsetCurve(  temp_left_separator  , lane_width),1) ; --  ((i%2)*2-1) * lane_width) ; 
