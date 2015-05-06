@@ -306,11 +306,11 @@
 			
 			
 			
-			lane_separator:=ST_GeometryN(temp_left_separator ,1)  ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axis:= ST_GeometryN(temp_left_axis ,1)   ;lane_ordinality :=1 ; 
+			lane_separator:=ST_GeometryN(temp_left_separator ,1)  ; lane_position:= i ;  lane_side:= 'left'  ;    lane_center_axis:= ST_GeometryN(temp_left_axis ,1)   ;lane_ordinality :=i-1 ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			 
-			lane_separator:=ST_GeometryN(ST_Reverse(temp_right_separator ),1) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axis:= ST_GeometryN(ST_Reverse(temp_right_axis  ),1)  ;lane_ordinality :=2 ; 
+			lane_separator:=ST_GeometryN(ST_Reverse(temp_right_separator ),1) ;  lane_position:= i  ;   lane_side:= 'right' ;   lane_center_axis:= ST_GeometryN(ST_Reverse(temp_right_axis  ),1)  ;lane_ordinality :=i ; 
 			lane_surface := ST_Buffer(lane_center_axis,lane_width/2,'endcap=flat') ;
 			RETURN NEXT ;
 			 
