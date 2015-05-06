@@ -13,6 +13,7 @@ Change on node :
 	CREATE :
 		_if isolated : create isolated 
 		-if along an existing edge : split existing edge, update both new edge
+		- if close enough to an existing node, return the existing node
 		- else : forbiden
 	UPDATE : 
 		move : move all adjacent edges last point, if  no crossing
@@ -74,7 +75,11 @@ $BODY$
 	DELETE :
 		if isolated delete
 		if exactly 2 edges, merge 2 edges, delete
+		if the node is shared by one or more than 2 edges, delete the edges, delete the node. 
 		else : forbiden
+
+	if update or delete : get  all node that may have been impacted and that are isolated, update the containing_face if necessary
+	--topology.rc_CorrectIsolatedNode(topology_name TEXT, isolated_node_to_update INT[], faces_to_delete INT[]  )
 	*/
 
 	DECLARE     
@@ -83,7 +88,8 @@ $BODY$
 	IF TG_OP = 'DELETE' THEN  
 		SELECT f.deleted_node_id , f.deleted_node_geom INTO OLD.node_id, OLD.node_geom
 		FROM topology.rc_DeleteNodeSafe(TG_TABLE_SCHEMA::text, OLD.node_id,OLD.node_geom)   as f ; 
-		 
+
+		
 		RETURN NULL ; 
 		--returN NEW;
 	END IF ; --end of delete dealing 
@@ -211,6 +217,7 @@ $BODY$
 			error case : if the edge to split is self edge
 		else : simply move the node, update last/first summit of self edges
 			error case : if updating produce self-crossing edges, or edges crossing other edges : warn user, rollback 
+
 	*/ 
 	DECLARE      
 		_topology_precision float := 0 ; 
