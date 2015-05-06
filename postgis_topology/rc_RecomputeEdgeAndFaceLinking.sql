@@ -230,7 +230,7 @@ CREATE OR REPLACE FUNCTION topology.rc_CorrectIsolatedNode(topology_name TEXT, i
   AS
 $BODY$  
 	/**
-	@brief given a topoology where isolated_node may have wrong face ,correct the containing_face of this nodes. 
+	@brief given a topology where isolated_node may have wrong face ,correct the containing_face of this nodes. 
 
 	for all nodes as input
 		get the potential containing face (bbox intersection)
@@ -299,7 +299,7 @@ $BODY$
 			FROM potential_face_id as pi
 				NATURAL JOIN potential_faces_geom as pg
 			ORDER BY  pi.node_id, area ASC NULLS LAST, (pi.face_id=0) DESC,  pi.face_id DESC
-				--complicated order by : getting prioritarly the smallest face (excluding NULL face), then  prioritary the 0 face if any, then the highest face id if theire where no universal face
+				--complicated order by : getting prioritarly the smallest face (excluding NULL face), then  prioritary the 0 face if any, then the highest face id if there were no universal face
 		) 
 		, updating_node AS(--update the node accordingly if necessary
 			UPDATE bdtopo_topological.node set containing_face = face_id
