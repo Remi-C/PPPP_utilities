@@ -92,17 +92,22 @@ def create_bezier_curve_from_3points(
     """
 
     tstep = 1.0/nbSegments
+
+    composantes_x = [point_start[0], point_control[0], point_end[0]]
+    composantes_y = [point_start[1], point_control[1], point_end[1]]
+
     return np.array([
         [
-            ((1-t)**2) * point_start[0] + ((2*t)*(1-t)) * point_control[0] + (t**2)*point_end[0],
-            ((1-t)**2) * point_start[1] + ((2*t)*(1-t)) * point_control[1] + (t**2)*point_end[1]
+            np.dot(berstein, composantes_x),
+            np.dot(berstein, composantes_y)
         ]
-        for t in np.arange(0.0, 1.0, tstep)
+        for berstein in [[(1-t)**2, (2*t)*(1-t), t**2] for t in np.arange(0.0, 1.0, tstep)]
     ])
 
 
 def create_bezier_curve(
         np_array_points,
+        intersection_centre, 
         threshold_acos_angle=0.875,
         nbSegments=30
 ):
@@ -134,15 +139,17 @@ def create_bezier_curve(
         # print 'INTERSECTION'
         PC = intersection(line_P0P1, line_P3P2)
     # Calcul des points intermediaires
+    PC = (PC + intersection_centre) / 2.0
     np_segment_bezier = create_bezier_curve_from_3points(P1, P2, PC, nbSegments)
     return np_segment_bezier, PC
-    
 
 
-def bezier_curve(i_wkb,parallel_threshold,nbSegments,in_server=True):
+def bezier_curve(i_wkb,i_wbk_centre, parallel_threshold,nbSegments,in_server=True):
     np_points = input_geom_to_np(i_wkb,in_server)
+    intersection_centre = input_geom_to_np(i_wbk_centre,in_server) 
     np_line, PC = create_bezier_curve(
         np_points,
+        intersection_centre,
         parallel_threshold,
         nbSegments=30 )
     bezier_wkb = np_to_wkb_line(np_line, in_server)

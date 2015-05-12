@@ -4,8 +4,8 @@
 --this function construct a Bezier curve linking 2 segments
 --------------------------------------------
 
-DROP FUNCTION IF EXISTS rc_bezier_from_seg(seg_points geometry,parallel_threshold float, nb_segs int);
-CREATE OR REPLACE FUNCTION rc_bezier_from_seg(seg_points geometry,parallel_threshold float, nb_segs int, OUT bezier geometry, OUT PC geometry)
+DROP FUNCTION IF EXISTS rc_bezier_from_seg(seg_points geometry, centre_of_intersection geometry, parallel_threshold float, nb_segs int);
+CREATE OR REPLACE FUNCTION rc_bezier_from_seg(seg_points geometry,centre_of_intersection geometry, parallel_threshold float, nb_segs int, OUT bezier geometry, OUT PC geometry)
   AS
 $BODY$
 #this function takes 2 segments, and build a Bezier curve to join the segments
@@ -13,14 +13,15 @@ import sys
 sys.path.insert(0, '/media/sf_E_RemiCura/PROJETS/PPPP_utilities/postgis') 
 import rc_py_generate_bezier_curve as rc
 #reload(rc)
-bezier, pc = rc.bezier_curve(seg_points, parallel_threshold, nb_segs, in_server=True)
+bezier, pc = rc.bezier_curve(seg_points, centre_of_intersection, parallel_threshold, nb_segs, in_server=True)
 return (bezier,pc)
 $BODY$
 LANGUAGE plpythonu STABLE STRICT;
 
 SELECT st_astext(bezier), st_astext(pc) 
-FROM ST_GeomFromText('MULTIPOINT(0 2,1 2,2 1 ,2 0)') as geom 
-	,rc_bezier_from_seg(geom,pi()/8, 10);
+FROM ST_GeomFromText('MULTIPOINT(0 2,0 1,1 0 ,2 0)') as geom 
+	,ST_GeomFromText('POINT(0.5 0.5)') as geom2
+	,rc_bezier_from_seg(geom,geom2, 0.85, 10);
 
 	
 SELECT geom
