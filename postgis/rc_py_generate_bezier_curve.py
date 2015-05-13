@@ -73,7 +73,17 @@ def is_parallel_lines(line0, line1, threshold_acos_angle=0.875):
     #
     cos_angle = np.dot(vec_dir_P0P1, vec_dir_P3P2)
     #
-    return abs(cos_angle) >= threshold_acos_angle
+    if abs(cos_angle) >= threshold_acos_angle:
+        #parallel
+        if cos_angle<0:
+            #open angle
+            return 1 
+        else:
+            #closed angle
+            return -1
+    else:
+        #not parallel
+        return 0 
 
 def create_bezier_curve_from_3points(
         point_start,
@@ -126,20 +136,29 @@ def create_bezier_curve(
         np array de la liste des points representant le segment de bezier
         point de controle utilise pour calculer le segment de bezier
     """
+    #import plpy
     P0, P1, P2, P3 = np_array_points
     #
     line_P0P1 = line(P0, P1)
     line_P3P2 = line(P3, P2)
     #
     PC = None
-    if is_parallel_lines(line_P0P1, line_P3P2, threshold_acos_angle):
-        # print 'PARALLEL'
-        PC = (P1 + P2) * 0.5
-    else:
-        # print 'INTERSECTION'
+    is_para = is_parallel_lines(line_P0P1, line_P3P2, threshold_acos_angle)
+    
+    if is_para == 1:
+        #plpy.notice('parallel, open angle')
+        PC = (P1 + P2) * 0.5  
+    if is_para == -1 :
+        #plpy.notice('parallel, closed angle')
+        PC = (P1 + P2) * 0.5  
+        PC = (PC + intersection_centre) / 2.0
+    if is_para == 0 :
+        #plpy.notice('not parallel')
         PC = intersection(line_P0P1, line_P3P2)
-    # Calcul des points intermediaires
-    PC = (PC + intersection_centre) / 2.0
+        PC = (PC + intersection_centre) / 2.0
+     
+        
+    # Calcul des points intermediaires 
     np_segment_bezier = create_bezier_curve_from_3points(P1, P2, PC, nbSegments)
     return np_segment_bezier, PC
 
