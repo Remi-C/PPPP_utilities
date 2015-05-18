@@ -30,7 +30,8 @@ def np_to_wkb(np_array,in_server):
             #plpy.error('error while converting np_array to point',nb_array)
     else:
         from shapely.geometry import asMultiPoint
-        try:
+        np_shapely = asMultiPoint(np_array) 
+        """try:
             print 'error while converting np_array too multipoint',nb_array
             np_shapely = asMultiPoint(np_array)
         except:
@@ -38,7 +39,7 @@ def np_to_wkb(np_array,in_server):
             #import plpy            
             #plpy.error('error while converting np_array too multipoint',nb_array)
         #print len(np_array.shape)
-        
+        """
          
     return wkb.dumps(np_shapely, hex=in_server)
 
@@ -324,7 +325,7 @@ def test_numpy_to_wkb():
 #test_numpy_to_wkb()
     
 def test_bezier_2():
-    i_wkb = "01040000000400000001010000000000000000000000000000000000004001010000000000000000000000000000000000F03F0101000000000000000000F03F0000000000000000010100000000000000000000400000000000000000"
+    i_wkb = "010200000004000000C2B80411C363B0408F21887B8736D74077A13BFE1B64B04059259FCAAF36D740B6CB32586D6AB0400BB3123B1937D740EA316666E66AB0406D0960660637D740"
     i_wkb_centre = "0101000000000000000000E03F000000000000E03F"
     
     from shapely.geometry import MultiPoint
@@ -332,4 +333,4 @@ def test_bezier_2():
     print m
 
     return bezier_curve(i_wkb,i_wkb_centre, 0.85,20)
-test_bezier_2()
+#print test_bezier_2()
