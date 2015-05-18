@@ -21,26 +21,11 @@ def np_to_wkb(np_array,in_server):
     
     if len(np_array.shape)<=1:
         #print len(np_array.shape)
-        try:
-            from shapely.geometry import asPoint
-            np_shapely = asPoint(np_array)
-        except:
-            print 'toto'
-            #import plpy            
-            #plpy.error('error while converting np_array to point',nb_array)
+        from shapely.geometry import asPoint
+        np_shapely = asPoint(np_array)
     else:
         from shapely.geometry import asMultiPoint
         np_shapely = asMultiPoint(np_array) 
-        """try:
-            print 'error while converting np_array too multipoint',nb_array
-            np_shapely = asMultiPoint(np_array)
-        except:
-            print 'titi'
-            #import plpy            
-            #plpy.error('error while converting np_array too multipoint',nb_array)
-        #print len(np_array.shape)
-        """
-         
     return wkb.dumps(np_shapely, hex=in_server)
 
 
