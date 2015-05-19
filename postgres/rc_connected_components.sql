@@ -364,10 +364,10 @@ CREATE EXTENSION IF NOT EXISTS plpythonu;
 
 
 
-  
-DROP FUNCTION IF EXISTS rc_py_ccomponents ( int[], INT[] );
+
+DROP FUNCTION IF EXISTS rc_py_ccomponents ( INT[], INT[] );
 CREATE FUNCTION rc_py_ccomponents ( 
- node1 int[], node2 INT[] 
+ node1 INT[], node2 INT[] 
 	) 
 RETURNS TABLE( node int, ccomponents INT )   
 AS $$
