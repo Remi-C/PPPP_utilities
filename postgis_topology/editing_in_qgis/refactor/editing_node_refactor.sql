@@ -168,7 +168,8 @@ $BODY$
 			Delete connected edges first  !',_n_edges ;
 		END IF ; 
 		--delete all connected edges
-			--@DEBUG @FIXME @TEMP : here it should be rc_DeleteEdgeSafe that sohould be called ! 
+			/** --@DEBUG @FIXME @TEMP : here it should be rc_DeleteEdgeSafe that should be called ! */ 
+			 
 		PERFORM DISTINCT ON (edge_id) ST_RemEdgeModFace(topology_name, edge_id) 
 		FROM bdtopo_topological.edge_data
 		WHERE start_node = deleted_node_id OR end_node = deleted_node_id ;
@@ -186,14 +187,13 @@ DROP FUNCTION IF EXISTS topology.rc_MoveNodeSafe(topology_name text , INOUT move
 CREATE OR REPLACE FUNCTION topology.rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry ,is_isolated int DEFAULT -1 )  AS
 $BODY$  
 	/**
-	@brief this function safely move a node within a topology
-		if the new position is near an exisitng node (excepting old self)
-			fuse the moved node to existing node, transfer edges, update edge_linking and face
-		if the new position is near an exisitng edge (excepting self edges)
-			split the edge, transfert edges to new split node, update edge_linking and face
-			error case : if the edge to split is self edge
-		else : simply move the node, update last/first summit of self edges
-			error case : if updating produce self-crossing edges, or edges crossing other edges : warn user, rollback 
+	@brief this function safely update a node within a topology
+		UPDATE :
+		Based on the new neighbour of the node --> action on node | action on neighbourg 
+		no new neighb.			-> update geom and containing_face	| update connected edges geom
+		neigh = 1 node			-> Delete							| update edge geom, Merge
+		neigh = node+edges		-> Same							| Same
+		neigh = 1 edge			-> Same with node from Split		| Split, then same
 
 	*/ 
 	DECLARE      
@@ -225,9 +225,13 @@ $BODY$
 			WHERE start_node = moved_node_id OR end_node = moved_node_id
 		) as sub ; 
 		IF is_isolated != -1 THEN _is_isolated = is_isolated ; END IF ;  
-		
 
-		
+
+		IF _near_node_id IS  NULL OR _near_node_id = -1 THEN
+			--the node is isolated, we simply udpate geom, updated connected edges, and update containing face
+		END IF ; 
+
+		/*
 		IF _near_node_id IS NOT NULL OR _near_node_id != -1 THEN -- need to merge moved node to existing, and transfer stuff
 			RAISE EXCEPTION 'moving a node (%) close to an existing one (%), fusing the moved node to the existing one, transfering edges, recomputing edge_linking, delete moved node .NOT YET IMPLEMENTED\n'
 				,moved_node_id,_near_node_id;
@@ -284,7 +288,7 @@ $BODY$
 				,moved_node_id;
 			END IF;  
 		END ;
-
+		*/
 		RETURN  ;
 	END ;
 	$BODY$
