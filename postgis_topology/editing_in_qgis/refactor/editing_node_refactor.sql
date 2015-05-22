@@ -216,6 +216,16 @@ $BODY$
 		AND node.node_id <>moved_node_id 
 		ORDER BY ST_Distance(node.geom, moved_node_geom) ASC
 		LIMIT 1 ; 
+
+		--check if new position is near an exisitng edge (excluding self edges)
+		SELECT edge_id,geom INTO _near_edge_id, _near_edge_geom
+		FROM bdtopo_topological.edge_data AS ed
+		WHERE ST_DWithin(ed.geom, moved_node_geom, _topology_precision) = TRUE
+			--we don't want edge that are directly connected to the moved node
+			AND ed.start_node <> moved_node_id AND ed.end_node <> moved_node_id 
+		ORDER BY ST_Distance(ed.geom, moved_node_geom) ASC
+		LIMIT 1 ;
+
 		
 		-- check if the node is isolated
 		SELECT (count(*)  = NULL) INTO _is_isolated
@@ -227,9 +237,16 @@ $BODY$
 		IF is_isolated != -1 THEN _is_isolated = is_isolated ; END IF ;  
 
 
-		IF _near_node_id IS  NULL OR _near_node_id = -1 THEN
-			--the node is isolated, we simply udpate geom, updated connected edges, and update containing face
+		IF (_near_node_id IS  NULL OR _near_node_id = -1) AND ( _near_edge_id IS NULL ) THEN
+			--the node is not going to be near another node or a not connected edge
+			--, we simply udpate geom, updated connected edges, and update containing face
+			RAISE NOTICE 'the node shouldnt change topology, we simply udpate geom, updated connected edges, and update containing face' ; 
+			PERFORM topology.rc_MoveNode_noTopoChange(topology_name,moved_node_id, moved_node_geom) ;
+			RETURN ; 
 		END IF ; 
+
+		--if we are going to have to merge with a node
+		--transfer edges to new node, update new node connected edges geom
 
 		/*
 		IF _near_node_id IS NOT NULL OR _near_node_id != -1 THEN -- need to merge moved node to existing, and transfer stuff
