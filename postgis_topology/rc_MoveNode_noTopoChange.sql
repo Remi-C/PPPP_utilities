@@ -9,9 +9,9 @@
 
 
   
-DROP FUNCTION IF EXISTS topology.rc_MoveNode_noTopoChange(varchar, int, geometry ); 
+DROP FUNCTION IF EXISTS topology.rc_MoveNode_noTopoChange(varchar, int, geometry,   edge_ids int[] ); 
 CREATE OR REPLACE FUNCTION topology.rc_MoveNode_noTopoChange( IN atopology  varchar ,INOUT node_id INT , IN new_node_geom geometry 
-	)AS
+,  edge_ids int[] DEFAULT NULL)AS
 $BODY$
 		--@brief this function moves a node and update all connected edges geometry accordingly.
 		-- WARNING : the node change shouldn't change topology
@@ -39,7 +39,7 @@ $BODY$
 			EXECUTE format('UPDATE %I.node AS n SET (containing_face,geom) = ($2,$3) WHERE n.node_id = $1 ',atopology) USING node_id, _face_id, new_node_geom ; 
 			
 			--updating the edges 
-			PERFORM topology.rc_MoveNonIsoNode_edges(atopology, node_id, new_node_geom, _topology_precision) ; 
+			PERFORM topology.rc_MoveNonIsoNode_edges(atopology, node_id, new_node_geom,edge_ids, _topology_precision) ; 
 			return; 
 		END ;
 	$BODY$
@@ -52,9 +52,9 @@ LANGUAGE plpgsql VOLATILE;
 
 
   
-DROP FUNCTION IF EXISTS topology.rc_MoveNonIsoNode_edges(varchar, int, geometry(point) , float); 
+DROP FUNCTION IF EXISTS topology.rc_MoveNonIsoNode_edges(varchar, int, geometry(point) , edge_ids int[],  float); 
 CREATE OR REPLACE FUNCTION topology.rc_MoveNonIsoNode_edges( IN atopology  varchar 
-	,INOUT node_id INT , IN new_node_geom geometry(point), topology_precision FLOAT default 0.0
+	,INOUT node_id INT , IN new_node_geom geometry(point),edge_ids int[] DEFAULT NULL, topology_precision FLOAT default 0.0
 	)
   RETURNS int AS
 $BODY$
@@ -66,7 +66,7 @@ $BODY$
 		BEGIN  
 			--update the outgoing edges by setting the first point of their geom
 			--check in the same time that proposed update doesn't break topology by cnaging edge_geom
-			 _q :=  format(
+			 _q :=  
 				'
 				WITH the_update AS ( 
 					UPDATE %1$I.edge_data AS ed 
@@ -74,9 +74,13 @@ $BODY$
 							WHEN ed.start_node = %4$s  
 							THEN ST_SetPoint(ed.geom, 0 , %3$L) 
 							ELSE  ST_SetPoint(ed.geom, ST_Npoints(ed.geom)-1 , %3$L) END 
-						WHERE ed.start_node = %4$s OR ed.end_node = %4$s
-						RETURNING edge_id, geom  
-					 
+						WHERE ' ; 
+						IF edge_ids IS NULL THEN 
+							_q := _q ||' ed.start_node = %4$s OR ed.end_node = %4$s' ;
+						ELSE _q := _q ||' ed.edge_id = ANY (''%5$s''::int[]) ' ;
+						END IF ; 
+						_q := _q ||
+						'RETURNING edge_id, geom  
 				)
 				,checking_crossing_within_new_edges AS(
 					SELECT 1
@@ -108,8 +112,9 @@ $BODY$
 				)
 				SELECT are_some_edge_crossing_new OR are_the_new_edge_invalid OR are_some_edge_crossing_others
 				FROM new_are_crossing, are_new_edge_invalid,old_are_crossing ;
-				'
-				,atopology, topology_precision,new_node_geom, node_id ) ; 
+				' ;
+				_q := format(_q
+				,atopology, topology_precision,new_node_geom, node_id, edge_ids ) ; 
 				--raise EXCEPTION'%',_q ;
 
 				EXECUTE _q INTO _is_invalid_change   ;
