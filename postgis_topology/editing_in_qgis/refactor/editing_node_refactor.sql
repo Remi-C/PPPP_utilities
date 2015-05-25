@@ -236,7 +236,6 @@ $BODY$
 		) as sub ; 
 		IF is_isolated != -1 THEN _is_isolated = is_isolated ; END IF ;  
 
-
 		IF (_near_node_id IS  NULL OR _near_node_id = -1) AND ( _near_edge_id IS NULL ) THEN
 			--the node is not going to be near another node or a not connected edge
 			--, we simply udpate geom, updated connected edges, and update containing face
@@ -245,67 +244,23 @@ $BODY$
 			RETURN ; 
 		END IF ; 
 
-		--if we are going to have to merge with a node
-		--transfer edges to new node, update new node connected edges geom
-
-		/*
-		IF _near_node_id IS NOT NULL OR _near_node_id != -1 THEN -- need to merge moved node to existing, and transfer stuff
-			RAISE EXCEPTION 'moving a node (%) close to an existing one (%), fusing the moved node to the existing one, transfering edges, recomputing edge_linking, delete moved node .NOT YET IMPLEMENTED\n'
-				,moved_node_id,_near_node_id;
-
-			-- transfer the edge one by one to the existing node
-			--recompute edge_linking
-			--delete moed node
-		ELSE
-			--the node is isoltaed, need to update it's containing face 
-			UPDATE bdtopo_topological.node 
-				SET containing_face = GetFaceByPoint('bdtopo_topological', moved_node_geom , 0.1)  
-				WHERE node_id = moved_node_id ; 
-			--RAISE EXCEPTION 'moving node, it was and stay isolated, need to update containing_face  ' ; 
-		END IF; 
-
-		--check if new position is near an exisitng edge (excluding self edges)
-		SELECT edge_id,geom INTO _near_edge_id, _near_edge_geom
-		FROM bdtopo_topological.edge_data AS ed
-		WHERE ST_DWithin(ed.geom, moved_node_geom, _topology_precision) = TRUE
-			--we don't want edge that are directly connected to the moved node
-			AND ed.start_node <> moved_node_id AND ed.end_node <> moved_node_id 
-		ORDER BY ST_Distance(ed.geom, moved_node_geom) ASC
-		LIMIT 1 ;
-
-		IF _near_edge_id IS NOT NULL OR _near_edge_id != -1 THEN 
-			-- need to split the near edge, then transfer the moved node to new node from splitting (transfer edge, update  edge geom , recomputing edge_linking )
-			RAISE EXCEPTION 'moving a node (%) close to an existing edge (%), splitting the edge, and fusing the moved edeg to node from split, transfering edges,updating edge geom,  recomputing edge_linking, deleting moved node. NOT YET IMPLEMENTED\n '
-				,moved_node_id,_near_edge_id;
-
-			-- transfer the edge one by one to the existing node
-			--recompute edge_linking
-			--delete moed node
-		END IF;  
-
-		--simply moving the node, updating edges geom. If new edge geom crosses other edges or generate invalid geom (self crossing), roolback.
-		BEGIN
-			--move node,change all edge geom, 
-			PERFORM street_amp.rc_MoveNonIsoNode(topology_name,moved_node_id, moved_node_geom) ; 
+		
+		IF (_near_edge_id IS NOT NULL AND( _near_node_id IS  NULL OR _near_node_id = -1) ) THEN
+		--case when we move the node onto an existing edge : need to split it 
+			--splitting
+			moved_node_geom := ST_ClosestPoint(_near_edge_geom, moved_node_geom)  ; 
+			SELECT  topology.rc_modedgesplit(topology_name, _near_edge_id,moved_node_geom) INTO _near_node_id; 
+			--getting the new geom
+			EXECUTE format('SELECT geom FROM  %I.node AS n WHERE node_id = $1 ',topology_name) INTO _near_node_geom  USING _near_node_id  ;  
+		ELSE 
+			--we are moving the node near an existing one
+			moved_node_geom := _near_node_geom ; 
 			
-			 
-			--then check that they don't cross each other or other edges
-			WITH self_edges AS (
-				SELECT distinct edge_id, geom
-				FROM bdtopo_topological.edge_data AS ed
-				WHERE ed.start_node = moved_node_id OR ed.end_node = moved_node_id 
-			)
-			SELECT count(*) INTO _crossing_edges
-			FROM bdtopo_topological.edge_data AS ed, self_edges as sed
-			WHERE ST_Crosses(sed.geom, ed.geom) 
-				AND sed.edge_id <> ed.edge_id ;
+		END IF 
 
-			IF  _crossing_edges >0 THEN
-				RAISE EXCEPTION 'moving a node (%) conduced to update connected edges geometry. While doing so, one or more updated edge proved to crosses one or more other edges. NOT YET IMPLEMENTED/PERMITTED \n '
-				,moved_node_id;
-			END IF;  
-		END ;
-		*/
+		PERFORM rc_MergeNodeIntoAnother(topology_name,moved_node_id ,_near_node_id, moved_node_geom, _near_node_geom , NULL) ; 
+
+
 		RETURN  ;
 	END ;
 	$BODY$
