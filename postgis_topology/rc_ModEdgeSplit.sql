@@ -72,7 +72,7 @@ BEGIN
   FOR rec IN EXECUTE 'SELECT node_id FROM '
     || quote_ident(atopology) || '.node 
     WHERE  ST_DWithin(node.geom, $1, $2) = TRUE
-    AND node_id != anode_id'
+    AND node_id != $3 '
     USING apoint, topology_precision, anode_id 
   LOOP
     RAISE EXCEPTION
