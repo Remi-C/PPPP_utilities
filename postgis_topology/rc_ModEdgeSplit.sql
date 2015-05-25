@@ -4,8 +4,8 @@
 --02/2015
 -- changing st_modedgesplit ot take into account precision
 
-DROP FUNCTion if exists topology.rc_modedgesplit(atopology character varying, anedge integer, apoint geometry) ;
-CREATE OR REPLACE FUNCTION topology.rc_modedgesplit(atopology character varying, anedge integer, apoint geometry)
+DROP FUNCTion if exists topology.rc_modedgesplit(atopology character varying, anedge integer,  apoint geometry, anode_id int ) ;
+CREATE OR REPLACE FUNCTION topology.rc_modedgesplit(atopology character varying, anedge integer, apoint geometry, anode_id int DEFAULT NULL)
   RETURNS integer AS
 $BODY$
 DECLARE
@@ -71,8 +71,9 @@ BEGIN
   --
   FOR rec IN EXECUTE 'SELECT node_id FROM '
     || quote_ident(atopology) || '.node 
-    WHERE  ST_DWithin(node.geom, $1, $2) = TRUE'
-    USING apoint, topology_precision
+    WHERE  ST_DWithin(node.geom, $1, $2) = TRUE
+    AND node_id != anode_id'
+    USING apoint, topology_precision, anode_id 
   LOOP
     RAISE EXCEPTION
      'SQL/MM Spatial exception - coincident node (with % precision)', topology_precision;
