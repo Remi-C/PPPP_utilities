@@ -70,9 +70,12 @@ $BODY$
 	IF TG_OP = 'INSERT' THEN 
 		--update/insert case
 		NEW.node_geom = ST_Force3D(NEW.node_geom) ;  --safeguard against qgis
-		--SELECT f.inserted_node_id , f.inserted_node_geom INTO NEW.node_id, NEW.node_geom
-		--FROM topology.rc_InsertNodeSafe(TG_TABLE_SCHEMA::text, NEW.node_id,NEW.node_geom,dont_update_face:= FALSE)   as f ;  
-		INSERT INTO bdtopo_topological.node (geom, containing_face) VALUES (NEW.node_geom, 0); 
+		--inserting a dummy node
+		INSERT INTO bdtopo_topological.node (geom, containing_face) VALUES (NEW.node_geom, 0) RETURNING node_id INTO NEW.node_id; 
+
+		-- 'moving' the node, so everything is done
+		SELECT f.moved_node_id , f.moved_node_geom INTO NEW.node_id, NEW.node_geom
+		FROM topology.rc_MoveNodeSafe(TG_TABLE_SCHEMA::text, NEW.node_id,NEW.node_geom)   as f ;  
 		RETURN NEW ;  
 	END IF ; --end of insert dealing
 /* */
@@ -256,7 +259,7 @@ $BODY$
 			--we are moving the node near an existing one
 			moved_node_geom := _near_node_geom ; 
 			
-		END IF 
+		END IF ;
 
 		PERFORM rc_MergeNodeIntoAnother(topology_name,moved_node_id ,_near_node_id, moved_node_geom, _near_node_geom , NULL) ; 
 
