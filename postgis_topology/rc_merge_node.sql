@@ -36,7 +36,7 @@ $BODY$
 
 			--updating the tansfered edges 
 			IF perform_edge_geom_change = TRUE THEN 
-				PERFORM topology.rc_MoveNonIsoNode_edges(atopology, to_node_id, to_node_geom,_edges_to_transfer, _topology_precision,NULL,perform_edge_geom_change) ;  
+				PERFORM topology.rc_MoveNonIsoNode_edges(atopology, to_node_id, to_node_geom,_edges_to_transfer, _topology_precision) ;  
 			END IF ;
 			END IF ; 
 		
