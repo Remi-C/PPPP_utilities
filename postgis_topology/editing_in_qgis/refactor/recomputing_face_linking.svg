@@ -22,9 +22,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.98994949"
-     inkscape:cx="514.88829"
-     inkscape:cy="603.4846"
+     inkscape:zoom="0.7"
+     inkscape:cx="552.84763"
+     inkscape:cy="256.25918"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -609,7 +609,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1"
-         style="font-size:20px">trouver rings</flowPara></flowRoot>    <path
+         style="font-size:20px">find rings</flowPara></flowRoot>    <path
        style="fill:none;stroke:#000000;stroke-width:1.28185916px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
        d="m 480.30803,-181.54691 27.29437,47.62238"
        id="path3416-15"
@@ -626,7 +626,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1"
-         style="font-size:20px">dedup rings</flowPara></flowRoot>    <path
+         style="font-size:20px">deduplicate rings</flowPara></flowRoot>    <path
        style="fill:none;stroke:#000000;stroke-width:1.28185916px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
        d="m 344.2366,-96.189768 27.29437,47.622381"
        id="path3416-15-3"
@@ -645,17 +645,17 @@
        xml:space="preserve"
        id="flowRoot4769-4-6"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       transform="translate(594.03232,92.822701)"><flowRegion
+       transform="translate(559.6625,478.26725)"><flowRegion
          id="flowRegion4771-5-1"><rect
            id="rect4773-5-8"
            width="145.26613"
            height="114.38364"
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
-         id="flowPara4775-1-9"
-         style="font-size:20px">Sous fonction</flowPara><flowPara
          style="font-size:20px"
-         id="flowPara5802">xN</flowPara></flowRoot>    <flowRoot
+         id="flowPara5802">sub function</flowPara><flowPara
+         style="font-size:20px"
+         id="flowPara5844">xN</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4769-4-2-2"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -667,7 +667,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1-5"
-         style="font-size:20px">pour chaque ring</flowPara></flowRoot>    <flowRoot
+         style="font-size:20px">for each ring</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4769-4-2-2-4"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -679,7 +679,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1-5-2"
-         style="font-size:20px">pour chaque ring</flowPara></flowRoot>    <path
+         style="font-size:20px">ring type</flowPara></flowRoot>    <path
        style="fill:none;stroke:#000000;stroke-width:1.28185916px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
        d="M 427.91935,54.524517 531.79702,121.33677 424.91069,408.57546"
        id="path3416-41"
@@ -703,7 +703,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1-5-9"
-         style="font-size:20px">interieur</flowPara></flowRoot>    <flowRoot
+         style="font-size:20px">inside</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4769-4-2-2-42-3"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -715,7 +715,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1-5-9-8"
-         style="font-size:20px">exterieur/plat</flowPara></flowRoot>    <path
+         style="font-size:20px">outside/flate</flowPara></flowRoot>    <path
        style="fill:none;stroke:#000000;stroke-width:1.28185916px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
        d="m 187.94832,169.59566 -65.56276,63.33666"
        id="path3416-15-3-2"
@@ -733,7 +733,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1-5-2-2"
-         style="font-size:20px">face_id homogène != 0?</flowPara></flowRoot>    <path
+         style="font-size:20px">face_id identical and  != 0?</flowPara></flowRoot>    <path
        style="fill:none;stroke:#000000;stroke-width:1.28185916px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
        d="m 228.40751,169.70643 50.86581,74.05094"
        id="path3416-15-3-2-5"
@@ -751,7 +751,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1-5-9-0"
-         style="font-size:20px">Oui</flowPara></flowRoot>    <flowRoot
+         style="font-size:20px">Yes</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4769-4-2-2-42-0-6"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -763,19 +763,19 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1-5-9-0-8"
-         style="font-size:20px">Non</flowPara></flowRoot>    <flowRoot
+         style="font-size:20px">No</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4769-4-2-2-42-0-9"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
        transform="translate(76.392232,269.37484)"><flowRegion
          id="flowRegion4771-5-7-7-7-9-3"><rect
            id="rect4773-5-6-9-7-0-4"
-           width="82.131599"
-           height="27.005438"
+           width="81.417313"
+           height="63.43401"
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          id="flowPara4775-1-1-5-9-0-4"
-         style="font-size:20px">rien</flowPara></flowRoot>    <flowRoot
+         style="font-size:20px">do nothing</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4769-4-2-2-42-6"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -786,10 +786,8 @@
            height="102.71972"
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
-         id="flowPara4775-1-1-5-9-6"
-         style="font-size:20px">créer nouvelle face</flowPara><flowPara
          style="font-size:20px"
-         id="flowPara5508" /></flowRoot>    <flowRoot
+         id="flowPara5508">create new face</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4769-4-2-1"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -801,7 +799,7 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          style="font-size:20px"
-         id="flowPara5553">trouver  la face contenante (0 par défaut)</flowPara></flowRoot>    <flowRoot
+         id="flowPara5553">find bounding face  ( default 0)</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4769-4-2-1-6"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -813,9 +811,9 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          style="font-size:20px"
-         id="flowPara5551-8">MAJ edges</flowPara><flowPara
+         id="flowPara5551-8">udpate edges</flowPara><flowPara
          style="font-size:20px"
-         id="flowPara5553-2">DELETE face inutiles</flowPara></flowRoot>    <path
+         id="flowPara5553-2">delete useless faces</flowPara></flowRoot>    <path
        style="fill:none;stroke:#000000;stroke-width:1.28185916px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
        d="m 317.54697,498.55201 1.5801,53.33666"
        id="path3416-15-3-2-5-5"
@@ -895,9 +893,10 @@
        inkscape:connector-curvature="0" />
     <path
        style="fill:none;stroke:#909090;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 358.485,15.381183 C 263.10201,49.895683 82.765424,76.524963 41.297113,187.10711 -23.952532,361.10616 312.64061,788.69071 504.95712,575.00569 599.35797,470.11586 660.26085,308.90254 641.32772,166.90406 628.05083,67.327393 447.19404,-43.758167 358.485,15.381183 z"
+       d="M 308.485,32.52404 C 213.10201,67.03854 107.05114,65.096391 65.582827,175.67854 0.33318229,349.67759 262.64061,805.83357 454.95712,592.14855 549.35797,487.25872 610.26085,326.0454 591.32772,184.04692 578.05083,84.47025 397.19404,-26.61531 308.485,32.52404 z"
        id="path5786"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="csssc" />
     <flowRoot
        xml:space="preserve"
        id="flowRoot5788"
@@ -909,8 +908,8 @@
            height="170.71577"
            x="32.324883"
            y="25.037045" /></flowRegion><flowPara
-         id="flowPara5794"
-         style="font-size:20px">fonction qui recalcul les left/right face des edges.</flowPara><flowPara
          style="font-size:20px"
-         id="flowPara5798">Implique de recalculer les faces si necessaires.</flowPara></flowRoot>  </g>
+         id="flowPara5798">This function recompute left/right_face of edges . It invovles managing face.</flowPara><flowPara
+         style="font-size:20px"
+         id="flowPara5838">We only suppose that edge to edge and edge to node links are correct.</flowPara></flowRoot>  </g>
 </svg>
