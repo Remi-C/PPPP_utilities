@@ -9,9 +9,9 @@
 
 
   
-DROP FUNCTION IF EXISTS topology.rc_MoveNode_noTopoChange(varchar, int, geometry,   edge_ids int[] ); 
+DROP FUNCTION IF EXISTS topology.rc_MoveNode_noTopoChange(varchar, int, geometry,   edge_ids int[] , perform_edge_geom_change BOOLEAN); 
 CREATE OR REPLACE FUNCTION topology.rc_MoveNode_noTopoChange( IN atopology  varchar ,INOUT node_id INT , IN new_node_geom geometry 
-,  edge_ids int[] DEFAULT NULL)AS
+,  edge_ids int[] DEFAULT NULL, perform_edge_geom_change BOOLEAN DEFAULT TRUE)AS
 $BODY$
 		--@brief this function moves a node and update all connected edges geometry accordingly.
 		-- WARNING : the node change shouldn't change topology
@@ -38,8 +38,10 @@ $BODY$
 			--moving the node
 			EXECUTE format('UPDATE %I.node AS n SET (containing_face,geom) = ($2,$3) WHERE n.node_id = $1 ',atopology) USING node_id, _face_id, new_node_geom ; 
 			
-			--updating the edges 
-			PERFORM topology.rc_MoveNonIsoNode_edges(atopology, node_id, new_node_geom,edge_ids, _topology_precision) ; 
+			--updating the edges , only if not override by arguments
+			IF perform_edge_geom_change = TRUE THEN 
+				PERFORM topology.rc_MoveNonIsoNode_edges(atopology, node_id, new_node_geom,edge_ids, _topology_precision) ; 
+			END IF ; 
 			return; 
 		END ;
 	$BODY$
