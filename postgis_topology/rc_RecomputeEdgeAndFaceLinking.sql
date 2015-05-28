@@ -65,7 +65,7 @@ $BODY$
 		updated_edges INT[] ; 
 		_q TEXT; 
 	BEGIN     	  
-		RAISE NOTICE 'node to update : %', nodes_to_update  ;
+		--RAISE NOTICE 'node to update : %', nodes_to_update  ;
 		--recomputing edge_linking :
 
 		_q := format('
@@ -188,7 +188,7 @@ $BODY$
 		_created_faces INT[]  ;
 		
 	BEGIN     	  
-		RAISE NOTICE 'edges to update : %', edges_to_update  ;
+		--RAISE NOTICE 'edges to update : %', edges_to_update  ;
  
 		--create new face, update edge left and right face when dealing with regular face (ie non-flat face)
 		SELECT * FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name  , edges_to_update)
@@ -204,7 +204,7 @@ $BODY$
 		--RAISE EXCEPTION '% %',_updated_edges, _faces_to_delete ;
 
 		--update isolated node :  
-		SELECT  * FROM topology.rc_CorrectIsolatedNode(topology_name,  NULL,  _faces_to_delete  )
+		SELECT  * FROM topology.rc_CorrectIsolatedNodes(topology_name,  NULL,  _faces_to_delete  )
 		INTO  _updated_nodes; 
 		--RAISE EXCEPTION '_updated_nodes %',_updated_nodes ; 
 		--delete face_to_delete from face table
@@ -293,7 +293,7 @@ $BODY$
 		_q TEXT; 
 		_r record;   
 	BEGIN     	  
-		RAISE NOTICE 'edges to update : %', edges_to_update  ;
+		--RAISE NOTICE 'edges to update : %', edges_to_update  ;
 		
 		--for each edge to update, get ring
 		-- GetRingEdges(varchar atopology, integer aring, integer max_edges=null);
