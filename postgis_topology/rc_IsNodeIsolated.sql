@@ -27,3 +27,27 @@ LANGUAGE plpgsql VOLATILE;
 SELECT * FROM topology.rc_IsNodeIsolated('bdtopo_topological',2113) ;
 
 
+DROP FUNCTION IF EXISTS topology.rc_NodeConnectivity(varchar, int ); 
+CREATE OR REPLACE FUNCTION topology.rc_NodeConnectivity( IN atopology  varchar ,IN node_id  INT ,OUT connectivity int)AS
+$BODY$
+		--@brief this function looks into edge_data how many edges are connected to the node
+		DECLARE  
+		BEGIN 
+			EXECUTE format(
+			'SELECT count(*)::int
+			FROM (
+			SELECT DISTINCT edge_id --using distinct because we don t want the looping edge counting twice
+			FROM %1$I.edge_data AS ed
+			WHERE ed.start_node = $1 OR ed.end_node = $1
+			) AS sub
+			', atopology) INTO connectivity USING node_id  ;
+			
+			RETURN; 
+		END ;
+	$BODY$
+LANGUAGE plpgsql VOLATILE;
+
+
+SELECT * FROM topology.rc_NodeConnectivity('bdtopo_topological',2123) ;
+
+
