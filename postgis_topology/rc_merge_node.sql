@@ -6,9 +6,9 @@
 ------------------------------
 
   
-DROP FUNCTION IF EXISTS topology.rc_MergeNodeIntoAnother(varchar, int, int, geometry, geometry, int[] ); 
+DROP FUNCTION IF EXISTS topology.rc_MergeNodeIntoAnother(varchar, int, int, geometry, geometry, int[],boolean ); 
 CREATE OR REPLACE FUNCTION topology.rc_MergeNodeIntoAnother( IN atopology  varchar ,INOUT from_node_id  INT ,INOUT to_node_id  INT, IN from_node_geom geometry 
-,  to_node_geom geometry, edge_to_transfer int[] DEFAULT NULL)AS
+,  to_node_geom geometry, edge_to_transfer int[] DEFAULT NULL, perform_edge_geom_change BOOLEAN DEFAULT TRUE)AS
 $BODY$
 		--@brief this function moves a node and update all connected edges geometry accordingly, then delete the old node, then update the new node isolation level.
 		DECLARE 
@@ -34,9 +34,10 @@ $BODY$
 				_q := format('UPDATE %I.edge_data AS e SET end_node = $2 WHERE e.end_node = $1 ',atopology);
 				EXECUTE _q  USING from_node_id, to_node_id;
 
-			--updating the tansfered edges
-				PERFORM topology.rc_MoveNonIsoNode_edges(atopology, to_node_id, to_node_geom,_edges_to_transfer, _topology_precision) ; 
-
+			--updating the tansfered edges 
+			IF perform_edge_geom_change = TRUE THEN 
+				PERFORM topology.rc_MoveNonIsoNode_edges(atopology, to_node_id, to_node_geom,_edges_to_transfer, _topology_precision,NULL,perform_edge_geom_change) ;  
+			END IF ;
 			END IF ; 
 		
 			--delete old node
@@ -44,7 +45,7 @@ $BODY$
 
 			
 			--update new node isolation if needed.
-				PERFORM topology.rc_UpdateNodeisolation( atopology, to_node_id ,to_node_geom, _edges_to_transfer); 
+			PERFORM topology.rc_UpdateNodeisolation( atopology, to_node_id ,to_node_geom, _edges_to_transfer); 
 			
 			--RAISE EXCEPTION '_edges_to_transfer : % ',_edges_to_transfer  ; 
 			
