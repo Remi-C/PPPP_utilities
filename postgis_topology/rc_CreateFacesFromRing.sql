@@ -61,7 +61,9 @@
 			UPDATE %1$I.face  
 			SET mbr =  pf.mbr
 			FROM new_face_mbr AS pf  
-			RETURNING face_id  ;',topology_name)  INTO face_id  USING signed_edges_of_ring ; 
+			WHERE face_id != 0 
+			AND face_id  = $2
+			RETURNING face_id  ;',topology_name)  INTO face_id  USING signed_edges_of_ring,  face_id; 
  
 		RETURN ;
 		END ;
