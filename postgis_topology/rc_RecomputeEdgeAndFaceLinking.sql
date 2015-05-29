@@ -7,7 +7,7 @@
 -- given nodes in a topology, where only start_node and end_node are supposed to be correct, recompute edge linking (next_left, next_right..), and face-linking (left_face, ...)
 
 
- 
+
 
 DROP FUNCTION IF EXISTS topology.rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[] ) ;
 CREATE OR REPLACE FUNCTION topology.rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[],
@@ -19,7 +19,7 @@ $BODY$
 		--first need to recompute edge-linking
 			--for each node : 
 				--list edge clockwise order
-				-- if edge is coming to node, set next_left_edge
+				-- if edge is coming to node, set ne xt_left_edge
 				-- if edge is going out of node, set next_right_edge
 		--then recompute face-linking 
 			--for regular face, create new face if necessary, update
@@ -46,7 +46,6 @@ $BODY$
 	END ;
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
-
 
 
 DROP FUNCTION IF EXISTS topology.rc_RecomputeEdgeLinking(topology_name TEXT, nodes_to_update INT[] ) ;
@@ -134,6 +133,7 @@ $BODY$
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
 
+ 
 
 
 DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges(topology_name TEXT, edges_to_update INT[] ) ;
@@ -189,10 +189,12 @@ $BODY$
 		
 	BEGIN     	  
 		--RAISE NOTICE 'edges to update : %', edges_to_update  ;
- 
+		--RAISE EXCEPTION 'input : edges_to_update %',edges_to_update  ; 
 		--create new face, update edge left and right face when dealing with regular face (ie non-flat face)
 		SELECT * FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name  , edges_to_update)
 		INTO  _inserted_face,_updated_edges,  _faces_to_delete, _edges_in_non_face_ring ;    
+
+		--RAISE EXCEPTION '_inserted_face %,_updated_edges %,  _faces_to_delete %, _edges_in_non_face_ring %',_inserted_face,_updated_edges,  _faces_to_delete, _edges_in_non_face_ring ; 
 
 		--deal with flat face, that are within another face necessarly 
 		SELECT * FROM  topology.rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name
@@ -328,18 +330,19 @@ $BODY$
 				--	(SELECT 1 FROM real_faces  as rf WHERE rf.base_id = r.base_id AND is_this_ring_a_real_face = TRUE)
 		) 
 		, problematic_rings AS ( -- this is a list of ring with not homogeneous face_id
-			SELECT *
+			SELECT base_id, nb_of_different_face_id
 			FROM (
 				SELECT base_id , count(*) as nb_of_different_face_id
 				FROM 
-				 ( 	SELECT base_id, face_id  
+				 ( 	SELECT base_id, face_id  -- ,   sum(abs(face_id))  as sum_abs_face_ids
 					FROM list_of_edge_faces as r 
 					WHERE   EXISTS --we don't take ring that dont form real face
 						(SELECT 1 FROM real_faces  as rf WHERE rf.base_id = r.base_id AND rf.is_this_ring_a_real_face = TRUE)
-					GROUP BY base_id, face_id 
+					GROUP BY base_id, face_id  
 					) AS sub
 				GROUP BY base_id ) AS nb_distinct_values
 			WHERE nb_of_different_face_id> 1 
+				-- OR sum_abs_face_ids = 0 --this  adds the ring if it is only constitued of 0 face_id (universal face can't have a ring !)
 			ORDER BY base_id
 		)
 		, face_id_to_delete AS (--here is the list of face_id to delete because they are used in non-unanimous ring
