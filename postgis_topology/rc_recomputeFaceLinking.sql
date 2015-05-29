@@ -88,9 +88,12 @@ LANGUAGE plpgsql VOLATILE;
 		  - update isolated nodes
 		*/
 		DECLARE 
-		 _is_inside BOOLEAN ; 
-		 _is_flat BOOLEAN ; 
-		 _useless record ; 
+		_is_inside BOOLEAN ; 
+		_is_flat BOOLEAN ; 
+		_face_to_delete INT[] ; 
+		_face_created INT; 
+		_face_updated INT ; 
+		_edge_updated INT[] ; 
 		BEGIN
 
 			--is the ring inside or outside?
@@ -118,6 +121,10 @@ LANGUAGE plpgsql VOLATILE;
 						LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
 					WHERE r.edge_id <0    
 				) 
+				, list_fo_face AS (
+					SELECT DISTINCT face_id
+					FROM list_of_edge_faces
+				)
 				, problematic_rings AS ( -- this is a list of ring with not homogeneous face_id
 				-- are the face id different?
 				-- are the face id identical and all egal to 0
@@ -137,26 +144,50 @@ LANGUAGE plpgsql VOLATILE;
 						SELECT DISTINCT ON (face_id) face_id
 						FROM list_of_edge_faces, problematic_rings
 						WHERE face_id != 0
-				) , creating_face AS (
+				)  
+				, creating_face AS (
 					SELECT topology.rc_CreateFaceFromRing(topology_name, array_agg(edge_id)) AS face_id
 					FROM problematic_rings, rings 
 				) 
+				, updating_face_MBR AS ( --updating the face MBR if the face wasn't created
+					SELECT topology.rc_UpdateFaceMBRFromRing(topology_name, array_agg(lo.edge_id)  
+						, (
+						SELECT face_id 
+						FROM list_fo_face
+						WHERE face_id !=0
+						EXCEPT 
+						SELECT face_id 
+						FROM creating_face 
+						WHERE face_id !=0
+						) )  AS updated_face
+					FROM list_of_edge_faces AS lo 
+				)
 				, updating_edges AS(
-					SELECT topology.Update_face_of_RingEdges(topology_name, array_agg(edge_id) ,face_id) AS correctly_updated
+					SELECT topology.Update_face_of_RingEdges(topology_name, array_agg(edge_id) ,face_id) AS updated_edges
 					FROM problematic_rings, rings, creating_face
 					GROUP BY face_id --useless
 				)
-				SELECT correctly_updated INTO _useless
-				FROM  updating_edges; 
+				SELECT (SELECT array_agg(face_id) 
+						FROM  face_id_to_delete) 
+					,(SELECT  face_id  
+						FROM  creating_face) 
+					,(SELECT updated_edges FROM updating_edges) 
+					, (SELECT updated_face FROM updating_face_MBR)
+				INTO _face_to_delete, _face_created, _edge_updated, _face_updated
+				;
 			ELSE
 				--outside ring, or flat ring
 				RAISE EXCEPTION 'outside ring, or flat ring , not implemented yet';
 				
 			END IF ; 
 
-			-- delete useless face
+			
+			-- delete useless face 
+			DELETE FROM bdtopo_topological.face WHERE
+			face_id = ANY (_face_to_delete) ; 
 			-- update isolated nodes
 
+			--RAISE EXCEPTION '_face_to_delete %, _face_created %, _face_updated % , _edge_updated % ',_face_to_delete, _face_created, _face_updated,  _edge_updated ; 
 		RETURN  TRUE;
 		END ;
 	$BODY$
