@@ -165,8 +165,7 @@ LANGUAGE plpgsql VOLATILE;
 
 
 DROP FUNCTION IF EXISTS topology.Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int) ;
-	CREATE OR REPLACE FUNCTION  topology.Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int )
-	RETURNS BOOLEAN 
+	CREATE OR REPLACE FUNCTION  topology.Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int, OUT updated_edges INT[] ) 
 	AS $BODY$   
 		/** @brief given a ring, and a face_id, update the left/right_face of the edges of the ring 
 		*/
@@ -217,8 +216,17 @@ DROP FUNCTION IF EXISTS topology.Update_face_of_RingEdges(topology_name TEXT, si
 				AND (right_face != nv OR left_face != nv)
 			RETURNING ed.edge_id   
 		)
-		SELECT 1  ; ',topology_name) INTO _useless    USING signed_edges_of_ring,new_face_id; 
-		RETURN _useless IS NOT NULL;
+		, updated_edges AS (
+			SELECT edge_id
+			FROM update_edge_only_left_face
+			UNION SELECT edge_id
+			FROM update_edge_only_right_face
+			UNION SELECT edge_id
+			FROM update_edge_right_and_left 
+		)
+		SELECT array_agg(edge_id)
+		FROM updated_edges ; ',topology_name) INTO updated_edges USING signed_edges_of_ring,new_face_id; 
+		RETURN  ;
 		END ;
 	$BODY$
 	LANGUAGE plpgsql VOLATILE STRICT; 
