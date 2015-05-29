@@ -95,6 +95,7 @@ LANGUAGE plpgsql VOLATILE;
 		_face_updated INT ; 
 		_edge_updated INT[] ; 
 		_node_updated INT[] ;
+		_edge_updated_outside INT[] ;
 		BEGIN
 
 			--is the ring inside or outside?
@@ -109,8 +110,11 @@ LANGUAGE plpgsql VOLATILE;
 				FROM  topology.rc_RingToFace_inside(topology_name, signed_edges_of_ring) 
 				INTO _face_to_delete, _face_created, _edge_updated, _face_updated ;
 			ELSE
-				--outside ring, or flat ring
-				RAISE EXCEPTION 'outside ring, or flat ring , not implemented yet';
+				RAISE EXCEPTION 'ring is an outside ring "%" or a flat ring "%"',NOT _is_inside,_is_flat  ; 
+				--outside ring, or flat ring 
+				SELECT *
+				FROM  topology.rc_RingToFace_outside(topology_name, signed_edges_of_ring,_face_to_delete) 
+				INTO  _edge_updated_outside ;
 				
 			END IF ; 
 
@@ -140,8 +144,8 @@ LANGUAGE plpgsql VOLATILE;
 			face_id = ANY (_face_to_delete) ; 
 			
 
-			--RAISE EXCEPTION '_face_to_delete %, _face_created %, _face_updated % , _edge_updated %, _node_updated % '
-			--	,_face_to_delete, _face_created, _face_updated,  _edge_updated , _node_updated; 
+			RAISE EXCEPTION ' _face_created %, _face_updated % , _edge_updated %, _edge_updated_outside %, _node_updated %, _face_to_delete %  '
+				 , _face_created, _face_updated,  _edge_updated ,_edge_updated_outside ,  _node_updated,_face_to_delete; 
 		RETURN  TRUE;
 		END ;
 	$BODY$
@@ -246,6 +250,86 @@ LANGUAGE plpgsql VOLATILE;
 		END ;
 	$BODY$
 	LANGUAGE plpgsql VOLATILE STRICT; 
+
+
+
+	DROP FUNCTION IF EXISTS topology.rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] , face_to_delete INT[]) ;
+	CREATE OR REPLACE FUNCTION  topology.rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] , face_to_delete INT[]
+		 ,OUT  edge_updated INT[] )
+	AS $BODY$   
+		/** this is a helper function. Given a ring, will update correct left_face, right_face  of edges of ring 
+		Works only for outside face.
+		WARNING : should not be used alone, there is no deletion of useless face, nor update of isolated nodes.
+		 - if the ring is an  outside : 
+		     - find bounding face (0 by default)
+		  - update left_face, right_face
+		*/
+		DECLARE   
+		_edge_updated INT[] ; 
+		BEGIN
+  
+			WITH rings AS ( -- unnesting the list of edges to update
+				SELECT DISTINCT ON (edge_id) f.* AS s_edges
+				FROM  rc_unnest_with_ordinality( signed_edges_of_ring)  AS f(edge_id,ordinality)
+				ORDER BY edge_id 
+			 
+			)  
+			, faces_to_delete AS (
+				SELECT DISTINCT u AS face_id
+				FROM unnest(face_to_delete) AS u
+			)
+			, list_of_edges AS ( --joingin the edge with edge table, to get sign and face_id of edge
+				SELECT  r.ordinality,r.edge_id AS s_edge_id, abs(r.edge_id) as edge_id, sign(r.edge_id) AS sign , geom as edge_geom
+				FROM rings AS r
+					LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id) 
+			) 
+			,geom_collected AS (--constructing a grouping of edge geom per ring
+				SELECT  ST_Collect(edge_geom) AS edge_collected
+				FROM list_of_edges 
+			)
+			,potential_faces AS (--getting potential face where the ring could potentially within, and that are not in the deleted list
+				--it is potential because we use bbox, but we must check with actual geometry
+				SELECT  edge_collected,  f.face_id AS potential_face_id
+					,CASE --adding a security to alwys include 0 face, in case the ring is wihtin the universal face (0)
+						WHEN  f.face_id<> 0 THEN ST_GetFaceGeometry('bdtopo_topological',  f.face_id) 
+						ELSE ST_GeomFromtext('POLYGON EMPTY',ST_SRID(edge_collected)) 
+					END as face_geom
+				FROM geom_collected as gc, bdtopo_topological.face as f
+				WHERE (ST_Within(gc.edge_collected,f.mbr) OR  f.face_id = 0) --including 0 face 
+					AND NOT EXISTS (--must not choose face that will be deleted ! 
+						SELECT *
+						FROM faces_to_delete AS fd
+						WHERE fd.face_id  =  f.face_id
+					)
+					   
+			)
+			,exact_face AS ( --use the actual face geometry to perform the within test, include the 0 face in case there are no others
+				SELECT  potential_face_id --the disctinct and ORDER are essentials
+					, CASE WHEN ST_Area(face_geom) >0 THEN ST_Area(face_geom) ELSE NULL END  as area --we assign the NULL area to universal face 
+				FROM potential_faces
+					WHERE (ST_Within(edge_collected,face_geom) = TRUE OR potential_face_id = 0)
+					ORDER BY  area ASC NULLS LAST, potential_face_id ASC --null is for the universal face, that should be used in last resort
+				LIMIT 1 
+			) 
+			,preparing_update AS ( --listing edge with associated new face_id 
+				SELECT DISTINCT ON (ei.s_edge_id)   ei.s_edge_id, ei.ordinality,  potential_face_id --distinct is just a security
+				FROM exact_face as ef , list_of_edges as ei 
+			)
+			, updating_edges AS(
+				SELECT topology.Update_face_of_RingEdges(topology_name, array_agg(s_edge_id ORDER BY ordinality ASC) ,potential_face_id) AS updated_edges
+				FROM preparing_update 
+				GROUP BY potential_face_id --useless
+			)  
+			SELECT  
+				(SELECT  updated_edges  FROM updating_edges)  
+			INTO   edge_updated ;
+			 
+
+			--RAISE EXCEPTION '  _edge_updated % ',  _edge_updated ; 
+		RETURN  ;
+		END ;
+	$BODY$
+	LANGUAGE plpgsql VOLATILE CALLED ON NULL INPUT ; 
 
 
 
