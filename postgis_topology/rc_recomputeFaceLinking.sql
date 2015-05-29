@@ -104,6 +104,50 @@ LANGUAGE plpgsql VOLATILE;
 			--deal first with the simple is_inside case
 			IF _is_inside = TRUE THEN
 			
+				SELECT *
+				FROM  topology.rc_RingToFace_inside(topology_name, signed_edges_of_ring) 
+				INTO _face_to_delete, _face_created, _edge_updated, _face_updated ;
+			ELSE
+				--outside ring, or flat ring
+				RAISE EXCEPTION 'outside ring, or flat ring , not implemented yet';
+				
+			END IF ; 
+
+			-- update isolated nodes
+			
+			-- delete useless face 
+			DELETE FROM bdtopo_topological.face WHERE
+			face_id = ANY (_face_to_delete) ; 
+			
+
+			--RAISE EXCEPTION '_face_to_delete %, _face_created %, _face_updated % , _edge_updated % ',_face_to_delete, _face_created, _face_updated,  _edge_updated ; 
+		RETURN  TRUE;
+		END ;
+	$BODY$
+	LANGUAGE plpgsql VOLATILE STRICT; 
+
+	DROP FUNCTION IF EXISTS topology.rc_RingToFace_inside(topology_name TEXT, signed_edges_of_ring INT[] ) ;
+	CREATE OR REPLACE FUNCTION  topology.rc_RingToFace_inside(topology_name TEXT, signed_edges_of_ring INT[] 
+		,OUT face_to_delete INT[], OUT face_created INT,OUT  edge_updated INT[], OUT face_updated INT)
+	AS $BODY$   
+		/** this is a helper function. Given a ring, will update correct left_face, right_face  of edges of ring, and manage face.
+		Works only for inside face.
+		WARNING : should not be used alone, there is no deletion of useless face, nor update of isolated nodes.
+		 - if the ring is an inside  
+		     - if the relevant face linked by edges of the ring are all the same and not 0
+		       - update face MBR
+		     - else
+		       -  create a new face 
+		*/
+		DECLARE  
+		_face_to_delete INT[] ; 
+		_face_created INT; 
+		_face_updated INT ; 
+		_edge_updated INT[] ; 
+		BEGIN
+
+			 
+			
 				WITH rings AS ( -- unnesting the list of edges to update
 						SELECT DISTINCT ON (edge_id) f.* AS s_edges
 						FROM  rc_unnest_with_ordinality( signed_edges_of_ring)  AS f(edge_id,ordinality)
@@ -166,29 +210,18 @@ LANGUAGE plpgsql VOLATILE;
 					SELECT topology.Update_face_of_RingEdges(topology_name, array_agg(edge_id) ,face_id) AS updated_edges
 					FROM problematic_rings, rings, creating_face
 					GROUP BY face_id --useless
-				)
+				)  
 				SELECT (SELECT array_agg(face_id) 
 						FROM  face_id_to_delete) 
 					,(SELECT  face_id  
 						FROM  creating_face) 
 					,(SELECT updated_edges FROM updating_edges) 
 					, (SELECT updated_face FROM updating_face_MBR)
-				INTO _face_to_delete, _face_created, _edge_updated, _face_updated
-				;
-			ELSE
-				--outside ring, or flat ring
-				RAISE EXCEPTION 'outside ring, or flat ring , not implemented yet';
-				
-			END IF ; 
-
-			
-			-- delete useless face 
-			DELETE FROM bdtopo_topological.face WHERE
-			face_id = ANY (_face_to_delete) ; 
-			-- update isolated nodes
+				INTO face_to_delete, face_created, edge_updated, face_updated ;
+			 
 
 			--RAISE EXCEPTION '_face_to_delete %, _face_created %, _face_updated % , _edge_updated % ',_face_to_delete, _face_created, _face_updated,  _edge_updated ; 
-		RETURN  TRUE;
+		RETURN  ;
 		END ;
 	$BODY$
 	LANGUAGE plpgsql VOLATILE STRICT; 
