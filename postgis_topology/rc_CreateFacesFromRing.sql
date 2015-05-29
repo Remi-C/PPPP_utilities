@@ -36,3 +36,36 @@
 		END ;
 	$BODY$
 	LANGUAGE plpgsql VOLATILE STRICT; 
+
+	DROP FUNCTION IF EXISTS topology.rc_UpdateFaceMBRFromRing(topology_name TEXT, signed_edges_of_ring INT[] , face_id int) ;
+	CREATE OR REPLACE FUNCTION  topology.rc_UpdateFaceMBRFromRing(topology_name TEXT, signed_edges_of_ring INT[]  , INOUT face_id  INT)
+	AS $BODY$   
+		/** @brief given a ring, update the boudnign box of the face
+		@return return the face_id of the updated face
+		*/
+		DECLARE 
+		BEGIN
+		
+		EXECUTE format('
+		 WITH rings AS ( -- unnesting the list of edges to update
+			SELECT DISTINCT ON (edge_id) abs(s_edges) AS edge_id, ed.geom AS edge_geom
+			FROM   unnest ( $1)  AS s_edges
+				LEFT OUTER JOIN %1$I.edge_data AS ed ON (ed.edge_id =abs(s_edges)  )
+			ORDER BY edge_id
+		)  
+		 , new_face_mbr AS ( --computing the bbox of new face
+			SELECT  ST_Envelope(ST_Collect(edge_geom) ) as mbr 
+			FROM rings AS le  
+		)
+		--, new_faces as ( --inserting new faces  into face table
+			UPDATE %1$I.face  
+			SET mbr =  pf.mbr
+			FROM new_face_mbr AS pf  
+			RETURNING face_id  ;',topology_name)  INTO face_id  USING signed_edges_of_ring ; 
+ 
+		RETURN ;
+		END ;
+	$BODY$
+	LANGUAGE plpgsql VOLATILE STRICT; 
+
+	
