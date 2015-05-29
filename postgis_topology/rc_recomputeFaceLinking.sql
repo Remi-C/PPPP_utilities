@@ -66,22 +66,7 @@ $BODY$
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
 
-
-
-	WITH edges_to_up AS ( -- unnesting the list of edges to update
-			SELECT DISTINCT 
-			unnest(ARRAY[832,-832,833])  
-			AS edge_id
-		) 
-		 ,rings AS  ( --for each edge, geztting the ring it is in, (aka the face ), but we don't want the same ring twice
-			SELECT DISTINCT ON (edge_id) edge_id as base_id, f.sequence as ordinality, f.edge AS edge_id
-			FROM edges_to_up, topology.GetRingEdges('bdtopo_topological',edge_id ) AS f 
-			ORDER BY edge_id , base_id
-		)
-		SELECT topology.rc_RingToFace('bdtopo_topological' ,array_agg(edge_id ORDER BY ordinality) ) 
-		FROM rings
-		ORDER BY base_id, ordinality
-
+ 
 
 
 
@@ -105,6 +90,7 @@ LANGUAGE plpgsql VOLATILE;
 		DECLARE 
 		 _is_inside BOOLEAN ; 
 		 _is_flat BOOLEAN ; 
+		 _useless record ; 
 		BEGIN
 
 			--is the ring inside or outside?
@@ -117,7 +103,7 @@ LANGUAGE plpgsql VOLATILE;
 			
 				WITH rings AS ( -- unnesting the list of edges to update
 						SELECT DISTINCT ON (edge_id) f.* AS s_edges
-						FROM  rc_unnest_with_ordinality( ARRAY[-832,833,-833,830,-831])  AS f(edge_id,ordinality)
+						FROM  rc_unnest_with_ordinality( signed_edges_of_ring)  AS f(edge_id,ordinality)
 						ORDER BY edge_id
 					 
 				)  
@@ -153,21 +139,28 @@ LANGUAGE plpgsql VOLATILE;
 						WHERE face_id != 0
 				) , creating_face AS (
 					SELECT topology.rc_CreateFaceFromRing(topology_name, array_agg(edge_id)) AS face_id
-					FROM rings 
+					FROM problematic_rings, rings 
 				) 
 				, updating_edges AS(
 					SELECT topology.Update_face_of_RingEdges(topology_name, array_agg(edge_id) ,face_id) AS correctly_updated
-					FROM rings, creating_face
+					FROM problematic_rings, rings, creating_face
+					GROUP BY face_id --useless
 				)
-				SELECT correctly_updated
+				SELECT correctly_updated INTO _useless
 				FROM  updating_edges; 
+			ELSE
+				--outside ring, or flat ring
+				RAISE EXCEPTION 'outside ring, or flat ring , not implemented yet';
+				
 			END IF ; 
-			
+
+			-- delete useless face
+			-- update isolated nodes
 
 		RETURN  TRUE;
 		END ;
 	$BODY$
-	LANGUAGE plpgsql VOLATILE; 
+	LANGUAGE plpgsql VOLATILE STRICT; 
 
 
 
@@ -205,6 +198,7 @@ DROP FUNCTION IF EXISTS topology.Update_face_of_RingEdges(topology_name TEXT, si
 			FROM prepare_edges_update AS pe
 			WHERE pe.edge_id  = ed.edge_id AND pe.sign >0
 				AND need_update_left_and_right = FALSE
+				AND left_face != nv
 			RETURNING ed.edge_id  
 		)
 		,update_edge_only_right_face AS (   --updating right_face of edge with new face id
@@ -212,6 +206,7 @@ DROP FUNCTION IF EXISTS topology.Update_face_of_RingEdges(topology_name TEXT, si
 			FROM prepare_edges_update AS pe
 			WHERE pe.edge_id  = ed.edge_id AND pe.sign <0
 				AND need_update_left_and_right = FALSE
+				AND right_face != nv
 			RETURNING ed.edge_id   
 		)
 		,update_edge_right_and_left AS( --updating both left_face and right_face of edge with new face id
@@ -219,6 +214,7 @@ DROP FUNCTION IF EXISTS topology.Update_face_of_RingEdges(topology_name TEXT, si
 			FROM prepare_edges_update AS pe
 			WHERE  pe.edge_id  = ed.edge_id
 				AND need_update_left_and_right = TRUE
+				AND (right_face != nv OR left_face != nv)
 			RETURNING ed.edge_id   
 		)
 		SELECT 1  ; ',topology_name) INTO _useless    USING signed_edges_of_ring,new_face_id; 
