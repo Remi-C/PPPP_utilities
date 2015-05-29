@@ -94,6 +94,7 @@ LANGUAGE plpgsql VOLATILE;
 		_face_created INT; 
 		_face_updated INT ; 
 		_edge_updated INT[] ; 
+		_node_updated INT[] ;
 		BEGIN
 
 			--is the ring inside or outside?
@@ -114,13 +115,33 @@ LANGUAGE plpgsql VOLATILE;
 			END IF ; 
 
 			-- update isolated nodes
+			WITH faces_where_node_should_be_updated AS (
+				SELECT unnest(_face_to_delete) AS face_id
+				UNION  SELECT _face_updated
+				UNION SELECT _face_created
+			)
+			,isolated_node_to_update AS ( --we take all the nodes that are isolated and may have been affected (geometrically), and may have been affteced (semantically). 
+				SELECT n.node_id
+				FROM faces_where_node_should_be_updated AS fw
+					LEFT OUTER JOIN bdtopo_topological.face AS f USING (face_id)
+					, bdtopo_topological.node AS n  
+				WHERE ST_Intersects(n.geom , f.mbr ) = TRUE
+					AND n.containing_face IS NOT NULL
+					OR n.containing_face = _face_created
+					OR n.containing_face = _face_updated
+					OR n.containing_face = ANY (_face_to_delete)
+			)
+			SELECT rc_CorrectIsolatedNodes(topology_name, array_agg(node_id),_face_to_delete) INTO _node_updated
+			FROM isolated_node_to_update ; 
+			 
 			
 			-- delete useless face 
 			DELETE FROM bdtopo_topological.face WHERE
 			face_id = ANY (_face_to_delete) ; 
 			
 
-			--RAISE EXCEPTION '_face_to_delete %, _face_created %, _face_updated % , _edge_updated % ',_face_to_delete, _face_created, _face_updated,  _edge_updated ; 
+			--RAISE EXCEPTION '_face_to_delete %, _face_created %, _face_updated % , _edge_updated %, _node_updated % '
+			--	,_face_to_delete, _face_created, _face_updated,  _edge_updated , _node_updated; 
 		RETURN  TRUE;
 		END ;
 	$BODY$
