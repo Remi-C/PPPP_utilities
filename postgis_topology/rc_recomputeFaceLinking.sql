@@ -110,7 +110,7 @@ LANGUAGE plpgsql VOLATILE;
 				FROM  topology.rc_RingToFace_inside(topology_name, signed_edges_of_ring) 
 				INTO _face_to_delete, _face_created, _edge_updated, _face_updated ;
 			ELSE
-				RAISE EXCEPTION 'ring is an outside ring "%" or a flat ring "%"',NOT _is_inside,_is_flat  ; 
+				--RAISE EXCEPTION 'ring is an outside ring "%" or a flat ring "%"',NOT _is_inside,_is_flat  ; 
 				--outside ring, or flat ring 
 				SELECT *
 				FROM  topology.rc_RingToFace_outside(topology_name, signed_edges_of_ring,_face_to_delete) 
@@ -144,8 +144,8 @@ LANGUAGE plpgsql VOLATILE;
 			face_id = ANY (_face_to_delete) ; 
 			
 
-			RAISE EXCEPTION ' _face_created %, _face_updated % , _edge_updated %, _edge_updated_outside %, _node_updated %, _face_to_delete %  '
-				 , _face_created, _face_updated,  _edge_updated ,_edge_updated_outside ,  _node_updated,_face_to_delete; 
+			--RAISE EXCEPTION ' _face_created %, _face_updated % , _edge_updated %, _edge_updated_outside %, _node_updated %, _face_to_delete %  '
+			--	 , _face_created, _face_updated,  _edge_updated ,_edge_updated_outside ,  _node_updated,_face_to_delete; 
 		RETURN  TRUE;
 		END ;
 	$BODY$
