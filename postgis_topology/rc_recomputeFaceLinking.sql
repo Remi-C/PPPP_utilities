@@ -44,6 +44,8 @@ $BODY$
 		
 	BEGIN     	   
 
+		--RAISE EXCEPTION 'edges_to_update : % ',edges_to_update ; 
+		
 		WITH edges_to_up AS ( -- unnesting the list of edges to update
 			SELECT DISTINCT 
 			unnest(edges_to_update)  
@@ -97,8 +99,9 @@ LANGUAGE plpgsql VOLATILE;
 		_node_updated INT[] ;
 		_edge_updated_outside INT[] ;
 		_face_to_potentially_delete INT[];  
+		_temp record;
 		BEGIN
-
+			RAISE EXCEPTION 'toto' ; 
 			--is the ring inside or outside?
 			_is_inside := topology.rc_SignedArea(topology_name, signed_edges_of_ring ) >0 ; 
 			--is the ring flat?
@@ -119,15 +122,21 @@ LANGUAGE plpgsql VOLATILE;
 				
 			END IF ; 
 
-			--RAISE EXCEPTION '_face_to_potentially_delete %',_face_to_potentially_delete;
-			-- update isolated nodes
+			-- RAISE EXCEPTION '_face_to_potentially_delete %',_face_to_potentially_delete;
+			-- update isolated nodes 
+			--RAISE EXCEPTION '_temp : %',_temp ; 
+				
 			WITH faces_where_node_should_be_updated AS (
+				SELECT face_id 
+				FROM (
 				SELECT unnest(_face_to_delete) AS face_id
 				UNION  SELECT _face_updated
 				UNION SELECT _face_created
 				UNION SELECT unnest(_face_to_potentially_delete)
+				) AS sub
+				WHERE face_id IS NOT NULL AND face_id !=0 --safeguard
 			)
-			,isolated_node_to_update AS ( --we take all the nodes that are isolated and may have been affected (geometrically), and may have been affteced (semantically). 
+			,isolated_node_to_update AS ( --we take all the nodes that are isolated and may have been affected (geometrically), and may have been affected (semantically). 
 				SELECT n.node_id
 				FROM faces_where_node_should_be_updated AS fw
 					LEFT OUTER JOIN bdtopo_topological.face AS f USING (face_id)
