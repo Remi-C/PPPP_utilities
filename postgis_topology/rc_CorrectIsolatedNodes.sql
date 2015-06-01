@@ -80,8 +80,8 @@ $BODY$
 			SELECT DISTINCT ON (pi.node_id) pi.node_id, pi.face_id 
 				, ST_Area(face_geom) as area
 			FROM potential_face_id as pi
-				NATURAL JOIN potential_faces_geom as pg
-			WHERE ST_Intersects(face_geom,node_geom ) AND face_id != 0 OR  face_id = 0
+				LEFT OUTER JOIN potential_faces_geom as pg USING (face_id)
+			WHERE ST_Intersects(face_geom,pi.node_geom ) AND face_id != 0 OR  face_id = 0
 			ORDER BY  pi.node_id, area ASC NULLS LAST, (pi.face_id=0) DESC,  pi.face_id DESC
 				-- in the where, we see if the point is really intersecting the actual face, and not only the bbow
 				--, while ignoring this test for universal face
