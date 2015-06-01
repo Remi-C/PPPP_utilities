@@ -69,7 +69,7 @@ $BODY$
 					)
 		)
 		, potential_faces_geom AS(	--listing the potential face and finding their geometry
-			SELECT face_id
+			SELECT face_id, node_geom
 				, CASE --adding a security to alwys include 0 face, in case the ring is wihtin the universal face (0)
 						WHEN face_id<> 0 THEN ST_GetFaceGeometry('bdtopo_topological', face_id) 
 						ELSE NULL -- ST_GeomFromtext('POLYGON EMPTY',ST_SRID(node_geom)) 
@@ -81,8 +81,12 @@ $BODY$
 				, ST_Area(face_geom) as area
 			FROM potential_face_id as pi
 				NATURAL JOIN potential_faces_geom as pg
+			WHERE ST_Intersects(face_geom,node_geom ) AND face_id != 0 OR  face_id = 0
 			ORDER BY  pi.node_id, area ASC NULLS LAST, (pi.face_id=0) DESC,  pi.face_id DESC
-				--complicated order by : getting prioritarly the smallest face (excluding NULL face), then  prioritary the 0 face if any, then the highest face id if there were no universal face
+				-- in the where, we see if the point is really intersecting the actual face, and not only the bbow
+				--, while ignoring this test for universal face
+				--complicated order by : getting prioritarly the smallest face (excluding NULL face)
+				--, then  prioritary the 0 face if any, then the highest face id if there were no universal face
 		) 
 		, updating_node AS(--update the node accordingly if necessary
 			UPDATE bdtopo_topological.node set containing_face = face_id
@@ -97,4 +101,4 @@ $BODY$
 		RETURN  ;
 	END ;
 	$BODY$
-LANGUAGE plpgsql VOLATILE; 
+LANGUAGE plpgsql VOLATILE  CALLED ON NULL INPUT; 
