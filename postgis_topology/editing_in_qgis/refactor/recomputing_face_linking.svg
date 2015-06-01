@@ -515,6 +515,20 @@
          id="path4803-9"
          inkscape:connector-curvature="0" />
     </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Mend-17"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mend">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         id="path4803-40"
+         inkscape:connector-curvature="0" />
+    </marker>
   </defs>
   <metadata
      id="metadata7">
@@ -695,7 +709,7 @@
          id="flowPara4775-1-1-5-2"
          style="font-size:20px">ring type</flowPara></flowRoot>    <path
        style="fill:none;stroke:#000000;stroke-width:1.28185916px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
-       d="M 427.91935,-1.475483 531.79702,65.33677 424.91069,352.57546"
+       d="M 427.91935,-1.475483 531.79702,65.33677 472.76783,238.28975"
        id="path3416-41"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccc" />
@@ -807,7 +821,7 @@
        xml:space="preserve"
        id="flowRoot4769-4-2-1"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       transform="translate(323.25774,394.22115)"><flowRegion
+       transform="translate(372.54345,284.22115)"><flowRegion
          id="flowRegion4771-5-7-8"><rect
            id="rect4773-5-6-4"
            width="233.22119"
@@ -945,5 +959,23 @@
            x="14.285714"
            y="-39.392693" /></flowRegion><flowPara
          style="font-size:20px"
-         id="flowPara5553-2-6">update isolated nodes</flowPara></flowRoot>  </g>
+         id="flowPara5553-2-6">update isolated nodes</flowPara></flowRoot>    <path
+       style="fill:none;stroke:#000000;stroke-width:1.28185916px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
+       d="m 464.42225,295.69306 -40.56276,42.62237"
+       id="path3416-15-3-2-5-0-1-9"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4769-4-2-1-4"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       transform="translate(325.24177,379.05431)"><flowRegion
+         id="flowRegion4771-5-7-8-8"><rect
+           id="rect4773-5-6-4-8"
+           width="143.22119"
+           height="55.58812"
+           x="14.285714"
+           y="-39.392693" /></flowRegion><flowPara
+         style="font-size:20px"
+         id="flowPara5553-24">get potentially unused face</flowPara></flowRoot>  </g>
 </svg>

@@ -96,6 +96,7 @@ LANGUAGE plpgsql VOLATILE;
 		_edge_updated INT[] ; 
 		_node_updated INT[] ;
 		_edge_updated_outside INT[] ;
+		_face_to_potentially_delete INT[];  
 		BEGIN
 
 			--is the ring inside or outside?
@@ -114,10 +115,11 @@ LANGUAGE plpgsql VOLATILE;
 				--outside ring, or flat ring 
 				SELECT *
 				FROM  topology.rc_RingToFace_outside(topology_name, signed_edges_of_ring,_face_to_delete) 
-				INTO  _edge_updated_outside ;
+				INTO  _edge_updated_outside,_face_to_potentially_delete ;
 				
 			END IF ; 
 
+			--RAISE EXCEPTION '_face_to_potentially_delete %',_face_to_potentially_delete;
 			-- update isolated nodes
 			WITH faces_where_node_should_be_updated AS (
 				SELECT unnest(_face_to_delete) AS face_id
@@ -142,7 +144,13 @@ LANGUAGE plpgsql VOLATILE;
 			-- delete useless face 
 			DELETE FROM bdtopo_topological.face WHERE
 			face_id = ANY (_face_to_delete) ; 
-			
+			--delete face from _face_to_potentially_delete if they are really useless
+			DELETE FROM bdtopo_topological.face WHERE
+			face_id = ANY (_face_to_potentially_delete)
+			AND NOT EXISTS (
+				SELECT 1 FROM bdtopo_topological.edge_data AS ed 
+				WHERE ed.left_face = face_id OR ed.right_face = face_id
+			) ; 
 
 			--RAISE EXCEPTION ' _face_created %, _face_updated % , _edge_updated %, _edge_updated_outside %, _node_updated %, _face_to_delete %  '
 			--	 , _face_created, _face_updated,  _edge_updated ,_edge_updated_outside ,  _node_updated,_face_to_delete; 
@@ -180,12 +188,14 @@ LANGUAGE plpgsql VOLATILE;
 					 
 				)  
 				, list_of_edge_faces AS ( --joingin the edge with edge table, to get sign and face_id of edge
-					SELECT  r.ordinality,r.edge_id AS s_edge_id, abs(r.edge_id) as edge_id, ed.left_face as face_id, geom as edge_geom, +1 as sign
+					SELECT  r.ordinality,r.edge_id AS s_edge_id, abs(r.edge_id) as edge_id
+							, ed.left_face as face_id, geom as edge_geom, +1 as sign
 					FROM rings AS r
 						LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
 					WHERE r.edge_id >0 
-						UNION ALL 
-						SELECT   r.ordinality,r.edge_id AS s_edge_id, abs(r.edge_id) as edge_id , ed.right_face as face_id, geom as edge_geom, -1 as sign
+					UNION ALL 
+					SELECT   r.ordinality,r.edge_id AS s_edge_id, abs(r.edge_id) as edge_id
+						, ed.right_face as face_id, geom as edge_geom, -1 as sign
 					FROM rings AS r
 						LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
 					WHERE r.edge_id <0    
@@ -253,9 +263,12 @@ LANGUAGE plpgsql VOLATILE;
 
 
 
-	DROP FUNCTION IF EXISTS topology.rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] , face_to_delete INT[]) ;
-	CREATE OR REPLACE FUNCTION  topology.rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] , face_to_delete INT[]
-		 ,OUT  edge_updated INT[] )
+	DROP FUNCTION IF EXISTS topology.rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] 
+		, face_to_delete INT[]) ;
+	CREATE OR REPLACE FUNCTION  topology.rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] 
+	, face_to_delete INT[]
+		 ,OUT  edge_updated INT[] 
+		 , OUT face_to_potentially_delete INT[])
 	AS $BODY$   
 		/** this is a helper function. Given a ring, will update correct left_face, right_face  of edges of ring 
 		Works only for outside face.
@@ -279,10 +292,23 @@ LANGUAGE plpgsql VOLATILE;
 				FROM unnest(face_to_delete) AS u
 			)
 			, list_of_edges AS ( --joingin the edge with edge table, to get sign and face_id of edge
-				SELECT  r.ordinality,r.edge_id AS s_edge_id, abs(r.edge_id) as edge_id, sign(r.edge_id) AS sign , geom as edge_geom
-				FROM rings AS r
-					LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id) 
-			) 
+					SELECT  r.ordinality,r.edge_id AS s_edge_id, abs(r.edge_id) as edge_id
+							, ed.left_face as face_id, geom as edge_geom, +1 as sign
+					FROM rings AS r
+						LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
+					WHERE r.edge_id >0 
+					UNION ALL 
+					SELECT   r.ordinality, r.edge_id AS s_edge_id, abs(r.edge_id) as edge_id
+						, ed.right_face as face_id, geom as edge_geom, -1 as sign
+					FROM rings AS r
+						LEFT OUTER JOIN bdtopo_topological.edge_data AS ed ON (abs(r.edge_id ) = ed.edge_id)
+					WHERE r.edge_id <0    
+			)
+			,potential_face_to_delete AS (
+				SELECT DISTINCT face_id
+				FROM list_of_edges
+				WHERE face_id != 0 
+			)
 			,geom_collected AS (--constructing a grouping of edge geom per ring
 				SELECT  ST_Collect(edge_geom) AS edge_collected
 				FROM list_of_edges 
@@ -322,7 +348,8 @@ LANGUAGE plpgsql VOLATILE;
 			)  
 			SELECT  
 				(SELECT  updated_edges  FROM updating_edges)  
-			INTO   edge_updated ;
+				, (SELECT array_agg(face_id) FROM potential_face_to_delete ) 
+			INTO   edge_updated ,face_to_potentially_delete;
 			 
 
 			--RAISE EXCEPTION '  _edge_updated % ',  _edge_updated ; 
