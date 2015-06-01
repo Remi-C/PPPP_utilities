@@ -46,7 +46,7 @@ $BODY$
 
 		WITH edges_to_up AS ( -- unnesting the list of edges to update
 			SELECT DISTINCT 
-			unnest(ARRAY[832,-832,833,830,-830])  
+			unnest(edges_to_update)  
 			AS edge_id
 		) 
 		 ,rings AS  ( --for each edge, geztting the ring it is in, (aka the face ), but we don't want the same ring twice
