@@ -125,6 +125,7 @@ LANGUAGE plpgsql VOLATILE;
 				SELECT unnest(_face_to_delete) AS face_id
 				UNION  SELECT _face_updated
 				UNION SELECT _face_created
+				UNION SELECT unnest(_face_to_potentially_delete)
 			)
 			,isolated_node_to_update AS ( --we take all the nodes that are isolated and may have been affected (geometrically), and may have been affteced (semantically). 
 				SELECT n.node_id
