@@ -74,4 +74,47 @@ $BODY$
 -- 			 )
 -- 			)
 -- 	FROM the_geom, ST_Centroid(geom) as centroid  ;
+
+
  
+
+DROP FUNCTION IF EXISTS public.rc_affine_centered(  igeom GEOMETRY,   center GEOMETRY(Point),a float, b float,  d float, e float , xoff float, yoff float);
+CREATE OR REPLACE FUNCTION  
+	public.rc_affine_centered(  igeom GEOMETRY,   center GEOMETRY(Point) DEFAULT NULL,a float DEFAULT 1 , b float DEFAULT 0,  d float DEFAULT 0, e float DEFAULT 1, xoff float DEFAULT 0, yoff float DEFAULT 0)  RETURNS GEOMETRY AS
+$BODY$
+	--@brief : this function use an affine transformation on a translated geom, the geom being translated to the the center gien as input
+	--@param : a geom to be scaled
+	--@param : a,b,c .. see ST_Affine function
+	--@return : a transformed  geom 
+
+		DECLARE  
+		BEGIN  
+
+			IF center IS NULL OR st_isempty(center)=TRUE THEN
+				center := ST_Centroid(igeom);
+			END IF; 
+			
+			RETURN ST_Translate(
+						ST_Affine(
+							ST_translate(
+								igeom
+								, -ST_X(center)
+								,-ST_Y(center)
+								, COALESCE( -ST_Z(center) ,0) --we use the coalesce to avoid null input
+								) 
+						, a , b ,  d , e  , xoff , yoff  
+						)  
+						,ST_X(center)
+						,ST_Y(center)
+						, COALESCE( ST_Z(center),0)
+					 ) ; 
+		END ;
+$BODY$
+ LANGUAGE plpgsql IMMUTABLE CALLED ON NULL INPUT;
+
+/*
+  SELECT *, ST_AsText(f)
+  FROM ST_GeomFromText('LINESTRING(20 10, 30 40 )') AS geom 
+		,radians( 25) AS angle
+	, rc_affine_centered(geom, NULL, cos(angle) , -sin(angle), sin(angle) , cos(angle)) as f  ; 
+*/
