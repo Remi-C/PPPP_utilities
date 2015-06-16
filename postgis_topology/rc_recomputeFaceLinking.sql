@@ -101,7 +101,7 @@ LANGUAGE plpgsql VOLATILE;
 		_face_to_potentially_delete INT[];  
 		_temp record;
 		BEGIN
-			RAISE EXCEPTION 'toto' ; 
+			--RAISE EXCEPTION 'toto' ; 
 			--is the ring inside or outside?
 			_is_inside := topology.rc_SignedArea(topology_name, signed_edges_of_ring ) >0 ; 
 			--is the ring flat?
@@ -123,6 +123,7 @@ LANGUAGE plpgsql VOLATILE;
 			END IF ; 
 
 			-- RAISE EXCEPTION '_face_to_potentially_delete %',_face_to_potentially_delete;
+			 
 			-- update isolated nodes 
 			--RAISE EXCEPTION '_temp : %',_temp ; 
 				
