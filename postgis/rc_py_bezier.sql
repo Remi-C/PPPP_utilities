@@ -12,7 +12,7 @@ $BODY$
 import sys
 sys.path.insert(0, '/media/sf_E_RemiCura/PROJETS/PPPP_utilities/postgis')
 #sys.path.insert(0, '/media/sf_perso_PROJETS/PPPP_utilities/postgis')
-#sys.path.insert(0, '/home/remi')
+sys.path.insert(0, '/home/remi/PPPP_utilities/postgis')
 import rc_py_generate_bezier_curve as rc
 
 #reload(rc)
