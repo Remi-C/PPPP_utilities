@@ -21,10 +21,12 @@ BEGIN
 			SELECT left_face as face_id
 			FROM %1$s.edge_data
 			WHERE edge_id IN ($1,$2)
+			AND left_face !=0
 			UNION ALL
 			SELECT right_face
 			FROM %1$s.edge_data
 			WHERE edge_id IN ($1,$2)
+			AND right_face !=0
 		) as sub 
 		) as subsub
 		WHERE c >=2
