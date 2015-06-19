@@ -4,8 +4,8 @@
 --a function to construct a surface out of 2 linestring
 --------------------------------------------
 
-DROP FUNCTION IF EXISTS public.rc_build_surface_from_axis(g1 geometry,g2 geometry);
-CREATE OR REPLACE FUNCTION public.rc_build_surface_from_axis(g1 geometry,g2 geometry, OUT surf geometry)
+DROP FUNCTION IF EXISTS rc_build_surface_from_axis(g1 geometry,g2 geometry);
+CREATE OR REPLACE FUNCTION rc_build_surface_from_axis(g1 geometry,g2 geometry, OUT surf geometry)
   AS
 $BODY$
 --this function takes 2 linestring having a point in common, and returns a surface formed by closing the linestring

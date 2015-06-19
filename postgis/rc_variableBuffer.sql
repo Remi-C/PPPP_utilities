@@ -7,8 +7,8 @@
 ------------------------------
 
 
-DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry,signe int, TEXT );
-		CREATE FUNCTION public.rc_variableBuffer(i_geom geometry ,signe int,style TEXT DEFAULT '', OUT buffered_geom geometry)
+DROP FUNCTION IF EXISTS rc_variableBuffer(i_geom geometry,signe int, TEXT );
+		CREATE FUNCTION rc_variableBuffer(i_geom geometry ,signe int,style TEXT DEFAULT '', OUT buffered_geom geometry)
 			RETURNS geometry AS
 		$BODY$
 			--@brief this function computes a variable buffer given a geometry and a raidus in M dimension of each point

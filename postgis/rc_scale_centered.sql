@@ -10,8 +10,8 @@
 ------------- 
 
 
-DROP FUNCTION IF EXISTS public.rc_scale_centered(  igeom GEOMETRY, scale float, center GEOMETRY(Point));
-CREATE OR REPLACE FUNCTION public.rc_scale_centered(
+DROP FUNCTION IF EXISTS rc_scale_centered(  igeom GEOMETRY, scale float, center GEOMETRY(Point));
+CREATE OR REPLACE FUNCTION rc_scale_centered(
 	igeom GEOMETRY
 	, scale float 
 	, center GEOMETRY(Point)  DEFAULT NULL 
@@ -78,9 +78,9 @@ $BODY$
 
  
 
-DROP FUNCTION IF EXISTS public.rc_affine_centered(  igeom GEOMETRY,   center GEOMETRY(Point),a float, b float,  d float, e float , xoff float, yoff float);
+DROP FUNCTION IF EXISTS rc_affine_centered(  igeom GEOMETRY,   center GEOMETRY(Point),a float, b float,  d float, e float , xoff float, yoff float);
 CREATE OR REPLACE FUNCTION  
-	public.rc_affine_centered(  igeom GEOMETRY,   center GEOMETRY(Point) DEFAULT NULL,a float DEFAULT 1 , b float DEFAULT 0,  d float DEFAULT 0, e float DEFAULT 1, xoff float DEFAULT 0, yoff float DEFAULT 0)  RETURNS GEOMETRY AS
+	rc_affine_centered(  igeom GEOMETRY,   center GEOMETRY(Point) DEFAULT NULL,a float DEFAULT 1 , b float DEFAULT 0,  d float DEFAULT 0, e float DEFAULT 1, xoff float DEFAULT 0, yoff float DEFAULT 0)  RETURNS GEOMETRY AS
 $BODY$
 	--@brief : this function use an affine transformation on a translated geom, the geom being translated to the the center gien as input
 	--@param : a geom to be scaled

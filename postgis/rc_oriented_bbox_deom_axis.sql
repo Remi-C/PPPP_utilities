@@ -5,8 +5,8 @@
 ----------------------------
 --function to create an oriented bbox from center, axis, rotation.
 ------
-	DROP FUNCTION IF EXISTS public.rc_BboxOrientedFromAxis(x_center float,y_center float,z_center float,axis_1 float, axis_2 float , angle float)  ; 
-	CREATE OR REPLACE FUNCTION public.rc_BboxOrientedFromAxis(x_center float,y_center float,z_center float,axis_1 float, axis_2 float , angle float, OUT OBbox geometry(polygon) ) 
+	DROP FUNCTION IF EXISTS rc_BboxOrientedFromAxis(x_center float,y_center float,z_center float,axis_1 float, axis_2 float , angle float)  ; 
+	CREATE OR REPLACE FUNCTION rc_BboxOrientedFromAxis(x_center float,y_center float,z_center float,axis_1 float, axis_2 float , angle float, OUT OBbox geometry(polygon) ) 
 	RETURNS geometry AS 
 		$BODY$
 			--@brief : this function output the rectangle defined by 2 axe, a roation and a center. Rotation is in degree
@@ -58,8 +58,8 @@
 
 -- Function: trajectory.rc_cuttrajectoryintoextractparis140616(integer, integer)
 
- DROP FUNCTION IF EXISTS public.rc_BboxOrientedFromGeom(i_geom geometry); 
-CREATE OR REPLACE FUNCTION public.rc_BboxOrientedFromGeom(i_geom geometry, OUT angle float, out l1 float, out l2 float,  out obbox geometry(polygon))
+ DROP FUNCTION IF EXISTS rc_BboxOrientedFromGeom(i_geom geometry); 
+CREATE OR REPLACE FUNCTION rc_BboxOrientedFromGeom(i_geom geometry, OUT angle float, out l1 float, out l2 float,  out obbox geometry(polygon))
   AS
 $BODY$
 		--@brief : this function takes a geom and computes its oriented bbox, that is the mnimal area rectangle containing the geom
@@ -101,4 +101,4 @@ END ;
   LANGUAGE plpgsql IMMUTABLE STRICT ;
 
 -- SELECT f.*, ST_AsText(obbox)
--- FROM ST_Geomfromtext('POLYGON((0 0 , 1 0 , 2 2 , 1 1,  0 1, -1 1  , 0 0))' )as geom, public.rc_BboxOrientedFromGeom(geom) AS f;
+-- FROM ST_Geomfromtext('POLYGON((0 0 , 1 0 , 2 2 , 1 1,  0 1, -1 1  , 0 0))' )as geom, rc_BboxOrientedFromGeom(geom) AS f;

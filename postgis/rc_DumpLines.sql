@@ -6,8 +6,8 @@
 
  
 
-	DROP FUNCTION IF EXISTS public.rc_DumpLines(_a_geom geometry ) ;
-	CREATE OR REPLACE FUNCTION public.rc_DumpLines(_a_geom geometry)
+	DROP FUNCTION IF EXISTS rc_DumpLines(_a_geom geometry ) ;
+	CREATE OR REPLACE FUNCTION rc_DumpLines(_a_geom geometry)
 	RETURNS SETOF geometry_dump AS
 	$BODY$
 		--this function breaks a polygon/geomCollection into lines and return the lines, along with the path

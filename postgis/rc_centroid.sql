@@ -10,8 +10,8 @@
 ------------- 
 
 
-DROP FUNCTION IF EXISTS public.rc_centroid(  igeom GEOMETRY);
-CREATE OR REPLACE FUNCTION public.rc_centroid(
+DROP FUNCTION IF EXISTS rc_centroid(  igeom GEOMETRY);
+CREATE OR REPLACE FUNCTION rc_centroid(
 	igeom GEOMETRY
 	)  RETURNS GEOMETRY AS
 $BODY$

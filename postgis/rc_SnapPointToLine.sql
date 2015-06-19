@@ -12,8 +12,8 @@
 
 
 
-	DROP FUNCTION IF EXISTS public.rc_SnapPointToLine(point geometry, line geometry , tolerance double precision,tolerance_vertex double precision);
-	CREATE FUNCTION public.rc_SnapPointToLine(point geometry, line geometry , tolerance double precision,tolerance_vertex double precision DEFAULT 0)
+	DROP FUNCTION IF EXISTS rc_SnapPointToLine(point geometry, line geometry , tolerance double precision,tolerance_vertex double precision);
+	CREATE FUNCTION rc_SnapPointToLine(point geometry, line geometry , tolerance double precision,tolerance_vertex double precision DEFAULT 0)
 		RETURNS geometry AS
 		$BODY$
 		-- This function snap a point to a line : if under a given tolerance distance
@@ -71,12 +71,12 @@
 
 		--DROP TABLE IF EXISTS temp_test_snappointtoline;
 		--CREATE TABLE temp_test_snappointtoline AS 
-		--SELECT point, line, 1 AS tolerance, public.rc_SnapPointToLine(point  , line  , 1, 0.5  ) AS spoint 
+		--SELECT point, line, 1 AS tolerance, rc_SnapPointToLine(point  , line  , 1, 0.5  ) AS spoint 
 		--FROM ST_MakePoint(1,1) AS point, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line
 
 
-	DROP FUNCTION IF EXISTS public.rc_SnapPointToLineEfficient(geometry(point), geometry(linestring) , tolerance double precision );
-	CREATE FUNCTION public.rc_SnapPointToLineEfficient(INOUT point geometry(point), IN line geometry(linestring) ,IN tolerance double precision ) AS
+	DROP FUNCTION IF EXISTS rc_SnapPointToLineEfficient(geometry(point), geometry(linestring) , tolerance double precision );
+	CREATE FUNCTION rc_SnapPointToLineEfficient(INOUT point geometry(point), IN line geometry(linestring) ,IN tolerance double precision ) AS
 		$BODY$
 		-- This function snap a point to a line : if under a given tolerance distance 
 		--	else, if the line is close enough, take the closest point on line (projection)
@@ -103,13 +103,13 @@
 
 		--DROP TABLE IF EXISTS temp_test_snappointtoline;
 		--CREATE TABLE temp_test_snappointtoline AS 
-		--SELECT point, line, 1 AS tolerance, public.rc_SnapPointToLineEfficient(point  , line  , 1   ) AS spoint 
+		--SELECT point, line, 1 AS tolerance, rc_SnapPointToLineEfficient(point  , line  , 1   ) AS spoint 
 		--FROM ST_MakePoint(1,1) AS point, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line
 
 
 
-		DROP FUNCTION IF EXISTS public.rc_SnapLineToLine(line_to_snap geometry, line geometry , tolerance double precision,tolerance_vertex double precision);
-	CREATE FUNCTION public.rc_SnapLineToLine(line_to_snap geometry, line geometry , tolerance double precision,tolerance_vertex double precision DEFAULT 0)
+		DROP FUNCTION IF EXISTS rc_SnapLineToLine(line_to_snap geometry, line geometry , tolerance double precision,tolerance_vertex double precision);
+	CREATE FUNCTION rc_SnapLineToLine(line_to_snap geometry, line geometry , tolerance double precision,tolerance_vertex double precision DEFAULT 0)
 		RETURNS geometry AS
 		$BODY$
 		-- This function snap all the points of a line ot another line: if under a given tolerance distance
@@ -137,15 +137,15 @@
 		$BODY$
 		LANGUAGE plpgsql IMMUTABLE;
 /*
-		SELECT  1 AS tolerance, ST_AsText(public.rc_SnapLineToLine(line1  , line2  , 0.6, 0.5  )) AS sline 
+		SELECT  1 AS tolerance, ST_AsText(rc_SnapLineToLine(line1  , line2  , 0.6, 0.5  )) AS sline 
 		--FROM ST_GeomFromText('MULTILINESTRING((0.1 0, 1 10, 0.1 100),(0.2 0 , 1.5 10))') AS line1, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line2
 		FROM ST_GeomFromText('LINESTRING(0.1 0, 1 10, 0.1 100)') AS line1, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line2;
 */
 		 
 
 
-			DROP FUNCTION IF EXISTS public.rc_SnapLineToLineEfficient(line_to_snap geometry, line geometry , tolerance float);
-	CREATE FUNCTION public.rc_SnapLineToLineEfficient(INOUT line_to_snap geometry, line geometry , tolerance float ) AS
+			DROP FUNCTION IF EXISTS rc_SnapLineToLineEfficient(line_to_snap geometry, line geometry , tolerance float);
+	CREATE FUNCTION rc_SnapLineToLineEfficient(INOUT line_to_snap geometry, line geometry , tolerance float ) AS
 		$BODY$
 		-- This function snap all the points of a line ot another line , if the other line is not too far 
 		DECLARE   

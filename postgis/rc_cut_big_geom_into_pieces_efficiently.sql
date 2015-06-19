@@ -156,7 +156,7 @@ DROP TABLE IF EXISTS squarized_ring ;
 CREATE TABLE squarized_ring  AS 
 WITH segments_of_ring_square AS (
 		SELECT  p1, dmp.geom AS seg, count(*) over(partition by p1,dmp.geom  ) as n_seg
-		FROM mapping_segment_square, public.rc_DumpSegments(ST_ExteriorRing(square)) as dmp
+		FROM mapping_segment_square, rc_DumpSegments(ST_ExteriorRing(square)) as dmp
 	)
 	--, segments_filtered_grouped AS ( -- this create a 
 		SELECT  p1 --, ST_MakePolygon(ST_UnaryUnion( ST_LineMerge(ST_Collect(ST_SNapToGrid(seg,0.01)))))as squarized_ring

@@ -21,8 +21,8 @@
 -- 	It introduces small rounding error, and has no warrante of sucess (because theoretically there  sin't always a solution)
 --
 --
-	DROP FUNCTION IF EXISTS public.rc_GetPointOnLineWithGivenDigitsNb( line geometry, point geometry, n_more_digits INT,tolerance double precision );
-		CREATE OR REPLACE FUNCTION public.rc_GetPointOnLineWithGivenDigitsNb( line geometry, point geometry, n_more_digits int,tolerance double precision DEFAULT 0)
+	DROP FUNCTION IF EXISTS rc_GetPointOnLineWithGivenDigitsNb( line geometry, point geometry, n_more_digits INT,tolerance double precision );
+		CREATE OR REPLACE FUNCTION rc_GetPointOnLineWithGivenDigitsNb( line geometry, point geometry, n_more_digits int,tolerance double precision DEFAULT 0)
 		RETURNS geometry AS  
 		$BODY$
 			--this function returns the closest point to "point" on "line" with "n_more_digits" more digits than the max number of digits in "line".
@@ -112,13 +112,13 @@
 		SELECT ST_Intersects(cpoint , line) , ST_AsText(cpoint )
 		 FROM ST_GeomFromText('LINESTRING(405.8 344.8,395.5 377.789)') AS line
 		 	,ST_GeomFromtext('POINT(400 360)') As point
-		 	,public.rc_GetPointOnLineWithGivenDigitsNb( line , point , 1) AS cpoint;
+		 	,rc_GetPointOnLineWithGivenDigitsNb( line , point , 1) AS cpoint;
 		  
 
 */
 		
-		DROP FUNCTION IF EXISTS public.rc_Closest( geom_array geometry[], geom2 geometry, max_distance double precision );
-		CREATE OR REPLACE FUNCTION public.rc_Closest( geom_array geometry[], geom2 geometry,max_distance double precision DEFAULT 0)
+		DROP FUNCTION IF EXISTS rc_Closest( geom_array geometry[], geom2 geometry, max_distance double precision );
+		CREATE OR REPLACE FUNCTION rc_Closest( geom_array geometry[], geom2 geometry,max_distance double precision DEFAULT 0)
 		RETURNS geometry AS 
 		$BODY$
 			--This function returns one element of "geom_array" wich is the closest to "geom2", or nothing if this closest element is farthest than "max_distance"
@@ -155,14 +155,14 @@
 		SELECT  *
 		FROM (SELECT ARRAY[ST_GeomFromText('LINESTRING(405.8 344.8,395.5 377.789)'),ST_GeomFromText('LINESTRING(401.8 350.8,399.5 380.789)')] AS line) AS line
 			,ST_GeomFromtext('POINT(400 360)') As point
-			,public.rc_Closest( line , point , 0) AS cpoint;
+			,rc_Closest( line , point , 0) AS cpoint;
 */
 
 
 
 		
-		DROP FUNCTION IF EXISTS public.rc_ClosestSegment( line geometry, point geometry,max_distance double precision );
-		CREATE OR REPLACE FUNCTION public.rc_ClosestSegment( line geometry, point geometry,max_distance double precision DEFAULT 0)
+		DROP FUNCTION IF EXISTS rc_ClosestSegment( line geometry, point geometry,max_distance double precision );
+		CREATE OR REPLACE FUNCTION rc_ClosestSegment( line geometry, point geometry,max_distance double precision DEFAULT 0)
 		RETURNS geometry AS 
 		$BODY$
 		DECLARE
@@ -194,13 +194,13 @@
 		SELECT row_number() over() AS id,  ST_AsText(cseg ) t_cseg,cseg , line, point
 		FROM ST_GeomFromText('LINESTRING(0 10, 0 20, 0 30 )') AS line
 			,ST_GeomFromtext('POINT(10 25)') As point
-			,public.rc_ClosestSegment( line , point ,0) AS cseg;
+			,rc_ClosestSegment( line , point ,0) AS cseg;
 */
 
 		-- @TODO
-		--DROP FUNCTION IF EXISTS public.rc_ClosestSegment( line geometry, point geometry,tolerance double precision );
+		--DROP FUNCTION IF EXISTS rc_ClosestSegment( line geometry, point geometry,tolerance double precision );
 
 		-- @TODO
-		--DROP FUNCTION IF EXISTS public.rc_DumpLines( line geometry, point geometry,tolerance double precision );
+		--DROP FUNCTION IF EXISTS rc_DumpLines( line geometry, point geometry,tolerance double precision );
 
 		

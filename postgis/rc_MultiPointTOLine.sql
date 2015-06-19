@@ -5,8 +5,8 @@
 --------------------------------------------
 
   
-DROP FUNCTION IF EXISTS public.rc_MultiPointTOLine( multipoint geometry);
-		CREATE OR REPLACE FUNCTION public.rc_MultiPointTOLine( multipoint geometry  )
+DROP FUNCTION IF EXISTS rc_MultiPointTOLine( multipoint geometry);
+		CREATE OR REPLACE FUNCTION rc_MultiPointTOLine( multipoint geometry  )
 	RETURNS geometry  AS  
 		$BODY$
 			--this function sew together points from multipoint in the multipoint order to form a line

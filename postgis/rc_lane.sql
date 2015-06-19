@@ -13,8 +13,8 @@
 
 /*
 
-	DROP FUNCTION IF EXISTS public.rc_createLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text);
-	CREATE OR REPLACE FUNCTION public.rc_createLane(
+	DROP FUNCTION IF EXISTS rc_createLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text);
+	CREATE OR REPLACE FUNCTION rc_createLane(
 		chaussee_geom geometry
 		, chaussee_axis geometry
 		, lane_number integer
@@ -61,7 +61,7 @@
 		--@TODO
 		--adding check on lane_width 
 
-			--public.rc_Dilate(geom geometry,radius int,buffer_option:=buffer_opt)
+			--rc_Dilate(geom geometry,radius int,buffer_option:=buffer_opt)
 			--c_SymDif(geomA geometry,geomB geometry)
 			
 		IF lane_number %2 = 1
@@ -119,8 +119,8 @@
 
 
 
-	DROP FUNCTION IF EXISTS public.rc_cleanLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text );
-	CREATE OR REPLACE FUNCTION public.rc_cleanLane(
+	DROP FUNCTION IF EXISTS rc_cleanLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text );
+	CREATE OR REPLACE FUNCTION rc_cleanLane(
 		chaussee_geom geometry
 		, chaussee_axis geometry
 		, lane_number integer
@@ -146,9 +146,9 @@
 	LANGUAGE plpgsql VOLATILE;
 
 
-	DROP FUNCTION IF EXISTS public.rc_groupLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text,OUT lane geometry(multipolygon)
+	DROP FUNCTION IF EXISTS rc_groupLane(chaussee_geom geometry, chaussee_axis geometry, lane_number integer,lane_width float,snapping_precison float,buffer_opt text,OUT lane geometry(multipolygon)
 		,OUT lane_position integer[]);
-	CREATE OR REPLACE FUNCTION public.rc_groupLane(
+	CREATE OR REPLACE FUNCTION rc_groupLane(
 		chaussee_geom geometry
 		, chaussee_axis geometry
 		, lane_number integer
@@ -172,8 +172,8 @@
 	LANGUAGE plpgsql VOLATILE;
  
 
-	 DROP FUNCTION IF EXISTS public.rc_Dilate(geometry, float, text ,int);
-	CREATE OR REPLACE FUNCTION public.rc_Dilate(geom geometry,radius float, buffer_option text DEFAULT 'quad_segs=4',srid int DEFAULT 931008)
+	 DROP FUNCTION IF EXISTS rc_Dilate(geometry, float, text ,int);
+	CREATE OR REPLACE FUNCTION rc_Dilate(geom geometry,radius float, buffer_option text DEFAULT 'quad_segs=4',srid int DEFAULT 931008)
 	  RETURNS geometry AS
 	$BODY$
 	--this function is a wrapper around ST_Buffer 
@@ -190,17 +190,17 @@
 	LANGUAGE plpgsql VOLATILE;
 	----test
 	--SELECT ST_AsText(rc_Dilate(ST_GeomFromText('LINESTRING(650814.2 6861324.8 ,650807.6 6861313)'),9))
-		DROP TABLE IF EXISTS public.test_dilate;
-		CREATE TABLE public.test_dilate AS
+		DROP TABLE IF EXISTS test_dilate;
+		CREATE TABLE test_dilate AS
 		SELECT 1 AS id, 
-			public.rc_Dilate(
+			rc_Dilate(
 				ST_GeomFromText('LINESTRING(650814.2 6861324.8 ,650807.6 6861313,650750.3 6861219.1 )'),
 				9);
 
 
 
-	DROP FUNCTION IF EXISTS public.rc_SymDif(geometry, geometry);
-	CREATE OR REPLACE FUNCTION public.rc_SymDif(geomA geometry,geomB geometry)
+	DROP FUNCTION IF EXISTS rc_SymDif(geometry, geometry);
+	CREATE OR REPLACE FUNCTION rc_SymDif(geomA geometry,geomB geometry)
 	  RETURNS geometry AS
 	$BODY$
 	--this function is a wrapper around ST_SymDifference(geometry geomA, geometry geomB);
@@ -212,9 +212,9 @@
 	LANGUAGE plpgsql VOLATILE; 
 	----test
 	--
-	DROP TABLE IF EXISTS public.test_symdif;
-	CREATE TABLE public.test_symdif AS
-	SELECT 1 AS id,  rc_SymDif(rc_Dilate(ST_GeomFromText('LINESTRING(650814.2 6861324.8 ,650807.6 6861313,650750.3 6861219.1 )'),9) ,public.rc_Dilate(ST_GeomFromText('LINESTRING(650814.2 6861324.8 ,650807.6 6861313,650750.3 6861219.1 )'),5)) AS geom;
+	DROP TABLE IF EXISTS test_symdif;
+	CREATE TABLE test_symdif AS
+	SELECT 1 AS id,  rc_SymDif(rc_Dilate(ST_GeomFromText('LINESTRING(650814.2 6861324.8 ,650807.6 6861313,650750.3 6861219.1 )'),9) ,rc_Dilate(ST_GeomFromText('LINESTRING(650814.2 6861324.8 ,650807.6 6861313,650750.3 6861219.1 )'),5)) AS geom;
 
 
 
@@ -229,8 +229,8 @@
 
 
 	
-	DROP FUNCTION IF EXISTS public.rc_generate_lane_marking(  road_axis geometry, lane_number integer,lane_width float );
-	CREATE OR REPLACE FUNCTION public.rc_generate_lane_marking(
+	DROP FUNCTION IF EXISTS rc_generate_lane_marking(  road_axis geometry, lane_number integer,lane_width float );
+	CREATE OR REPLACE FUNCTION rc_generate_lane_marking(
 		road_axis geometry , lane_number integer,lane_width float)
 	  RETURNS TABLE (lane_position integer,lane_side TEXT, lane_ordinality INT, lane_surface GEOMETRY(POLYGON),  lane_center_axis GEOMETRY(linestring) ,lane_separator geometry) AS
 	  
@@ -331,11 +331,11 @@
 	  LANGUAGE plpgsql IMMUTABLE STRICT;
 
       /*
-	DROP TABLE IF EXISTS public.temp_test_lane; 
-	CREATE TABLE  public.temp_test_lane AS 
+	DROP TABLE IF EXISTS temp_test_lane; 
+	CREATE TABLE  temp_test_lane AS 
 	SELECT  row_number() over() as gid, *
 		--,ST_AsText(lane_center_axis), st_astext(lane_separator)
-	FROM  public.rc_generate_lane_marking(
+	FROM  rc_generate_lane_marking(
 			road_axis:= ST_GeomFromText('Linestring(0 0, 10 10 , 20  0 , 40 10 , 60 0)')
 			, lane_number:=4
 			,lane_width:=2.2);  

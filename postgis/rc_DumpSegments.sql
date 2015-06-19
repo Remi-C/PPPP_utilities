@@ -5,8 +5,8 @@
 --breaking geometry into segments, while conserving the order	 
 ------------------------------
 
-	DROP FUNCTION IF EXISTS public.rc_DumpSegments(_line geometry ) ;
-	CREATE OR REPLACE FUNCTION public.rc_DumpSegments(_line geometry)
+	DROP FUNCTION IF EXISTS rc_DumpSegments(_line geometry ) ;
+	CREATE OR REPLACE FUNCTION rc_DumpSegments(_line geometry)
 		RETURNS SETOF geometry_dump
 	AS
 		$BODY$

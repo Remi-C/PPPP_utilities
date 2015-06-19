@@ -6,11 +6,11 @@
 -- 
 --------------------------------------------
 
---___ public.rc_Split_multi(input_geom geometry ,blade geometry)___
+--___ rc_Split_multi(input_geom geometry ,blade geometry)___
 	
 		--creating a simple wrapper around ST_Split to allow splitting line by multipoints
-		DROP FUNCTION IF EXISTS public.rc_Split_multi(input_geom geometry ,blade geometry, tolerance double precision ) CASCADE;
-		CREATE FUNCTION public.rc_Split_multi(input_geom geometry ,blade geometry, tolerance double precision )
+		DROP FUNCTION IF EXISTS rc_Split_multi(input_geom geometry ,blade geometry, tolerance double precision ) CASCADE;
+		CREATE FUNCTION rc_Split_multi(input_geom geometry ,blade geometry, tolerance double precision )
 		  RETURNS geometry AS
 		$BODY$
 		--this function is a wrapper around the function ST_Split to allow splitting mutli_lines with multi_points
