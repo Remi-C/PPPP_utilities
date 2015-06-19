@@ -1,26 +1,24 @@
-﻿/*
-Rémi Cura 
-IGN + THALES
-24/01/2013
-
-This function change srid fr all tables in a schema
-WARNING: always returns true, no control of execution,
-prototype : not properly tested and proofed.
-
-*/
-
+﻿---------------------------------------------------------------------
+--Rémi Cura 
+--IGN + THALES
+--24/01/2013
+--
+--This function change srid fr all tables in a schema
+--WARNING: always returns true, no control of execution,
+--prototype : not properly tested and proofed.
+---------------------------------------------------------------------
 
 
-DROP FUNCTION IF EXISTS odparis_test.rc_change_srid_for_all_from_a_schema(text,bigint);--remove the function before re-creating it : act as a security versus function-type change
+DROP FUNCTION IF EXISTS rc_change_srid_for_all_from_a_schema(text,bigint);--remove the function before re-creating it : act as a security versus function-type change
 
-CREATE OR REPLACE FUNCTION odparis_test.rc_change_srid_for_all_from_a_schema(schema_name text, newsrid bigint) RETURNS boolean
+CREATE OR REPLACE FUNCTION rc_change_srid_for_all_from_a_schema(schema_name text, newsrid bigint) RETURNS boolean
 AS $$
 DECLARE
     row record;
     result boolean;
     the_query text :='';
 BEGIN
-	FOR row IN /*all tables in geometry_columns wich are not postgis specific table and are in the old schema*/
+	FOR row IN --all tables in geometry_columns wich are not postgis specific table and are in the old schema 
 	SELECT *
 	FROM geometry_columns
 	WHERE f_table_schema = schema_name
@@ -46,18 +44,5 @@ END;
 $$LANGUAGE plpgsql; 
 
 /*exemple use-case :*/
---SELECT odparis_test.rc_change_srid_for_all_from_a_schema('odparis_reworked'::Text, 932007);
+--SELECTrc_change_srid_for_all_from_a_schema('odparis_reworked'::Text, 932007);
 
-----prototypage de la requete :
---
-
-UPDATE odparis_test.borne SET geom = ST_SetSRID(geom, 932007)
-
-SELECT UpdateGeometrySRID( 'odparis_test' , 'borne', 'geom' , 932007);
-
-
-ALTER TABLE odparis_test.borne 
- ALTER COLUMN geom TYPE geometry(MULTILINESTRING, 3857) USING ST_Transform(ST_SetSRID(geom,4326),3857) ;
-
---
-----fin du prototypage de la requete sql

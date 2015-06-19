@@ -1,14 +1,12 @@
-﻿
-/*
-Rémi Cura
-Thales Service& Telecom Paristech
-Confidential
-
-This function create an index for all info column in schema
-
-WARNING : prototype : non tested or proofed.
-
-*/
+﻿---------------------------------------------------------------------
+--Rémi Cura 
+--THALES and Telecom Paristech
+--24/01/2013
+--
+--This function create an index for all info column in schema
+-- WARNING : prototype : non tested or proofed.
+----------------------------------------------------------------------
+ 
 
 
 

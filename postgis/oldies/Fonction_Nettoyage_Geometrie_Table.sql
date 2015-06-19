@@ -1,20 +1,21 @@
 ﻿
 --DROP FUNCTION Fonction_Nettoyage_Geometrie_Table(text,text); --nettoyage au cas ou une fonction du même nom existerait
 
-/*fonction Sql permettant de nettoyer la géométrie d'une table sans provoquer d'erreur de type
-/ INPUTS:. 'nom_schema' , nom du shcema dans lequel est la table
-	 . 'nom_table' , nom de la table source
-/OUTPUT:. //modifie la table source en corrigeant les géométries erronées en utilisant des types compatibles./
-/WARNING : comportement non testé avec des types complexes (curves, 3D, etc)
-*/
+--fonction Sql permettant de nettoyer la géométrie d'une table sans provoquer d'erreur de type
+-- INPUTS:. 'nom_schema' , nom du shcema dans lequel est la table
+--	 . 'nom_table' , nom de la table source
+--OUTPUT:. //modifie la table source en corrigeant les géométries erronées en utilisant des types compatibles./
+--WARNING : comportement non testé avec des types complexes (curves, 3D, etc)
+
+/*
 CREATE OR REPLACE FUNCTION Fonction_Nettoyage_Geometrie_Table(nom_schema text DEFAULT 'gwgam_clipped' ,
 nom_table text DEFAULT 'gwgam_clipped.apurheuristiquebloc_wgs84_area' )
 RETURNS SETOF record  AS
 $$
-DECLARE /*declaration des variables pour la suite*/
+DECLARE --declaration des variables pour la suite--
 geomColumnName text DEFAULT '';
 BEGIN
-/*NOTE : il faudrait aller chercher le nom de la colonne de geometrie des deux tables pour bien faire , cii on suppose qu elles s appellent 'geom' toutes les 2*/
+--NOTE : il faudrait aller chercher le nom de la colonne de geometrie des deux tables pour bien faire , cii on suppose qu elles s appellent 'geom' toutes les 2--
 	RAISE NOTICE 'début de la fonction Fonction_Nettoyage_Geométrie_Table ( % , % ) ',$1,$2;
 
 	EXECUTE 'SELECT Fonction_GetGeomColumnName('''||nom_schema||''' , '''||nom_table||''');' INTO geomColumnName;
@@ -44,7 +45,8 @@ BEGIN
 		FROM geom_nettoyee_typee
 		WHERE geom_nettoyee_typee.gid = a_nettoyer.gid ;' 
 	; 
-END/*fin du block begin*/;
+END--fin du block begin ;
 $$ LANGUAGE plpgsql;
 
 SELECT Fonction_Nettoyage_Geometrie_Table('gwgam'::Text, 'apurheuristiquebloc_wgs84_area'::Text);
+*/
