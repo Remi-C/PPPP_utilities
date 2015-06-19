@@ -1,12 +1,20 @@
-﻿
+﻿---------------------------------------------
+-- Remi-C Thales & IGN , Terra Mobilita Project, 2015 
+----------------------------------------------
+-- This script tries to output correct .obj geometries
+-- This script expects a postgres >= 9.2.3, Postgis >= 2.0.2, postgis topology enabled
+--
+------------- 
+
+/*
 with i_geom AS (
 	SELECT  o_closing as geom --, r.*
 	FROM generalisation.transformed_points_closing_reconstructed --, rc_geom_to_obj(o_closing,3,'plan_'||qgisid) as  r
 	WHERE qgisid =17
 )
 SELECT ST_AddPoint(geom,  ST_StartPoint(geom),-1)
-FROM i_geom
-
+FROM i_geom ; 
+*/
 
 DROP FUNCTION IF EXISTS rc_geom_to_obj(geom geometry, digits int, object_name text) ;
 CREATE OR REPLACE FUNCTION rc_geom_to_obj(geom geometry, digits int, object_name text) 
@@ -42,10 +50,11 @@ RETURN ;
 END;
 $$ LANGUAGE 'plpgsql' IMMUTABLE STRICT ;
 
+/*
 SELECT   r.*
 FROM generalisation.transformed_points_closing_reconstructed 
 	, rc_geom_to_obj(o_closing,3,'plan_' ) as  r
-WHERE qgisid =17 
+WHERE qgisid =17 ; 
 
 
 COPY (
@@ -124,3 +133,4 @@ COPY (
 	ORDER BY ordinality ASC
 		)TO '/tmp/export2.obj'
  
+ */
