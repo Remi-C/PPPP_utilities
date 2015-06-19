@@ -17,7 +17,7 @@ DROP FUNCTION IF EXISTS rc_generate_orthogonal_line(
 	, IN ipoint geometry
 	, IN  width FLOAT
 	,IN  support_line_size FLOAT
-	,oUT oline geometry
+	,OUT oline geometry
 	 );
 	  
 CREATE OR REPLACE FUNCTION rc_generate_orthogonal_line(  
@@ -99,7 +99,7 @@ LANGUAGE plpgsql IMMUTABLE STRICT;
 			, 5
 			, 0.1  
 			 )  AS r
-*/
+
 
 SELECT st_astext(r.oline),  ST_IsEmpty('01020000A0AB380E0000000000'::geometry) , ST_AsText('01020000A0AB380E0000000000'::geometry)
 	FROM  
@@ -109,5 +109,4 @@ SELECT st_astext(r.oline),  ST_IsEmpty('01020000A0AB380E0000000000'::geometry) ,
 			, 9.01
 			, 0.01  
 			 )  AS r ; 
- 
-			 
+ */ 

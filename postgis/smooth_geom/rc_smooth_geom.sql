@@ -12,8 +12,8 @@
 --in case where 2 succesive turn are in conflict, and it is concave : way to find tangents : --http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Tangents_between_two_circles
 ------------------------------
 
-	CREATE SCHEMA iF NOT EXISTS buffer_variable;
-	SET search_path TO buffer_variable,bdtopo, public;
+--	CREATE SCHEMA iF NOT EXISTS buffer_variable;
+--	SET search_path TO buffer_variable,bdtopo, public;
 
 
 /* 

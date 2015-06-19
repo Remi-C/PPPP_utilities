@@ -286,7 +286,7 @@ $BODY$
 --testing the grouping of points per line 
 
 */
-
+/*
 	WITH the_geom AS (
 	 SELECT *
 	FROM ST_GeomFromText('GEOMETRYCOLLECTION(MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),MULTILINESTRING( (0 0 ,10 10 , 20 10 ),(23 23, 58 58)),LINESTRING(89 89, 789 689))',932011) AS liness
@@ -324,4 +324,4 @@ $BODY$
 	SELECT line_id,lpath || (cl).path AS path, ST_AsText((cl).geom)
 	FROM cut_lines;
 	--ORDER BY line ASC, curv_abses.curv_abs ASC
-
+*/

@@ -60,7 +60,7 @@
 		$BODY$
 	 LANGUAGE plpgsql  IMMUTABLE STRICT; 
 
-
+/*
  SELECT   ST_AsText(geom.geom) AS t_geom, dmp.path, ST_AsText((dmp).geom) AS t_dmplines, dmp
 	FROM ST_GeomFromText(
 		' LINESTRING(3 4,10 50,20 25)'
@@ -88,3 +88,4 @@
 				)
 			)'
 		) as geom, rc_DumpSegments(geom) AS dmp(path,geom);
+        */

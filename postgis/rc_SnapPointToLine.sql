@@ -136,11 +136,11 @@
 		END ;
 		$BODY$
 		LANGUAGE plpgsql IMMUTABLE;
-
+/*
 		SELECT  1 AS tolerance, ST_AsText(public.rc_SnapLineToLine(line1  , line2  , 0.6, 0.5  )) AS sline 
 		--FROM ST_GeomFromText('MULTILINESTRING((0.1 0, 1 10, 0.1 100),(0.2 0 , 1.5 10))') AS line1, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line2
 		FROM ST_GeomFromText('LINESTRING(0.1 0, 1 10, 0.1 100)') AS line1, ST_GeomFromText('LINESTRING(0 0, 0 10, 0 100)') AS line2;
-
+*/
 		 
 
 

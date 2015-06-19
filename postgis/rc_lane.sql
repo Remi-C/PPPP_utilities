@@ -329,7 +329,8 @@
 		END; -- required for plpgsql
 		$BODY$
 	  LANGUAGE plpgsql IMMUTABLE STRICT;
-	
+
+      /*
 	DROP TABLE IF EXISTS public.temp_test_lane; 
 	CREATE TABLE  public.temp_test_lane AS 
 	SELECT  row_number() over() as gid, *
@@ -338,3 +339,5 @@
 			road_axis:= ST_GeomFromText('Linestring(0 0, 10 10 , 20  0 , 40 10 , 60 0)')
 			, lane_number:=4
 			,lane_width:=2.2);  
+            
+            */

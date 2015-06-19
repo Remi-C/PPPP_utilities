@@ -6,7 +6,7 @@
 --test suite for the  function to smoth given line/polygon with a given turning radius 
 --	 
 ------------------------------
-
+/*
 --setting search path
 	SET search_path TO buffer_variable,street_amp,bdtopo, public;
 
@@ -115,3 +115,5 @@
 		FROM the_geom AS sp
 
 		LINESTRING(-383.80000001348 24638.5999984842,-275.300000013467 24531.0999984835,-277.800000013467 24520.0999984834,-215.200000013367 24432.7999984838,-268.500000013416 24505.3999984852,-277.800000013467 24520.0999984834)
+        
+        */

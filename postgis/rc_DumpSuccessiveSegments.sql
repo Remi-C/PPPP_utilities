@@ -77,6 +77,7 @@ CREATE OR REPLACE FUNCTION rc_DumpSuccessiveSegments ( igeom GEOMETRY   )
 		$BODY$
   LANGUAGE plpgsql VOLATILE;
 
+  /*
 	--test case :
 	WITH the_geom AS (
 		SELECT row_number() over() as qgis_id, geom , 40 AS base_radius, 0.5 AS pertubation_radius
@@ -90,3 +91,4 @@ CREATE OR REPLACE FUNCTION rc_DumpSuccessiveSegments ( igeom GEOMETRY   )
 	--FROM the_geom, rc_DumpSegments(geom ) as dump
 	SELECT sseg.*, ST_Astext(geom1), St_AsText(geom2) 
 	FROM the_geom ,rc_DumpSuccessiveSegments (geom ) as sseg;
+*/

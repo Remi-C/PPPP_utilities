@@ -1,4 +1,8 @@
-﻿
+﻿---------------------------------------------
+--Copyright Remi-C Thales IGN 05/2015
+-- 
+--this function use python helper function to spatially cluster points
+--------------------------------------------
 
 
 --a plpython predicting gt_class, cross_validation , result per class

@@ -4,10 +4,7 @@
 --a function to get a point on a line with a given number of digits
 --------------------------------------------
 
-
-
-
-
+ 
 
 	DROP FUNCTION IF EXISTS public.rc_DumpLines(_a_geom geometry ) ;
 	CREATE OR REPLACE FUNCTION public.rc_DumpLines(_a_geom geometry)
@@ -58,7 +55,7 @@
 	 LANGUAGE plpgsql  IMMUTABLE STRICT;
 
 
-
+/*
 	--test : 
 	SELECT   ST_AsText(geom.geom) AS t_geom, dmp.path, ST_AsText((dmp).geom) AS t_dmplines, dmp
 	FROM ST_GeomFromText(
@@ -83,6 +80,6 @@
 			)'
 		) as geom, rc_DumpLines(geom) AS dmp(path,geom);
 
-
+*/
 
 

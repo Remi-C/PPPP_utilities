@@ -5,7 +5,7 @@
 --------------------------------------------
 
 
-
+/*
 DROP TABLE IF EXISTS temp_visu_qgis_to_delete;
 CREATE TABLE temp_visu_qgis_to_delete AS
 
@@ -34,3 +34,4 @@ GROUP BY id
  SELECT id, geom 
  FROM reconstructed_lines
  WHERE st_IsValid(geom)  = FALSE
+ */

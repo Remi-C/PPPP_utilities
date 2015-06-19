@@ -1,8 +1,8 @@
 ﻿
 
 		--settings to help test
-		SET search_path TO demo_zone_test,bdtopo,bdtopo_bati,bdtopo_reseau_route,topology,public;
-		SET postgis.backend = 'sfcgal';
+		--SET search_path TO demo_zone_test,bdtopo,bdtopo_bati,bdtopo_reseau_route,topology,public;
+		--SET postgis.backend = 'sfcgal';
 
 
 		----

@@ -49,10 +49,10 @@ $BODY$
 		END ;
 $BODY$
  LANGUAGE plpgsql IMMUTABLE CALLED ON NULL INPUT;
- 
+ /*
 	SELECT ST_AsText( rc_scale_centered(geom, 0.5::float) ) 
 	FROM ST_GeomFromText('LINESTRING(20 10, 30 40 )') AS geom ; 
--- 
+-- */
 -- 	WITH the_geom AS (
 -- 		SELECT ST_GeomFromText('LINESTRING(20 10, 30 40 )') AS geom, 0.1 AS scale
 -- 	)

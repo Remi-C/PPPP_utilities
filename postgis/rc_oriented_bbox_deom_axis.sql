@@ -32,7 +32,7 @@
 			END ; 
 		$BODY$
 	LANGUAGE plpgsql IMMUTABLE STRICT;     
- 
+/*
 	SELECT  ST_AsText(geom)
 	FROM rc_BboxOrientedFromAxis( 651367.2,6860701.73085937,50 , 0.3 , 0.2  , 34.7219773903111 ) AS geom;
 
@@ -51,7 +51,7 @@
 		,ST_Rotate(bbox, radians(angle)) as bbox_rot
 		,ST_Astext(ST_translate(bbox_rot, x_center, y_center, z_center))  ;
 
-
+*/
 
 
 
@@ -98,7 +98,7 @@ $BODY$
 	RETURN  ;
 END ; 
 	$BODY$
-  LANGUAGE plpgsql VOLATILE STRICT ;
+  LANGUAGE plpgsql IMMUTABLE STRICT ;
 
 -- SELECT f.*, ST_AsText(obbox)
 -- FROM ST_Geomfromtext('POLYGON((0 0 , 1 0 , 2 2 , 1 1,  0 1, -1 1  , 0 0))' )as geom, public.rc_BboxOrientedFromGeom(geom) AS f;

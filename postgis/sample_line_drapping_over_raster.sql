@@ -12,7 +12,7 @@
 ------------------------------
 
 
-
+/*
 	WITH rast AS ( --getting a raster, and a diag line for this raster
 		SELECT *  --, ST_Intersection(rast,line)--unnest(regexp_split_to_array(ST_Summary(rast),'\n'))
 		FROM test_raster.test_temp_raster,ST_SetSRID(ST_GeomFromText('Linestring(651050. 6860677,651055 6860682)') ,931008) AS line
@@ -43,4 +43,7 @@
 		ORDER BY path ASC, ST_Length(sl.geom) DESC
 	)--fusion the line parts to create a single line (don't use ST_Union, it drops the M value)
 	SELECT ST_Astext(ST_MakeLine(l_heigth ORDER BY path ASC) )  
-	FROM sl_and_pix
+	FROM sl_and_pix ; 
+    
+    
+    */

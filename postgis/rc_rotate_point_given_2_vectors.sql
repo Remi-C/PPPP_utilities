@@ -1,4 +1,8 @@
-﻿
+﻿---------------------------------------------
+--Copyright Remi-C Thales IGN 05/2015
+-- 
+--this function performs a 3D rotation based on 3D vectors
+--------------------------------------------
 DROP FUNCTION IF EXISTS rc_rotate_point_given_2_vectors_py (vect1 geometry, vect2 geometry, point geometry );
 CREATE OR REPLACE FUNCTION rc_rotate_point_given_2_vectors_py (vect1 geometry, vect2 geometry, point geometry)
 RETURNS float[]
@@ -83,9 +87,10 @@ RETURN ;
 END 
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
-
+/*
 SELECT ST_aSText(rc_rotate_point_given_2_vectors (
 	ST_MakePoint( 1,1,1)
 	,ST_MakePoint(0,0,1)
 	, ST_MakePoint(0.2,0.2,0.2)
 	)) 
+    */

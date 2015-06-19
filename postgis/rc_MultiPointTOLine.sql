@@ -4,13 +4,7 @@
 --a function to convert a multipoint into a linestring, following the mutlipoint order
 --------------------------------------------
 
-
-
-
-
-
-
-
+  
 DROP FUNCTION IF EXISTS public.rc_MultiPointTOLine( multipoint geometry);
 		CREATE OR REPLACE FUNCTION public.rc_MultiPointTOLine( multipoint geometry  )
 	RETURNS geometry  AS  
@@ -35,10 +29,10 @@ DROP FUNCTION IF EXISTS public.rc_MultiPointTOLine( multipoint geometry);
 			END;
 		$BODY$
 		  LANGUAGE plpgsql  IMMUTABLE STRICT;
-
+/*
 		---- test of the function
 		SELECT ST_AsText( rc_MultiPointTOLine( point) )
 		 FROM ST_GeomFromText('MULTIPOINT(1601.21138045673 21494.9000674227,1601.3 21494.4,1602.31065385555 21488.8919364873)') AS point
-
+*/
 		 
 		 

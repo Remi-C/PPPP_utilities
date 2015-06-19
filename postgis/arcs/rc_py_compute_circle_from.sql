@@ -60,7 +60,7 @@ else :
 #plpy.notice('bisector direction normalized ',(_t1 +t2__ - 2*_e )/ np.linalg.norm(_t1 +t2__ - 2*_e )) ;
 	#now we need to get te distance from e to center. We know dist(et1)  and theta. The relation to exploit is cos(theta)=dist(et1)/dist(ecenter).
 	#So dist(e-center) = dist(et1)/cos(theta);
-	#Note : we shouldn't use theta numerical value, but instead convert cos(alpha)=cos(2theta) and directly reuse the formula to compute theta, so as to avoid  cos(arcos/2)
+	#Note : we shouldn t use theta numerical value, but instead convert cos(alpha)=cos(2theta) and directly reuse the formula to compute theta, so as to avoid  cos(arcos/2)
 	#the formula to exploit here is cos(theta) = sqrt((cos(2theta)+1)/2), and cos(2 theta) is directly given by the scalar product
 #plpy.notice('distance from E to center by numerical approx:',  np.linalg.norm(_e - _t1)/np.cos(theta) ) ;
 

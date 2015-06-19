@@ -1,11 +1,12 @@
 ﻿--------------
 --Remi-C Thales IG 02/2015
---
+-----------
+-- some work to try to perfom efficient geometry cutting into pieces
 --------------
 
 
 --importing real data 
-
+/*
 
 --creating index
 CREATE INDEX ON lancover_polygons_2010 (ogc_fid);
@@ -44,7 +45,7 @@ WHERE ogc_fid = 103209 AND lc_class=  34
 
 --emulating a big geom, dumping it to points 
 --150 sec for 60000 as a parameter
-
+*/
 /*
 DROP TABLE IF EXISTS geom_dumped_rings ;
 CREATE TABLE geom_dumped_rings AS 
@@ -57,7 +58,7 @@ WITH fake_input_geom AS (--creating a polygon with possibly very big number of p
 	) 
 	SELECT dmp.path[1] as rid, dmp.geom
 	FROM  fake_input_geom, ST_DumpRings(geom) as dmp;
-*/
+*//*
 CREATE TABLE geom_dumped_rings AS  
 	SELECT dmp.path[1] as rid, dmp.geom
 	FROM  lancover_polygons_2010, ST_DumpRings(ST_GeometryN(wkb_geometry,1)) as dmp 
@@ -248,3 +249,5 @@ SELECT ST_Tesselate( geom) AS triangle
 FROM  lancover_polygons_2010 
 	WHERE ogc_fid = 103209 AND lc_class=  34
  
+ 
+ */

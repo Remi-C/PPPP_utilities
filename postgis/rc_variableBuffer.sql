@@ -94,14 +94,14 @@ DROP FUNCTION IF EXISTS public.rc_variableBuffer(i_geom geometry,signe int, TEXT
 			END ;
 		$BODY$
 		LANGUAGE plpgsql IMMUTABLE;
-
+/*
 	---testing
 	SELECT ST_AsText(rc_variableBuffer(geom ,+1,'endcap=flat,quadseg=12'))
 	FROM ST_GeomFromtext('LINESTRINGM(0 0 1, 10 0 2, 20 20 3 )') AS geom;
 
 	SELECT ST_AsText(rc_variableBuffer(geom ,-1))
 	FROM ST_GeomFromtext('POLYGONM((0 0 1, 10 0 2, 10 10 3, 0 0 1 ))') AS geom;
-
+*/
 
 	
 

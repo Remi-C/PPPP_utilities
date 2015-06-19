@@ -76,7 +76,7 @@ CREATE OR REPLACE  FUNCTION rc_SetPoint(IN ig GEOMETRY,IN point_position int  , 
 			)
 			SELECT ST_Astext(ST_MakeLine(geom ORDER BY path asc))
 			FROM nodes 
-	*/
+
 
 	
 		WITH the_geom AS (
@@ -85,4 +85,4 @@ CREATE OR REPLACE  FUNCTION rc_SetPoint(IN ig GEOMETRY,IN point_position int  , 
 			)
 			SELECT  ST_Astext(rc_SetPoint(geom,pos , npoint   ))
 			FROM the_geom 
-	
+		*/

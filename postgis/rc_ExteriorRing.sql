@@ -3,9 +3,7 @@
 --
 --a wrapper around st_EteriorRing to also work on multipolygon..
 --------------------------------------------
-
-
-
+ 
 
 DROP FUNCTION IF EXISTS rc_ExteriorRIng(   IN i_geom GEOMETRY, OUT o_geom GEOMETRY );
 	  
@@ -43,8 +41,7 @@ LANGUAGE plpgsql IMMUTABLE STRICT;
 	)
 	SELECT ST_AsText(rc_ExteriorRing(geom))
 	FROM the_geom; 
-
-	*/
+    
 
 	WITH the_geom AS (
 		SELECT  geom1  as geom
@@ -53,3 +50,5 @@ LANGUAGE plpgsql IMMUTABLE STRICT;
 	)
 	SELECT ST_AsText(rc_ExteriorRing(geom))
 	FROM the_geom; 
+
+	*/

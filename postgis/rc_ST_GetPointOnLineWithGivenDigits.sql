@@ -151,12 +151,12 @@
 			END;
 		$BODY$
 		  LANGUAGE plpgsql  IMMUTABLE STRICT;
-
+/*
 		SELECT  *
 		FROM (SELECT ARRAY[ST_GeomFromText('LINESTRING(405.8 344.8,395.5 377.789)'),ST_GeomFromText('LINESTRING(401.8 350.8,399.5 380.789)')] AS line) AS line
 			,ST_GeomFromtext('POINT(400 360)') As point
 			,public.rc_Closest( line , point , 0) AS cpoint;
-
+*/
 
 
 
@@ -189,13 +189,13 @@
 			END;
 		$BODY$
 		  LANGUAGE plpgsql  IMMUTABLE STRICT;
-
+/*
 		
 		SELECT row_number() over() AS id,  ST_AsText(cseg ) t_cseg,cseg , line, point
 		FROM ST_GeomFromText('LINESTRING(0 10, 0 20, 0 30 )') AS line
 			,ST_GeomFromtext('POINT(10 25)') As point
 			,public.rc_ClosestSegment( line , point ,0) AS cseg;
-
+*/
 
 		-- @TODO
 		--DROP FUNCTION IF EXISTS public.rc_ClosestSegment( line geometry, point geometry,tolerance double precision );
