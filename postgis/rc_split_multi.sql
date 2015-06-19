@@ -63,7 +63,9 @@
 		    END;
 		$BODY$
 		LANGUAGE plpgsql IMMUTABLE;
-		----
+
+        
+/*
 		--Testing the function
 		SELECT ST_AsText(rc_Split_multi( geom,blade ,0.001))
 		FROM (
@@ -76,3 +78,5 @@
 				ST_GeomFromtext('MULTIPOINT(621.254 1483.268,628.529 1488.133)' ) AS blade
 				,ST_GeomFromtext('LINESTRING(655.1 1505.9,605.3 1472.6)') AS geom
 			) AS toto ; 
+            
+*/
