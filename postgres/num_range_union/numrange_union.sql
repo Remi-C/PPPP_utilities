@@ -1,3 +1,5 @@
+
+/*
 create temp table data (i int, val char);
 
 insert into data (val, i)
@@ -35,3 +37,5 @@ from x
 group by d,
          val
 order by min(i)
+
+*/

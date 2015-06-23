@@ -1,6 +1,5 @@
-﻿
-/* Rémi Cura
-Thales Internal
+﻿/* Rémi C 
+Thales  
 
 rc_show_stats_of_a_table(schema_name text, table_name text, max_number_of_row integer)
 this function looks in pg_stats table to gather statistics abouta table regarding the most common values and the associated frequency, the output max number of row is controlled by max_number_of_row
@@ -17,7 +16,7 @@ Not optimal : the 'for' loop is not optimal and is only here for output reasons
 
 DROP FUNCTION IF EXISTS rc_show_stats_of_a_table(text,text,integer);
 
-CREATE OR REPLACE FUNCTION public.rc_show_stats_of_a_table(schema_name text, table_name text, max_number_of_row integer)
+CREATE OR REPLACE FUNCTION rc_show_stats_of_a_table(schema_name text, table_name text, max_number_of_row integer)
   RETURNS refcursor AS
 $$
 DECLARE
@@ -98,6 +97,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/*exemple use-case*/
+/*
+-- exemple use-case 
 SELECT rc_show_stats_of_a_table('odparis','eau',15);
 fetch all from test_cursor;
+*/

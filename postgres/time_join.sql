@@ -10,21 +10,7 @@
 --
 --the way to go seems to be with range
 -----------------------------------------
-
---creating test data
-	--intoducing usefull function to fill with random text
-	    CREATE OR REPLACE FUNCTION rc_random_string(INTEGER )
-	    RETURNS text AS $$
-	    SELECT array_to_string(
-	    ARRAY(
-	    SELECT
-	    substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' FROM (random()*36)::int + 1 FOR 1)
-	    FROM generate_series(1,$1)
-	    )
-	    ,'')
-	    $$ LANGUAGE sql;
-
-
+/*
 	--creating tables
 	    DROP TABLE IF EXISTS a;
 	    DROP TABLE IF EXISTS b;
@@ -141,3 +127,4 @@
 			FROM a,b ,range_interpolate(a.r,b.t) AS interpolated_weight
 			WHERE b.t BETWEEN lower(a.r) AND upper(a.r)
 			LIMIT 10;
+*/

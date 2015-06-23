@@ -20,8 +20,8 @@
 -- */
 
 -- DROP FUNCTION Fonction_GetGeomColumnName(text,text) ;
-DROP FUNCTION IF EXISTS Fonction_GetGeomColumnName(nom_schema_source text DEFAULT 'public',
-nom_table_source text DEFAULT '') 
+DROP FUNCTION IF EXISTS Fonction_GetGeomColumnName(nom_schema_source text  ,
+nom_table_source text  ) ;
 CREATE OR REPLACE FUNCTION Fonction_GetGeomColumnName(nom_schema_source text DEFAULT 'public',
 nom_table_source text DEFAULT '') 
 RETURNS text AS

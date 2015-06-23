@@ -4,6 +4,7 @@
 ---------------------------------------
 --this function compute median of a column (found on pavel stehul website)
 
+DROP FUNCTION IF EXISTS rc_median(anyarray) ; 
 create or replace function rc_median(anyarray) 
 returns double precision as $$
 /** @brief this function compute the median of a column

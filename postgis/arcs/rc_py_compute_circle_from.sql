@@ -102,7 +102,7 @@ else :
 	#return { "_center": _center, "_radius": _radius ,  "t1": t1, "t2":t2} 
 $$ LANGUAGE plpythonu;
 
-
+/*
 SELECT ST_Astext(center), radius, ST_Astext(t1),ST_Astext(t2)
 FROM rc_py_compute_max_circle(
 		ST_MakePoint(6,0.00001)
@@ -120,8 +120,8 @@ FROM rc_py_compute_max_circle(
 --POINT(3307.49999998745 19615.4999984735)
 --POINT(3307.49999998745 19615.4999984735)
 --POINT(3305.03765807083 19616.7853842391)
+*/
 
-/*
  
 DROP FUNCTION IF EXISTS rc_py_compute_circle_from_tangency ( f geometry(point), e geometry(point),g geometry(point),t1 geometry(point));
 CREATE OR REPLACE FUNCTION rc_py_compute_circle_from_tangency ( i_f geometry(point), i_e geometry(point), i_g geometry(point), i_t1 geometry(point)
@@ -180,7 +180,7 @@ else :
 	
 
 $$ LANGUAGE plpythonu;
-
+/*
 --testing
 SELECT *
 FROM rc_py_compute_circle_from_tangency(
@@ -191,7 +191,7 @@ FROM rc_py_compute_circle_from_tangency(
 		)  ; 
 
 
-
+*/
 DROP FUNCTION IF EXISTS rc_py_compute_circle_from_radius ( f geometry(point), e geometry(point),g geometry(point),r FLOAT );
 CREATE OR REPLACE FUNCTION rc_py_compute_circle_from_radius ( i_f geometry(point), i_e geometry(point), i_g geometry(point), i_r FLOAT  
 , OUT center geometry(point),OUT  radius FLOAT,OUT  t1 geometry(point),OUT  t2 geometry(point))  
@@ -240,6 +240,7 @@ t2 = wkb.dumps(asPoint(_t2), hex=in_server) ;
 return  [ center, radius  , t1 , t2 ]   ;	
 $$ LANGUAGE plpythonu;
 
+/*
 --testing
 SELECT *
 FROM rc_py_compute_circle_from_radius(
@@ -250,7 +251,7 @@ FROM rc_py_compute_circle_from_radius(
 		)  ;
 
 */
-/*
+
 DROP FUNCTION IF EXISTS rc_py_distance_point_line ( a float[2], b float[2],p float[2] );
 CREATE OR REPLACE FUNCTION rc_py_distance_point_line ( a float[2], b float[2],p float[2])
   RETURNS  FLOAT  --TABLE (center FLOAT[2], radius FLOAT 
@@ -270,6 +271,6 @@ AS $$
 	distance = np.linalg.norm( _a-_p - n *np.dot( _a-_p,n ) ) ; 
 	return distance ; 
 $$ LANGUAGE plpythonu;
-
+/*
 SELECT rc_py_distance_point_line( ARRAY[0 ,0] , ARRAY[10,0] ,  ARRAY[-10,-10] );
 */

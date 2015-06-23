@@ -1,6 +1,6 @@
 ﻿
 /* Rémi Cura
-Thales Internal
+Thales 
 
 rc_show_content_of_a_table(schema_name text, table_name text, max_number_of_row integer)
 this function looks in pg_stats table to gather most commons values abouta table regarding the most common values and the associated frequency, the output max number of row is controlled by max_number_of_row
@@ -18,7 +18,7 @@ Not optimal : the 'for' loop is not optimal and is only here for output reasons
 DROP FUNCTION IF EXISTS rc_show_content_of_a_table(text,text,integer);
 
 
-CREATE OR REPLACE FUNCTION public.rc_show_content_of_a_table(schema_name text, table_name text, max_number_of_row integer)
+CREATE OR REPLACE FUNCTION rc_show_content_of_a_table(schema_name text, table_name text, max_number_of_row integer)
   RETURNS refcursor AS
 $$
 DECLARE
@@ -108,7 +108,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /*exemple use-case*/
-SELECT rc_show_content_of_a_table('odparis_filtered','arbre',15);
-FETCH ALL FROM test_cursor;
+--SELECT rc_show_content_of_a_table('odparis_filtered','arbre',15);
+--FETCH ALL FROM test_cursor;
 
 

@@ -40,14 +40,15 @@ $BODY$
 	--FROM st_geomfromtext('circularstring(0 0 , 1 1, 2 0)') as geom ; 
 $BODY$
  LANGUAGE plpgsql IMMUTABLE STRICT;
- 
+
+ /*
 	SELECT ST_AsText(rc_centroid(geom ))
 	FROM st_geomfromtext('circularstring(0 0 , 1 1, 2 0)') as geom ; 
 
  
 	SELECT ST_AsText( geom )
 FROM st_geomfromtext('circularstring(0 0 , 1 1, 2 0)') as geom ;  
-
+*/
 
 
 		--redifining a centroid function for 3D : rc_ST_3DCentroid
@@ -70,8 +71,8 @@ FROM st_geomfromtext('circularstring(0 0 , 1 1, 2 0)') as geom ;
 			;
 		END;
 		$$ LANGUAGE plpgsql;
-		
+		/*
 		--trying the function :
 		SELECT rc_3DCentroid(ST_Union(s.segment)) --80sec : s'accelere fortement au fur et à mesure
 		FROM segments As s;
- 
+ */

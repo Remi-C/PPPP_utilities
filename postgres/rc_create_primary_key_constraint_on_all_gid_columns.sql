@@ -7,8 +7,10 @@ This function define gid as primary key for all tbale in schema
 
 WARNING : prototype : non tested or proofed.
 */
-DROP FUNCTION IF EXISTS odparis.rc_create_primary_key_constraint_on_all_gid_columns(text,text);--remove the function before re-creating it : act as a security versus function-type change
-CREATE OR REPLACE FUNCTION odparis.rc_create_primary_key_constraint_on_all_gid_columns(text_output boolean, schema_name text, pkey_table text)
+
+/*
+DROP FUNCTION IF EXISTS rc_create_primary_key_constraint_on_all_gid_columns(text,text);--remove the function before re-creating it : act as a security versus function-type change
+CREATE OR REPLACE FUNCTION rc_create_primary_key_constraint_on_all_gid_columns(text_output boolean, schema_name text, pkey_table text)
   RETURNS text AS
 $BODY$
 DECLARE
@@ -23,7 +25,7 @@ BEGIN
 		for_query := 'SELECT DISTINCT ON (f_table_name) * 
 			FROM geometry_columns 
 			WHERE f_table_schema = '||quote_literal(schema_name) ||'
-				AND odparis.rc_column_exists('|| quote_literal(schema_name)||',quote_ident(f_table_name),'|| quote_literal(pkey_table) ||') = TRUE
+				AND rc_column_exists('|| quote_literal(schema_name)||',quote_ident(f_table_name),'|| quote_literal(pkey_table) ||') = TRUE
 			ORDER BY f_table_name ASC ;';
 
 		
@@ -57,10 +59,10 @@ END IF;
 END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
+*/
+-- exemple use-case : 
 
-/*exemple use-case :*/
-
-SELECT odparis.rc_create_primary_key_constraint_on_all_gid_columns(TRUE,'odparis_reworked','gid');
+--SELECT rc_create_primary_key_constraint_on_all_gid_columns(TRUE,'odparis_reworked','gid');
 /*
 SELECT *
 FROM odparis_reworked.nomenclature
@@ -70,8 +72,9 @@ FROM odparis_reworked.nomenclature
 *this function define a given column as a primary key
 */
 
-DROP FUNCTION IF EXISTS odparis.rc_create_primary_key_constraint_on_gid_columns(text,text,text);--remove the function before re-creating it : act as a security versus function-type change
-CREATE OR REPLACE FUNCTION odparis.rc_create_primary_key_constraint_on_gid_columns(schema_name text,table_name text,pkey_column text) RETURNS boolean
+/*
+DROP FUNCTION IF EXISTS rc_create_primary_key_constraint_on_gid_columns(text,text,text);--remove the function before re-creating it : act as a security versus function-type change
+CREATE OR REPLACE FUNCTION rc_create_primary_key_constraint_on_gid_columns(schema_name text,table_name text,pkey_column text) RETURNS boolean
 AS $$
 DECLARE
     row record;
@@ -95,14 +98,10 @@ BEGIN
 		WHEN duplicate_object OR invalid_table_definition
 		THEN RAISE NOTICE 'this table %.% as already a primary key defined on %, skipping primary key adding',schema_name,table_name,pkey_column;
 	RETURN FALSE;
-	END;
-	
-	/*END LOOP;*/
+	END; 
 RETURN TRUE;
 END;
 $$LANGUAGE plpgsql; 
-
-/*exemple use-case :*/
---SELECT odparis.rc_create_primary_key_constraint_on_gid_columns('odparis_test','assainissement','gid');
-
-
+*/
+--exemple use-case :
+--SELECT rc_create_primary_key_constraint_on_gid_columns('odparis_test','assainissement','gid');

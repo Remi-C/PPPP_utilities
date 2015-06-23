@@ -2,13 +2,14 @@
 --Remi-C 02/2015
 --IGN THALES
 ----------------------------
---finding next value of sequence
+--finding next value of sequence :
+-- WARNING : USELESS, there is alreadya builtin function to do that
 ---------------------------- 
 
 			
 
-DROP FUNCTION IF EXISTS public.rc_FindNextValue(topology_name text , table_name text, column_name text )  ;
-CREATE OR REPLACE FUNCTION public.rc_FindNextValue(topology_name text , table_name text, column_name text) 
+DROP FUNCTION IF EXISTS rc_FindNextValue(topology_name text , table_name text, column_name text )  ;
+CREATE OR REPLACE FUNCTION rc_FindNextValue(topology_name text , table_name text, column_name text) 
 ReTURNS INT  AS
 $BODY$  
 	/** @brief this function return the next value of a sequence 
@@ -40,5 +41,5 @@ $BODY$
 	$BODY$
   LANGUAGE plpgsql VOLATILE;
 
-  SELECT *
-  FROM public.rc_FindNextValue('bdtopo_topological', 'node', 'node_id') ;
+ -- SELECT *
+--  FROM rc_FindNextValue('bdtopo_topological', 'node', 'node_id') ;

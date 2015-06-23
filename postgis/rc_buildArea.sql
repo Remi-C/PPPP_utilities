@@ -1,10 +1,9 @@
-﻿---------------------------------------------
+
+---------------------------------------------
 --Copyright Remi-C Thales IGN 29/11/2013
 --
 --a wrapper around st_buildarea to take into account polygons with holes, and better deal with isolated linestring
 --------------------------------------------
-
-
 
 
 DROP FUNCTION IF EXISTS rc_buildArea(   IN i_geom GEOMETRY, OUT o_geom GEOMETRY );

@@ -16,7 +16,7 @@
 --	else , store the current range in the list of range, use new range as new current range
 ---------------------------------------------------
 
-
+/*
 DROP SCHEMA IF EXISTS test_aggregates CASCADE; 
 create schema if not exists test_aggregates;
 set search_path to  public; 
@@ -98,4 +98,4 @@ WITH idata AS (
 )
 SELECT rc_numrange_disj_union(trange) 
 FROM idata
- 
+ */

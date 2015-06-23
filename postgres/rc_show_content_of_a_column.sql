@@ -11,11 +11,11 @@ WARNING :prototype only, not properly tested and/or proofed
 */
 
 
--- Function: public.rc_show_content_of_a_column(text, text, text, integer)
+-- Function: rc_show_content_of_a_column(text, text, text, integer)
 
-DROP FUNCTION IF EXISTS public.rc_show_content_of_a_column(text, text, text, integer);
+DROP FUNCTION IF EXISTS rc_show_content_of_a_column(text, text, text, integer);
 
-CREATE OR REPLACE FUNCTION public.rc_show_content_of_a_column(schema_name text, table_name text, column_name text, max_number_of_row integer)
+CREATE OR REPLACE FUNCTION rc_show_content_of_a_column(schema_name text, table_name text, column_name text, max_number_of_row integer)
   RETURNS SETOF record AS
 $BODY$
 DECLARE
@@ -74,4 +74,4 @@ END;
 $BODY$
   LANGUAGE plpgsql VOLATILE;
 
- SELECT * FROM public.rc_show_content_of_a_column('odparis_filtered', 'eau', 'info',30) AS toto(a_serie bigint, most_commons_vals varchar);
+ --SELECT * FROM rc_show_content_of_a_column('odparis_filtered', 'eau', 'info',30) AS toto(a_serie bigint, most_commons_vals varchar);

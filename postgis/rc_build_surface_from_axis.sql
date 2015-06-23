@@ -1,4 +1,4 @@
-﻿---------------------------------------------
+---------------------------------------------
 --Copyright Remi-C Thales IGN 25/04/2015
 -- 
 --a function to construct a surface out of 2 linestring
@@ -53,7 +53,7 @@ LANGUAGE plpgsql IMMUTABLE STRICT;
 -- )
 -- SELECT  st_astext(ST_MakePolygon(ST_AddPoint(l1, ST_StartPoint(l1), -1))) 
 -- FROM geo, fabricated_lines
-
+/*
 SELECT *
 FROM (
 SELECT  face_id, count(*) over(partition by face_id) as c
@@ -69,3 +69,4 @@ FROM  (
 ) as subsub
 WHERE c >=2
 LIMIT 1
+*/

@@ -1,11 +1,11 @@
 ﻿---------------------------------------------
 --Copyright Remi-C  11/2014
 -- 
---
+--Simply summing the values in an array
 --------------------------------------------
 	
-DROP FUNCTION IF EXISTS public.rc_ArraySum( arr ANYARRAY, int);
-		CREATE OR REPLACE FUNCTION public.rc_ArraySum( arr ANYARRAY,last_element int, OUT sum anyelement)
+DROP FUNCTION IF EXISTS rc_ArraySum( arr ANYARRAY, int);
+		CREATE OR REPLACE FUNCTION rc_ArraySum( arr ANYARRAY,last_element int, OUT sum anyelement)
 		 
 		 AS
 		$BODY$  
@@ -21,4 +21,4 @@ DROP FUNCTION IF EXISTS public.rc_ArraySum( arr ANYARRAY, int);
 		$BODY$
 		LANGUAGE plpgsql IMMUTABLE CALLED ON NULL INPUT ;
 
-		SELECT rc_ArraySum(ARRAY[1,2,3,4],0 )
+--		SELECT rc_ArraySum(ARRAY[1,2,3,4],0 )

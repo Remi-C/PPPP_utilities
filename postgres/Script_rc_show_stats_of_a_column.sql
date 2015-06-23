@@ -1,16 +1,15 @@
-﻿
-/*
+﻿/*
 Remi Cura
-THALES INTERNAL
+THALES 
 
 script to show stats about a column
 see function rc_show_stats_of_a_column for mor informations
 */
 
 
-ALTER TABLE odparis.arbres ALTER COLUMN lib_etat_c SET STATISTICS 1000;
-ANALYZE VERBOSE odparis.arbres(lib_etat_c);
-
+--ALTER TABLE arbres ALTER COLUMN lib_etat_c SET STATISTICS 1000;
+--ANALYZE VERBOSE arbres(lib_etat_c);
+/*
 
 WITH stats_table AS( --show only the part of the stats table we are interested in
 	SELECT s.attname AS column_name, s.n_distinct AS nombre_valeurs_distinctes, s.most_common_vals AS most_common_vals, s.most_common_freqs AS frequency
@@ -61,7 +60,7 @@ ORDER BY a_serie
 
 
 
-/*Query to join 2 stats result for 2 difreent column of a sma&e tbale together*/
+-- Query to join 2 stats result for 2 difreent column of a sma&e tbale together 
 WITH lib_type_e AS (
 	SELECT lib_type_e.* 
 	FROM rc_show_stats_of_a_column('odparis','arbres','lib_type_e',15) AS lib_type_e(a_serie integer, most_commons_vals varchar, frequency real)
@@ -73,7 +72,7 @@ lib_etat_c AS (
 SELECT * FROM lib_type_e LEFT OUTER JOIN lib_etat_c USING(a_serie);
 
 
-/*query to get the number of the column names of a table*/
+--query to get the number of the column names of a table 
 WITH list_column_names AS( --get the list of the column name in the same order as in the pg_stats table
 
 	SELECT s.attname AS column_name
@@ -85,7 +84,7 @@ SELECT count(*)
 FROM list_column_names
 
 
-/*query to  join 2 columns_stats table*/
+--query to  join 2 columns_stats table 
 SELECT * FROM 
 		rc_show_stats_of_a_column('odparis','eau','gid',15) AS column_stats(a_serie bigint, gid varchar, gid_frequency real) 
 		LEFT OUTER JOIN 
@@ -105,3 +104,5 @@ SELECT * FROM
 			 rc_show_stats_of_a_column('odparis','eau','info',15) AS column_stats(a_serie bigint, info varchar, info_frequency real) 
 			) AS info
 		USING(a_serie)
+        
+        */

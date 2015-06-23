@@ -11,11 +11,12 @@ WARNING :prototype only, not properly tested and/or proofed
 */
 
 
--- Function: public.rc_show_stats_of_a_column(text, text, text, integer)
+-- Function: rc_show_stats_of_a_column(text, text, text, integer)
 
--- DROP FUNCTION public.rc_show_stats_of_a_column(text, text, text, integer);
+-- DROP FUNCTION rc_show_stats_of_a_column(text, text, text, integer);
 
-CREATE OR REPLACE FUNCTION public.rc_show_stats_of_a_column(schema_name text, table_name text, column_name text, max_number_of_row integer)
+DROP FUNCTION IF EXISTS rc_show_stats_of_a_column(schema_name text, table_name text, column_name text, max_number_of_row integer) ; 
+CREATE OR REPLACE FUNCTION rc_show_stats_of_a_column(schema_name text, table_name text, column_name text, max_number_of_row integer)
   RETURNS SETOF record AS
 $BODY$
 DECLARE
@@ -74,4 +75,4 @@ BEGIN
 	RETURN;
 END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
+  LANGUAGE plpgsql VOLATILE ; 

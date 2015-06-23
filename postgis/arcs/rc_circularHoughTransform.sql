@@ -6,10 +6,6 @@
 ------------------------------
 
 
-
-
-
-
 DROP FUNCTION IF EXISTS rc_lineToCurve(igeom geometry, precision_center FLOAT ,min_support_points INT);
 CREATE OR REPLACE FUNCTION rc_lineToCurve(igeom geometry, precision_center FLOAT ,min_support_points INT DEFAULT 3)
 RETURNS SETOF geometry AS
@@ -250,6 +246,8 @@ CREATE OR REPLACE FUNCTION rc_circular_hough_transform( igeom GEOMETRY ,  the_pr
 			 
 		$BODY$
   LANGUAGE plpgsql IMMUTABLE STRICT;
+
+/*
 	SELECT *, st_astext(center)
 	from rc_circular_hough_transform ( ST_GeomFromText('MULTIPOINT( 600.96012  527.12384, 601.2188  527.42177, 601.52278  527.67323)'),0.1)
  
@@ -258,7 +256,7 @@ CREATE OR REPLACE FUNCTION rc_circular_hough_transform( igeom GEOMETRY ,  the_pr
   )
   SELECT ST_Astext(rc_circular_hough_transform(geom,0.01 ))
   FROM the_geom;
- 
+*/
 
 
 DROP FUNCTION IF EXISTS rc_determinant3x3 ( c  anyarray  );
@@ -276,4 +274,4 @@ CREATE OR REPLACE FUNCTION rc_determinant3x3 ( c anyarray  )
 		$BODY$
   LANGUAGE plpgsql VOLATILE;
 
-  
+

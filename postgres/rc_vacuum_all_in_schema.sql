@@ -8,9 +8,9 @@ This function generate the query to vacuum all in a schema
 same WARNING applies.
 
 */
-DROP FUNCTION IF EXISTS odparis.rc_vacuum_all_in_schema(text);--remove the function before re-creating it : act as a security versus function-type change
+DROP FUNCTION IF EXISTS rc_vacuum_all_in_schema(text);--remove the function before re-creating it : act as a security versus function-type change
 
-CREATE OR REPLACE FUNCTION odparis.rc_vacuum_all_in_schema(schema_name text) RETURNS text
+CREATE OR REPLACE FUNCTION rc_vacuum_all_in_schema(schema_name text) RETURNS text
 AS $$
 DECLARE
     the_row record;
@@ -35,14 +35,14 @@ BEGIN
 END;
 $$LANGUAGE plpgsql; 
 
-/*exemple use-case :*/
-SELECT odparis.rc_vacuum_all_in_schema('odparis_reworked'::Text);
+--exemple use-case : 
+--SELECT rc_vacuum_all_in_schema('odparis_reworked'::Text);
 
 
 
-DROP FUNCTION IF EXISTS odparis.rc_vacuum_table(text,text);
+DROP FUNCTION IF EXISTS rc_vacuum_table(text,text);
 
-CREATE OR REPLACE FUNCTION odparis.rc_vacuum_table(schema_name text, table_name text) RETURNS text
+CREATE OR REPLACE FUNCTION rc_vacuum_table(schema_name text, table_name text) RETURNS text
 AS $$
 DECLARE
 the_query text := '';
@@ -53,5 +53,5 @@ BEGIN
 END;
 $$LANGUAGE plpgsql; 
 
-/*exemple use-case*/
---SELECT odparis.rc_vacuum_table('odparis_test'::text,'arbre'::text);
+-- exemple use-case 
+--SELECT rc_vacuum_table('odparis_test'::text,'arbre'::text);

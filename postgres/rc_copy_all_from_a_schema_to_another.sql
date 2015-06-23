@@ -1,6 +1,6 @@
 ﻿/*
 Rémi Cura 
-THALES INTERNAL
+THALES  IGN
 28/08/2012
 
 boolean rc_copy_all_from_a_schema_to_another(old_schema text, new_schema text)

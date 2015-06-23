@@ -1,5 +1,5 @@
 ﻿/*
-Rémi Cura
+Rémi C 
 THALES-TELECOM Terra Mobilita Project
 29/08/2012
 
@@ -12,8 +12,8 @@ NOTE : same function with inout differnet : schema_name and table_name separated
 WARNING :prototype only, not properly tested and/or proofed
 NOTE : we could have checked inside the postgres schema, but the exception-catching way is safer against data structure change.
 */
-DROP FUNCTION IF EXISTS public.rc_table_exists(text);
-CREATE OR REPLACE FUNCTION public.rc_table_exists(table_name_qualified text) RETURNS boolean AS
+DROP FUNCTION IF EXISTS rc_table_exists(text);
+CREATE OR REPLACE FUNCTION rc_table_exists(table_name_qualified text) RETURNS boolean AS
 $$
 DECLARE
 	table_exists boolean := TRUE;
@@ -35,13 +35,13 @@ EXCEPTION
 END;
 $$LANGUAGE 'plpgsql';
 
---SELECT odparis.rc_table_exists('odparis.emplct_col');
+--SELECT rc_table_exists('emplct_col');
 
 
 
 
-DROP FUNCTION IF EXISTS public.rc_table_exists(text,text);
-CREATE OR REPLACE FUNCTION public.rc_table_exists(schema_name text, table_name text) RETURNS boolean AS
+DROP FUNCTION IF EXISTS rc_table_exists(text,text);
+CREATE OR REPLACE FUNCTION rc_table_exists(schema_name text, table_name text) RETURNS boolean AS
 $$
 DECLARE
 	table_exists boolean := TRUE;
@@ -63,13 +63,13 @@ EXCEPTION
 END;
 $$LANGUAGE 'plpgsql';
 
---SELECT odparis.rc_table_exists('odparis'::text,'emplct_col'::text);
+--SELECT rc_table_exists('odparis'::text,'emplct_col'::text);
 
 
 
 
-DROP FUNCTION IF EXISTS public.rc_column_exists(text,text) ;
-CREATE OR REPLACE FUNCTION public.rc_column_exists(table_name_qualified text, column_name text) RETURNS boolean AS
+DROP FUNCTION IF EXISTS rc_column_exists(text,text) ;
+CREATE OR REPLACE FUNCTION rc_column_exists(table_name_qualified text, column_name text) RETURNS boolean AS
 $$
 DECLARE
 	column_exists boolean := TRUE;
@@ -97,14 +97,14 @@ EXCEPTION
 END;
 $$LANGUAGE 'plpgsql';
 
---SELECT odparis.rc_column_exists('odparis_test.eau','info');
+--SELECT rc_column_exists('odparis_test.eau','info');
 
 
 
 
 
-DROP FUNCTION IF EXISTS public.rc_column_exists(text,text,text) ;
-CREATE OR REPLACE FUNCTION public.rc_column_exists(schema_name text, table_name text, column_name text) RETURNS boolean AS
+DROP FUNCTION IF EXISTS rc_column_exists(text,text,text) ;
+CREATE OR REPLACE FUNCTION rc_column_exists(schema_name text, table_name text, column_name text) RETURNS boolean AS
 $$
 DECLARE
 	column_exists boolean := TRUE;
@@ -134,4 +134,4 @@ EXCEPTION
 END;
 $$LANGUAGE 'plpgsql';
 
---SELECT odparis.rc_column_exists('odparis_test'::Text,'eau'::Text,'info');
+--SELECT rc_column_exists('odparis_test'::Text,'eau'::Text,'info');

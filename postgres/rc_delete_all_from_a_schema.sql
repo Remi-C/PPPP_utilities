@@ -10,8 +10,8 @@
 --don't use this in a schema with spatial_ref_sys or whole postgis will be removed
 --
 --
-DROP FUNCTION IF EXISTS public.rc_drop_all_geom_in_schema(text);--remove the function before re-creating it : act as a security versus function-type change
-CREATE OR REPLACE FUNCTION public.rc_drop_all_geom_in_schema( schema_name text) RETURNS boolean
+DROP FUNCTION IF EXISTS rc_drop_all_geom_in_schema(text);--remove the function before re-creating it : act as a security versus function-type change
+CREATE OR REPLACE FUNCTION rc_drop_all_geom_in_schema( schema_name text) RETURNS boolean
 AS $$ 
 DECLARE
     _r record;
@@ -33,9 +33,9 @@ $$LANGUAGE plpgsql;
 --SELECT rc_delete_all_geom_from_a_schema('odparis_reworked'::Text);
 
 
-DROP FUNCTION IF EXISTS public.rc_drop_all_in_schema(text);--remove the function before re-creating it : act as a security versus function-type change
+DROP FUNCTION IF EXISTS rc_drop_all_in_schema(text);--remove the function before re-creating it : act as a security versus function-type change
 
-CREATE OR REPLACE FUNCTION public.rc_drop_all_in_schema(_schema_name text) RETURNS boolean
+CREATE OR REPLACE FUNCTION rc_drop_all_in_schema(_schema_name text) RETURNS boolean
 AS $$
 DECLARE
     _r record;

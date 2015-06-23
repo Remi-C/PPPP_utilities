@@ -1,4 +1,4 @@
-﻿/********************************
+﻿/* *******************************
 *Rém C. 06/09/2013
 *Thales IGN
 *********************************
@@ -18,10 +18,10 @@
 * - create a function that decides if 2 interval should be merged
 * - lauch function
 *
-*********************************/
+******************************** */
 
 
-
+/*
 --__Creating test environnement__
 
 	--Create a test schema for the demo
@@ -67,6 +67,7 @@ WITH first_query AS ( SELECT *
 )
 SELECT *
 FROM my_function('first_query'::regclass) f(trange numrange) ;
+*/
 
 	DROP FUNCTION IF EXISTS rc_interval_union(data_table regclass) ;
 	CREATE OR REPLACE FUNCTION rc_test(data_table regclass) RETURNS setof record
@@ -84,13 +85,7 @@ FROM my_function('first_query'::regclass) f(trange numrange) ;
 	END;
 	$$ LANGUAGE plpgsql;
 
-
-
-----------------
-----------------
-------------------
-------------------
-------------------
+ 
 
 
 -----
@@ -167,12 +162,12 @@ FROM my_function('first_query'::regclass) f(trange numrange) ;
 	$$ LANGUAGE plpgsql;
 		
 		--trying the function :
-	SELECT * FROM rc_interval_union('test_data'::text,'rc_interval_overlap'::text,'toto');
+/*	SELECT * FROM rc_interval_union('test_data'::text,'rc_interval_overlap'::text,'toto');
  
 	SELECT *
 	FROM test_data
 	ORDER BY trange ASC;
-
+*/
 
 DROP FUNCTION IF EXISTS rc_interval_overlap(trange1 numrange, trange2 numrange , tolerancy numeric) ;
 	CREATE OR REPLACE FUNCTION rc_interval_overlap(trange1 numrange, trange2 numrange, tolerancy numeric DEFAULT 0) RETURNS boolean
@@ -262,7 +257,7 @@ DROP FUNCTION IF EXISTS rc_compute_interval_union(data_table_curs refcursor,colu
 	--trying the function :
 	--SELECT * FROM rc_interval_overlap(numrange(1,2), numrange(1.9,5))
 	
-
+/*
 	BEGIN;
 	DECLARE cursor_on_asc_range CURSOR FOR 
 		SELECT trange
@@ -272,7 +267,7 @@ DROP FUNCTION IF EXISTS rc_compute_interval_union(data_table_curs refcursor,colu
 	SELECT * FROM  rc_compute_interval_union('cursor_on_asc_range'::refcursor,'trange'::text, 'rc_interval_overlap'::text,'toto'::text) f(trange numrange) ;
 	CLOSE cursor_on_asc_range;
 	END;
-
+*/
 
 
 
@@ -337,7 +332,7 @@ DROP FUNCTION IF EXISTS rc_compute_interval_union_simplified(data_table_curs ref
 	RETURN;
 	END;
 	$$ LANGUAGE plpgsql;
-
+/*
 	
 	BEGIN;
 	DECLARE cursor_on_asc_range CURSOR FOR  
@@ -351,7 +346,7 @@ DROP FUNCTION IF EXISTS rc_compute_interval_union_simplified(data_table_curs ref
 	SELECT row_number() over() as frange_id,  * FROM  rc_compute_interval_union('cursor_on_asc_range'::refcursor , 'trange'::text ,  'rc_interval_overlap'::text , 'toto'::text) f(trange numrange)  ORDER BY trange ASC;
 	CLOSE cursor_on_asc_range;
 	END;
-
+*/
 
 
 
@@ -391,6 +386,7 @@ DROP FUNCTION IF EXISTS rc_compute_interval_union(data_table_curs refcursor) ;
     END;
     $$ LANGUAGE plpgsql;
 
+    /*
 BEGIN;
 	DECLARE cursor_on_asc_range CURSOR WITH HOLD FOR 
 		SELECT trange
@@ -400,3 +396,4 @@ BEGIN;
 	SELECT * FROM  rc_compute_interval_union('cursor_on_asc_range'::refcursor) f(trange numrange) ;
 	CLOSE cursor_on_asc_range;
 	END;
+*/

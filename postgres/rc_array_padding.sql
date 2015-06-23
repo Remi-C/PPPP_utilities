@@ -1,6 +1,8 @@
 ﻿-----------------------------
 --Rémi C
 --12/2014 
+--
+-- a dirty function to padd array (adding 0), if necessary
 ---------------------------------------
 
 

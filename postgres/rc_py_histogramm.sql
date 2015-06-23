@@ -41,7 +41,7 @@ return True ;
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 
 
-
+/*
 WITH i_data AS (
 	SELECT array_agg_custom(ARRAY[s*4,s*4+1,s*4+2,s*4+3] ) as dat
 	FROM generate_series(0,99) AS s
@@ -53,6 +53,8 @@ WITH i_data AS (
 		,'/media/sf_E_RemiCura/PROJETS/point_cloud/PC_in_DB/LOD_ordering_for_patches_of_points/result_rforest/vosges/tmp/test_hist.png'
 		,ARRAY['dim1','dim2','dim3','dim4']
 		,30) as r 
+
+*/
 
 
  DROP FUNCTION IF EXISTS rc_py_plot_2_hist(  dat1  FLOAT[]  , dat2  FLOAT[]  ,file_name_with_path text, labels TEXT[],nbins int, use_log_y boolean );
@@ -90,7 +92,7 @@ return True ;
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 
 
-
+/*
 
 WITH i_data AS (
 	SELECT array_agg (s ) as dat1, array_agg(s*2) AS dat2
@@ -103,5 +105,4 @@ WITH i_data AS (
 		,'/media/sf_E_RemiCura/PROJETS/point_cloud/PC_in_DB/LOD_ordering_for_patches_of_points/result_rforest/vosges/tmp/test_hist.png'
 		,ARRAY['dim1','dim2' ]
 		,30) as r 
-
-		
+*/

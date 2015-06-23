@@ -15,8 +15,8 @@
 
 
 --http://stackoverflow.com/questions/12597465/how-to-add-column-if-not-exists-on-postgresql
-DROP FUNCTION IF EXISTS public.rc_AddColIfNotExist(   _tbl regclass, _col  text, _type regtype, OUT success bool);
-CREATE OR REPLACE function public.rc_AddColIfNotExist(
+DROP FUNCTION IF EXISTS rc_AddColIfNotExist(   _tbl regclass, _col  text, _type regtype, OUT success bool);
+CREATE OR REPLACE function rc_AddColIfNotExist(
    _tbl regclass, _col  text, _type regtype, OUT success bool)
     LANGUAGE plpgsql AS
 $func$
@@ -37,4 +37,4 @@ $func$
 	END
 $func$;
 
-SELECT public.rc_AddColIfNotExist( 'public.kat', 'pfad1', 'int');
+--SELECT rc_AddColIfNotExist( 'kat', 'pfad1', 'int');

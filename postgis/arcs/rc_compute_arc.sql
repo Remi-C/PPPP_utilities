@@ -13,8 +13,8 @@
 		--	_3D input safely outputing 2D output?
 
 		
-		DROP FUNCTION IF EXISTS public.rc_compute_arc(p1 geometry, p2 geometry, p3 geometry, max_radius double precision, tolerance double precision, allow_full_circle BOOLEAN  );
-		CREATE FUNCTION public.rc_compute_arc(p1 geometry, p2 geometry, p3 geometry,max_radius double precision,  tolerance double precision default 0.00000001, allow_full_circle BOOLEAN DEFAULT TRUE )
+		DROP FUNCTION IF EXISTS rc_compute_arc(p1 geometry, p2 geometry, p3 geometry, max_radius double precision, tolerance double precision, allow_full_circle BOOLEAN  );
+		CREATE FUNCTION rc_compute_arc(p1 geometry, p2 geometry, p3 geometry,max_radius double precision,  tolerance double precision default 0.00000001, allow_full_circle BOOLEAN DEFAULT TRUE )
 			RETURNS geometry AS
 		$BODY$
 		--note : depends on public.rc_MakeArc()
@@ -150,7 +150,7 @@
 		LANGUAGE plpgsql IMMUTABLE;
 		----
 		--Testing the function
-		
+/*		
 		SELECT ST_AsText(St_CurveToLine(public.rc_compute_arc(
 			'point(0 10)'::geometry, --point1 geom, 
 			'point(10 0)'::geometry, --point2 geom, 
@@ -158,8 +158,7 @@
 			100, --max_radius double precision
 			0.0001 --tolerance double precision
 			),8));
-			
-
+	
 
 		--testing input
 			---
@@ -213,10 +212,10 @@
 										
 
 
+*/
 
-
-	DROP FUNCTION IF EXISTS public.rc_MakeArc(p1 geometry, p2 geometry, p3 geometry);
-		CREATE FUNCTION public.rc_MakeArc(p1 geometry, p2 geometry, p3 geometry)
+	DROP FUNCTION IF EXISTS rc_MakeArc(p1 geometry, p2 geometry, p3 geometry);
+		CREATE FUNCTION rc_MakeArc(p1 geometry, p2 geometry, p3 geometry)
 			RETURNS geometry AS
 		$BODY$
 			--this function create a curve geometry based on input 3 points. Points are supposed to be in the natural order along the curve
@@ -247,7 +246,10 @@
 			END ;
 		$BODY$
 		LANGUAGE plpgsql IMMUTABLE;
-		----
+
+
+
+/*		----
 		SELECT 1, ST_AsText(
 			ST_CurveToLine(public.rc_MakeArc(
 			'point(0 1)'::geometry,--p1 geometry
@@ -268,10 +270,4 @@
 
 		SELECT ST_AsBinary(ST_GeomFromtext( 'CIRCULARSTRING(0 1 , 1 1, 2 1)'))::bytea;
 		SELECT ST_GeomFromtext( 'multipoint(0 1 , 1 1, 2 1)');
-
-
-
-	/*
-
-	
 */

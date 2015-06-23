@@ -5,29 +5,31 @@
 --note : the sql version is slow! 
 
 -- Create a function that always returns the first non-NULL item
-CREATE OR REPLACE FUNCTION public.first_agg ( anyelement, anyelement )
+DROP FUNCTION IF EXISTS first_agg ( anyelement, anyelement ) ;
+CREATE OR REPLACE FUNCTION first_agg ( anyelement, anyelement )
 RETURNS anyelement LANGUAGE sql IMMUTABLE STRICT AS $$
         SELECT $1;
 $$;
  
 -- And then wrap an aggregate around it
-DROP AGGREGATE IF EXISTS public.first(anyelement) ;
-CREATE  AGGREGATE public.first (
-        sfunc    = public.first_agg,
+DROP AGGREGATE IF EXISTS first(anyelement) ;
+CREATE  AGGREGATE first (
+        sfunc    = first_agg,
         basetype = anyelement,
         stype    = anyelement
 );
  
 -- Create a function that always returns the last non-NULL item
-CREATE OR REPLACE FUNCTION public.last_agg ( anyelement, anyelement )
+DROP FUNCTION IF EXISTS last_agg ( anyelement, anyelement ) ; 
+CREATE OR REPLACE FUNCTION last_agg ( anyelement, anyelement )
 RETURNS anyelement LANGUAGE sql IMMUTABLE STRICT AS $$
         SELECT $2;
 $$;
  
 -- And then wrap an aggregate around it
-DROP AGGREGATE IF EXISTS public.last(anyelement) ;
-CREATE AGGREGATE public.last (
-        sfunc    = public.last_agg,
+DROP AGGREGATE IF EXISTS last(anyelement) ;
+CREATE AGGREGATE last (
+        sfunc    = last_agg,
         basetype = anyelement,
         stype    = anyelement
 );

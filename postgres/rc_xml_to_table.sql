@@ -1,4 +1,10 @@
-﻿
+﻿--------------------
+--Remi-C
+-- THALES / IGN
+-- 2014
+---------------------
+
+
 DROP FUNCTION IF EXISTS rc_xml_to_table(input_xml xml,table_name text, schema_name TEXT);
 CREATE OR REPLACE FUNCTION  rc_xml_to_table(input_xml xml, table_name text, schema_name TEXT DEFAULT 'public')
   RETURNS boolean AS

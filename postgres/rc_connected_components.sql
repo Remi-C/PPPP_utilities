@@ -6,13 +6,13 @@
 --function to compute connected components efficiently in postgres
 --need extension intarr
 
-SET search_path to temp_demo_mathieu, public;
+--SET search_path to temp_demo_mathieu, public;
 
 
 -- adding the extension to work with int[]
-CREATE EXTENSION IF NOT EXISTS intarray;
+--CREATE EXTENSION IF NOT EXISTS intarray;
 
-
+/*
 --creating synthetic data : 
 SET SEED TO 0.08;
 DROP TABLE IF  EXISTS adjacencies;
@@ -67,7 +67,7 @@ ORDER BY id ASC, adj[1],adj[2] ;
 --checking the result :
 SELECT * 
 FROM c_components
-
+*/
 ------------Finding connected components : algorithme description
 --------Notes
 --We suppose we have a table describing (2 ways, non duplicated, (min,max) ordered) connections between observations :  (gid1, gid2) (equivalent to (gid2,gid1) ) WARNING : this table is going to be emptyed during the process
@@ -263,10 +263,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+/*
 SELECT * , rc_ccomponents_update_edge(adj,ccid)
 FROM adjacencies 
 ORDER BY  adj[1],adj[2] ;
+*/
 
 DROP FUNCTION IF EXISTS rc_ccomponents_update_table( OUT modified_ccid INT   );
 CREATE OR REPLACE FUNCTION  rc_ccomponents_update_table(OUT modified_ccid INT   ) AS $$
@@ -308,6 +309,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 
 SELECT rc_ccomponents_update_table();
 
 
@@ -317,7 +319,8 @@ SELECT COALESCE(LEAST(4,min(a.ccid)),4) INTO updated_ccid
 	FROM adjacencies AS a
 	WHERE a.adj && ARRAY[4,19] AND a.ccid !=4;  
 
- 
+*/
+
 DROP FUNCTION IF EXISTS rc_ccomponents(  );
 CREATE OR REPLACE FUNCTION  rc_ccomponents(OUT max_clique_size INT  )   AS $$
 --note : need extesnion intarr
@@ -335,7 +338,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+/*
 SELECT *  
 FROM adjacencies 
 ORDER BY  adj[1],adj[2];
@@ -346,24 +349,21 @@ SELECT rc_ccomponents();
 SELECT * 
 FROM adjacencies 
 ORDER BY  adj[1],adj[2];
-
+*/
 
 
 ----------profiling & timing :
 --SELECT pg_stat_reset();
-
+/*
 SELECT funcname,calls, total_time/1000.0 AS total_time, self_time/1000.0 AS self_time, sum(self_time/1000.0) OVER (order by self_time DESC) As cum_self_time
 FROM pg_stat_user_functions
 ORDER BY  -- total_time DESC  ,
 	self_time DESC;  
-
+*/
 
 
 --the python way !
-CREATE EXTENSION IF NOT EXISTS plpythonu;
-
-
-
+--CREATE EXTENSION IF NOT EXISTS plpythonu;
 
 DROP FUNCTION IF EXISTS rc_py_ccomponents ( INT[], INT[] );
 CREATE FUNCTION rc_py_ccomponents ( 
@@ -401,14 +401,11 @@ for idx, val in enumerate(cc):
 return result ; 
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 
-
+/*
 WITH input_transform AS (
 	SELECT array_agg(adj[1] ORDER BY id ASC) as node1, array_agg(adj[2] ORDER BY id ASC)  as node2
 	FROM adjacencies  
 )
 SELECT f.*
 FROM input_transform, rc_py_ccomponents(node1,node2) as f ;
-
- 
-
-
+*/

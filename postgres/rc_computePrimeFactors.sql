@@ -11,7 +11,7 @@
 --	
 --	We use a recursive CTE to compute factors, then regroup using arreay agg. Simultaneously, we compute the product of factor to check if this is really equal to input number.
 --
---public.rc_PrimeFactor(a_number numeric, OUT prime_factors numeric[])
+--rc_PrimeFactor(a_number numeric, OUT prime_factors numeric[])
 --
 ------dependencies---------
 --
@@ -35,8 +35,8 @@ CREATE AGGREGATE numeric_product_agg(numeric)
 	--
 	--	Utility function : compute the max of all elements in an array
 	--
-	DROP FUNCTION IF EXISTS public.rc_maxArray(an_array anyarray, OUT result anyelement);
-		CREATE OR REPLACE FUNCTION public.rc_maxArray(an_array anyarray, OUT result anyelement)
+	DROP FUNCTION IF EXISTS rc_maxArray(an_array anyarray, OUT result anyelement);
+		CREATE OR REPLACE FUNCTION rc_maxArray(an_array anyarray, OUT result anyelement)
 		AS
 		$BODY$
 			--this function output the max of an array
@@ -54,7 +54,7 @@ CREATE AGGREGATE numeric_product_agg(numeric)
 		$BODY$
 		  LANGUAGE plpgsql  IMMUTABLE STRICT;
 
-		  SELECT rc_maxArray( ARRAY[1.4,2,3,2,1]);
+		 -- SELECT rc_maxArray( ARRAY[1.4,2,3,2,1]);
 
 
 
@@ -65,8 +65,8 @@ CREATE AGGREGATE numeric_product_agg(numeric)
 		--
 		--
 		--
-		DROP FUNCTION IF EXISTS public.rc_PrimeFactor(a_number numeric, OUT prime_factors numeric[]);
-		CREATE OR REPLACE FUNCTION public.rc_PrimeFactor(a_number numeric, OUT prime_factors numeric[])
+		DROP FUNCTION IF EXISTS rc_PrimeFactor(a_number numeric, OUT prime_factors numeric[]);
+		CREATE OR REPLACE FUNCTION rc_PrimeFactor(a_number numeric, OUT prime_factors numeric[])
 		AS
 		$BODY$
 			--this function output the prime factors of the given number, by ascending order, a prmie factor being outputted n times if needed.
@@ -129,13 +129,13 @@ CREATE AGGREGATE numeric_product_agg(numeric)
 		$BODY$
 		  LANGUAGE plpgsql  IMMUTABLE STRICT;
 
-		  SELECT public.rc_PrimeFactor(100);
-		 -- SELECT public.rc_PrimeFactor(69851254266875212);--worst case test : 81 sec
-		 -- SELECT public.rc_PrimeFactor(10203040506070809);--worst case test : 0.360ms
+		 -- SELECT rc_PrimeFactor(100);
+		 -- SELECT rc_PrimeFactor(69851254266875212);--worst case test : 81 sec
+		 -- SELECT rc_PrimeFactor(10203040506070809);--worst case test : 0.360ms
 	
 
-DROP FUNCTION IF EXISTS public.rc_PrimeFactorOnlyIn(a_number numeric, only_allowed_factors NUMERIC[], OUT prime_factors numeric[]);
-		CREATE OR REPLACE FUNCTION public.rc_PrimeFactorOnlyIn(a_number numeric, only_allowed_factors NUMERIC[], OUT prime_factors numeric[])
+DROP FUNCTION IF EXISTS rc_PrimeFactorOnlyIn(a_number numeric, only_allowed_factors NUMERIC[], OUT prime_factors numeric[]);
+		CREATE OR REPLACE FUNCTION rc_PrimeFactorOnlyIn(a_number numeric, only_allowed_factors NUMERIC[], OUT prime_factors numeric[])
 		AS
 		$BODY$
 			--this function output the prime factors of the given number, by ascending order, a prmie factor being outputted n times if needed.
@@ -199,7 +199,7 @@ DROP FUNCTION IF EXISTS public.rc_PrimeFactorOnlyIn(a_number numeric, only_allow
 		$BODY$
 		  LANGUAGE plpgsql  IMMUTABLE STRICT;
 
-		  SELECT public.rc_PrimeFactorOnlyIn(489611463161790210, ARRAY[2,5, 3,7,6765]);
+--		  SELECT rc_PrimeFactorOnlyIn(489611463161790210, ARRAY[2,5, 3,7,6765]);
 
 
 
@@ -212,8 +212,8 @@ DROP FUNCTION IF EXISTS public.rc_PrimeFactorOnlyIn(a_number numeric, only_allow
 	--	If a is slope of line, an integer , factorized into prime factors, the rules are:
 	--		* only 2 and 5 prime factors have an effect on spacing
 	--		* max 3 factor of each are allowed
-	DROP FUNCTION IF EXISTS public.rc_intersect_rounding_rules(array_of_factor_2_and_5 anyarray, max_repetition int,  OUT dividing_factor numeric);
-		CREATE OR REPLACE FUNCTION public.rc_intersect_rounding_rules(array_of_factor_2_and_5 anyarray, max_repetition int, OUT dividing_factor numeric)
+	DROP FUNCTION IF EXISTS rc_intersect_rounding_rules(array_of_factor_2_and_5 anyarray, max_repetition int,  OUT dividing_factor numeric);
+		CREATE OR REPLACE FUNCTION rc_intersect_rounding_rules(array_of_factor_2_and_5 anyarray, max_repetition int, OUT dividing_factor numeric)
 		AS
 		$BODY$
 			--this function reverse engineers the behavior of ST_intersect of a line and a point regarding the slope of the line
@@ -246,7 +246,7 @@ DROP FUNCTION IF EXISTS public.rc_PrimeFactorOnlyIn(a_number numeric, only_allow
 		$BODY$
 		  LANGUAGE plpgsql  IMMUTABLE STRICT;
 
-		  SELECT rc_intersect_rounding_rules(array_of_factor_2_and_5:=ARRAY[2,2,5,5,5],max_repetition:=3);
+/*		  SELECT rc_intersect_rounding_rules(array_of_factor_2_and_5:=ARRAY[2,2,5,5,5],max_repetition:=3);
 	
 	SELECT 
 		f , f_count
@@ -256,6 +256,7 @@ DROP FUNCTION IF EXISTS public.rc_PrimeFactorOnlyIn(a_number numeric, only_allow
 		WHERE f = ANY (ARRAY[2,5])
 		GROUP BY f
 		ORDER BY f ASC ) as foo;
+*/
 /*
 --sand box zone
 WITH RECURSIVE source (counter, factor, is_factor) AS (
