@@ -5,25 +5,83 @@ this script concatenates all the function in different files into one, so it is 
 create/remove all function using postgres extension mechanism
 """
 
-
-
-
 def test_extension_create():
     """tests the function that will create a file to create the extension 
     and a file to delete the extension"""
-    from os import path
-    target = "postgres" # get the name of the directory, it is the name of the target
+
+    #parameters
+    target = "pointcloud" # get the name of the directory, it is the name of the target
     version = 1.0
     test_output_path = './extension_creation'
-    function_path = path.join('./', target) 
-    output_path = path.abspath(test_output_path)
-    target_install =  path.join(output_path,"rc_lib_{0!s}--{1!s}.sql".format(target, version))
-    target_uninstall = path.join(output_path,"rc_lib_{0!s}_uninstall_{1!s}.sql".format(target, version))
-    target_control = path.join(output_path,"rc_lib_{0!s}.control".format(target, version))
-    create_extension_file(target, version, function_path, target_install,target_uninstall, target_control)
+    ignore_plpythonu = True
+    ignore_plr = True
+    
+    #dealign with paths 
+    output_path,function_path,target_install,target_uninstall,target_control = create_target(test_output_path,target,version)
+    
+    #creating the file to install extension
+    create_extension_file(target, version, function_path, target_install,target_uninstall, target_control
+        ,ignore_plpythonu, ignore_plr)
+         
+    #putting the extension file at the right place
+    installing_into_postgres(output_path,target,version)
     return
 
+def installing_into_postgres(output_path,target,version):  
+    """this function install the produced extension file at the right place"""    
+    import subprocess
+    from os import path
+    #getting the right place using pg_config, so it is safe in any installation
+    try:
+        p = subprocess.Popen(["pg_config", "--sharedir"], stdout=subprocess.PIPE)
+        output, err = p.communicate()
+    except:
+        print('error trying to get the place to install extension files')
+        exit(-1)
+    #adding extension to the path
+    output = output.rstrip() #removing the \n at the end
+    place_to_install = path.normpath(output)
+    place_to_install = path.join(place_to_install,'extension')
+    place_to_install = path.normpath(place_to_install)
+    
+    #getting the path of the created extension files
+    output_path,function_path,target_install,target_uninstall,target_control = create_target(output_path,target,version)
+    
+   
+        
+    #copying    
+    import shutil
+    shutil.copy(target_install,place_to_install)
+    shutil.copy(target_control,place_to_install)
+    
+    #setting the permission (if on linux):
+    try:
+        p = subprocess.Popen(["chown", 
+                              "postgres:postgres" ,
+                              path.join(place_to_install,"rc_lib_{0!s}--{1!s}.sql".format(target, version)) ]
+                              , stdout=subprocess.PIPE)
+        output, err = p.communicate()
+        p = subprocess.Popen(["chown", 
+                              "postgres:postgres" ,
+                              path.join(place_to_install,"rc_lib_{0!s}.control".format(target, version)) ]
+                              , stdout=subprocess.PIPE)
+        output, err = p.communicate()
+    except:
+        print('no need to set permission, chown missing anyway')
+    
+    return True
 
+
+def create_target(output_path,target,version):
+    """ this function create the path to the outputted file"""
+    from os import path
+    function_path = path.join('./', target) 
+    output_path = path.abspath(output_path)
+    target_install =  path.join(output_path,"rc_lib_{0!s}--{1!s}.sql".format(target, version))
+    target_uninstall = path.join(output_path,"rc_lib_{0!s}_uninstall_{1!s}.sql".format(target, version))
+    target_control = path.join(output_path,"rc_lib_{0!s}.control".format(target, version)) 
+    return output_path,function_path,target_install,target_uninstall,target_control
+    
 def create_extension_file(target, version, function_path, target_install,target_uninstall, target_control,ignore_plpythonu=True, ignore_plr=True):
     """create the sql extension file, appending every sql function file 
     into target_install file, and every DROP FUNCTION ... statement into
@@ -34,7 +92,7 @@ def create_extension_file(target, version, function_path, target_install,target_
     """ @TODO : add test to check that file can be opened"""
     install_file = open(target_install, 'w')
     uninstall_file = open(target_uninstall, 'w')
-    control_file = open(target_control,'w')
+    control_file = open(target_control,'w') 
     #putting misc stuff into files, to create/drop schema and so
     fill_headers(target, version, install_file, uninstall_file,control_file)
     
@@ -173,82 +231,25 @@ default_version = '{1!s}'
 relocatable = 'false'
 schema = 'rc_lib_{0!s}'""".format(target,version)
 
+    make_text = """# rc_lib_{0!s} extension
+#can be installed manually : just copy files into postgres/extension
+EXTENSION = rc_lib_{0!s}
+installing_into_postgres()
+DATA = rc_lib_{0!s}--{1!s}.sql
+
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+""".format(target,version)
+
     if dependencies[target] is not None:
         control_header += """\nrequires = '{0!s}'""".format(dependencies[target] )
 
 
     install_file.write(install_header)
     uninstall_file.write(uninstall_header)
-    control_file.write(control_header)
+    control_file.write(control_header) 
     return
 
 
-
- 
-
-
-
-
-
 test_extension_create()
-
-
-
-
-
-
-
-
-
-
-
-#loop on all files of the directory (with recursive walk)
-#append the files to the concatenation file
-#if line starts by DROP ..., put it and following lines upt to CREATE in uninstall
-#else put in install
-
-"""
-matches = []
-for root, dirnames, filenames in os.walk('./postgres'):
-    for filename in fnmatch.filter(filenames, '*.sql'):
-        matches.append(os.path.join(root, filename))
-
-target_install.close()
-target_uninstall.close()
-"""
-
-def switch_install_uninstall(examined_file, install_file, uninstall_file):
-    """reading a file examined_file, if the sql statemnt is between \
-    DROP FUNCTION... CREATE FUNCTION, put it in uninstall
-    else, put it in install. Statement are speared by ";" """
-    import re
-    p = re.compile('(DROP\sFUNCTION.*)CREATE')
-    p.findall('12 drummers drumming, 11 pipers piping, 10 lords a-leaping')
-
-
-import re
-
-test_header = """DROP FUNCTION IF EXISTS toto( toto int, 
-titi att,
-    ere ere,
-    );
-CREATE FUNCTION toto ()
-returns 
-DROP FUNCTION IF EXISTS toto( toto int, 
-titi att,
-    ere ere,--titi
-    );
-CREATE FUNCTION toto ()--toto
-returns 
-DROP FUNCTION IF EXISTS toto( toto int, 
-titi att,
-    ere ere,
-    ); -- toto titit
-CREATE FUNCTION toto ()
-returns 
-"""
-
-p = re.compile('(DROP FUNCTION.*?;)', re.MULTILINE|re.DOTALL) #note : ;*? is the lazzy way
-#print p.findall(test_header)
-
- 
