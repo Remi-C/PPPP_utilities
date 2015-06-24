@@ -1,4 +1,11 @@
-﻿
+﻿---------------------------------------------
+--Copyright Remi-C  2014
+--
+-- writting files with python
+--This script expects a postgres >= 9.3, Postgis >= 2.0.2 , pointcloud
+--------------------------------------------
+
+
 --found on internet then modified
 DROP FUNCTION IF EXISTS write_file (param_bytes bytea, param_filepath text, chmod character varying (4)) ; 
 CREATE OR REPLACE FUNCTION write_file (param_bytes bytea, param_filepath text, chmod character varying (4))
