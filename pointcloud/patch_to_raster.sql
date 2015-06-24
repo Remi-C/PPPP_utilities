@@ -1,7 +1,6 @@
 ﻿--Remi Cura Thales/IGN  10/03/2014
 --Function to rasterize patch using postgis raster
-
-
+ 
 -------------------------------------------------------------
 --
 --this scrip intend to try to use postgis raster functionnality with point_cloud functionnality

@@ -11,10 +11,10 @@
 --this fact brings modification , because we can compute the pixel index and pixel values once and for all, then set one band at a time.
 -------------------------------------------------------------
 
-DROP SCHEMA IF EXISTS test_raster CASCADE;
-CREATE SCHEMA test_raster;
+--DROP SCHEMA IF EXISTS test_raster CASCADE;
+--CREATE SCHEMA test_raster;
 
-SET search_path TO test_raster,acquisition_tmob_012013,public;
+--SET search_path TO test_raster,acquisition_tmob_012013,public;
 --SET client_min_messages TO WARNING;
 
 ----------------
@@ -103,7 +103,7 @@ SET search_path TO test_raster,acquisition_tmob_012013,public;
 	$BODY$
 	 LANGUAGE plpgsql  IMMUTABLE STRICT;
 
-	
+	/*
 	DROP TABLE IF EXISTS test_temp_raster;
 	CREATE TABLE test_temp_raster AS 
 	WITH patch  AS (
@@ -172,7 +172,7 @@ SET search_path TO test_raster,acquisition_tmob_012013,public;
 	-- st_mapalgebra(IN rast raster, IN nband integer[], IN callbackfunc regprocedure, IN pixeltype text DEFAULT NULL::text, IN extenttype text DEFAULT 'FIRST'::text, IN customextent raster DEFAULT NULL::raster, IN distancex integer DEFAULT 0, IN distancey integer DEFAULT 0, VARIADIC userargs text[] DEFAULT NULL::text[])
 
 
-
+*/
 
 	DROP FUNCTION IF EXISTS rc_Patch2RasterBand_arar(IN i_p PCPATCH, IN dim_name TEXT, in i_r RASTER , IN pixel_size FLOAT, IN temp_table_name regclass , OUT u_r RASTER) ;
 	CREATE OR REPLACE FUNCTION rc_Patch2RasterBand_arar(IN i_p PCPATCH, IN dim_name TEXT , in i_r RASTER , IN pixel_size FLOAT, IN temp_table_name regclass, OUT u_r RASTER) 

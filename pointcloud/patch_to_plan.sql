@@ -1,7 +1,10 @@
-﻿
-
-
-
+﻿-----------------------------------------------------------
+--
+--Rémi-C , Thales IGN
+--11/2014
+-- 
+  ---------------------- 
+  
 	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for planes inside, then cylinder
 	--note that we could do the same to detect cylinder
 DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection_from_patch ( pcpatch, int,  INT,INT, FLOAT, INT ,FLOAT,FLOAT,INT);
@@ -157,7 +160,7 @@ result , p_reduced = ptp.perform_N_ransac_segmentation_no_pcl(
 return result ; 
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 
-
+/*
 WITH pa AS (
 	SELECT gid, pc_uncompress(patch) as u_patch , pc_numpoints(patch)  
 	FROM benchmark_cassette_2013.riegl_pcpatch_space
@@ -176,3 +179,4 @@ FROM pa ,rc_py_plane_and_cylinder_detection_from_patch_no_pcl (
 
 SELECT count(*)
 FROM generalisation.patches_for_generalisation 
+*/

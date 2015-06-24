@@ -8,18 +8,14 @@
 
 		----
 		--deelte function if it exists
-		DROP FUNCTION IF EXISTS public.rc_compute_range_for_a_patch(PCPATCH,text);
-
-		----
-		--creating function
-		CREATE OR REPLACE FUNCTION public.rc_compute_range_for_a_patch(patch PCPATCH, nom_grandeur_pour_interval text)
+		DROP FUNCTION IF EXISTS  rc_compute_range_for_a_patch(PCPATCH,text); 
+		CREATE OR REPLACE FUNCTION  rc_compute_range_for_a_patch(patch PCPATCH, nom_grandeur_pour_interval text)
 		RETURNS NUMRANGE AS $$ 
 		BEGIN
 		/*
 		This function input is a patch. It compute the range (from min to max) of a given attribute
-		*/
-
-		RETURN NUMRANGE(PC_PatchMin(patch, nom_grandeur_pour_interval),PC_PatchMax(patch, nom_grandeur_pour_interval),'[]');
+		*/ 
+            RETURN NUMRANGE(PC_PatchMin(patch, nom_grandeur_pour_interval),PC_PatchMax(patch, nom_grandeur_pour_interval),'[]');
 		END;
 		$$ LANGUAGE 'plpgsql' IMMUTABLE;
 

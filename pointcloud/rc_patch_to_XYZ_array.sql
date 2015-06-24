@@ -5,14 +5,14 @@
 -- 
   ----------------------
 
-
+/*
 	--we need an array agg for array, found in PPPP_utilities
 			DROP AGGREGATE public.array_agg_custom(anyarray) ;
 			CREATE AGGREGATE public.array_agg_custom(anyarray)
 				( SFUNC = array_cat,
 				STYPE = anyarray
 				);
-
+*/
 	--a wrapper function to convert from patch to array[array[]], so to be able to transmit information	
 	DROP FUNCTION IF EXISTS rc_patch_to_XYZ_array(ipatch PCPATCH,maxpoints INT, int);
 	CREATE OR REPLACE FUNCTION rc_patch_to_XYZ_array(ipatch PCPATCH,maxpoints INT DEFAULT 0, rounding_digits int default 3

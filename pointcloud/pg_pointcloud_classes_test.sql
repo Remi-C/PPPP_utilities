@@ -1,9 +1,8 @@
-﻿
-
-
-
-
-
+﻿--Remi Cura Thales/IGN  02/2015
+--test file for plpythonu interaction
+ 
+-------------------------------------------------------------
+ /*
 DROP FUNCTION IF EXISTS test_global_dict_python() ; 
 CREATE FUNCTION test_global_dict_python()
 RETURNS pcpatch
@@ -62,4 +61,6 @@ SELECT patch
 FROM acquisition_tmob_012013.riegl_pcpatch_space   
 WHERE PC_NumPoints(patch) between 1000 and 1200
 LIMIT 1 
+
+*/
  

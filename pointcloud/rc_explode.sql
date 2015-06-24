@@ -15,8 +15,8 @@
 --
 --------------------------------------
 
-	DROP FUNCTION IF EXISTS public.rc_ExplodeN( a_patch PCPATCH , n bigint);
-		CREATE OR REPLACE FUNCTION  public.rc_ExplodeN( a_patch PCPATCH , n bigint)
+	DROP FUNCTION IF EXISTS rc_ExplodeN( a_patch PCPATCH , n bigint);
+		CREATE OR REPLACE FUNCTION  rc_ExplodeN( a_patch PCPATCH , n bigint)
 		RETURNS SETOF pcpoint AS
 		$BODY$
 		--this function is a wrapper around pc_explode to limit the number of points it returns	
@@ -43,8 +43,8 @@
 
 
 
-DROP FUNCTION IF EXISTS public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint);
-		CREATE OR REPLACE FUNCTION  public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint DEFAULT 0)
+DROP FUNCTION IF EXISTS rc_ExplodeN_numbered( a_patch PCPATCH , n bigint);
+		CREATE OR REPLACE FUNCTION rc_ExplodeN_numbered( a_patch PCPATCH , n bigint DEFAULT 0)
 		RETURNS table(ordinality bigint , point pcpoint ) AS
 		$BODY$
 		--this function is a wrapper around pc_explode to limit the number of points it returns	
@@ -68,7 +68,7 @@ DROP FUNCTION IF EXISTS public.rc_ExplodeN_numbered( a_patch PCPATCH , n bigint)
 		
 -- Function: rc_exploden_random(pcpatch, bigint)
 
--- DROP FUNCTION rc_exploden_random(pcpatch, bigint);
+DROP FUNCTION IF EXISTS rc_exploden_random(pcpatch, bigint);
 CREATE OR REPLACE FUNCTION rc_exploden_random(a_patch pcpatch, n bigint)
   RETURNS SETOF pcpoint AS
 $BODY$
@@ -93,7 +93,7 @@ $BODY$
   ROWS 1000; 
 
 
--- DROP FUNCTION rc_exploden_grid(pcpatch, bigint,float);
+DROP FUNCTION IF EXISTS rc_exploden_grid(pcpatch, bigint,float);
 CREATE OR REPLACE FUNCTION rc_exploden_grid(a_patch pcpatch, n bigint,voxel_size float)
   RETURNS SETOF pcpoint AS
 $BODY$

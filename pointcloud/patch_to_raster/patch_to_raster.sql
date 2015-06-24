@@ -1,7 +1,6 @@
 ﻿--Remi Cura Thales/IGN  10/03/2014
 --Function to rasterize patch using postgis raster
-
-
+ 
 -------------------------------------------------------------
 --
 --this scrip intend to try to use postgis raster functionnality with point_cloud functionnality
@@ -10,10 +9,10 @@
 --
 -------------------------------------------------------------
 
-DROP SCHEMA IF EXISTS test_raster CASCADE;
-CREATE SCHEMA test_raster;
+--DROP SCHEMA IF EXISTS test_raster CASCADE;
+--CREATE SCHEMA test_raster;
 
-SET search_path TO test_raster,acquisition_tmob_012013,public;
+--SET search_path TO test_raster,acquisition_tmob_012013,public;
 --SET client_min_messages TO DEBUG5;
 
 ----------------
@@ -85,7 +84,7 @@ SET search_path TO test_raster,acquisition_tmob_012013,public;
 		END;
 	$BODY$
 	 LANGUAGE plpgsql  IMMUTABLE STRICT;
- 
+ /*
 	DROP TABLE IF EXISTS test_temp_raster;
 	CREATE TABLE test_temp_raster AS 
 	WITH patch  AS (
@@ -103,7 +102,7 @@ SET search_path TO test_raster,acquisition_tmob_012013,public;
  
  
 	 
-
+*/
 	DROP FUNCTION IF EXISTS rc_Patch2RasterBand(IN i_p PCPATCH, IN dim_name TEXT, in i_r RASTER , IN pixel_size FLOAT ) ;
 	CREATE OR REPLACE FUNCTION rc_Patch2RasterBand(IN i_p PCPATCH, IN dim_name TEXT , in i_r RASTER , IN pixel_size FLOAT ) 
 	RETURNS RASTER AS
@@ -159,29 +158,6 @@ SET search_path TO test_raster,acquisition_tmob_012013,public;
 	$BODY$
 	 LANGUAGE plpgsql VOLATILE;
 
-
  
-
-
-
-	DROP FUNCTION IF EXISTS rc_round(in val anyelement , IN round_step anyelement, out o_val DOUBLE PRECISION) ;
-	CREATE OR REPLACE FUNCTION rc_round(in val anyelement , IN round_step anyelement, out o_val double precision) AS
-	$BODY$
-			--@brief : this function round the input value to the nearest value multiple of round_step
-		DECLARE			 
-		BEGIN 
-
-		o_val := (round(val::numeric/round_step::numeric)*round_step::numeric)::double precision;
-		RETURN ;
-		END;
-	$BODY$
-	 LANGUAGE plpgsql  IMMUTABLE STRICT;
-
-	--SELECT rc_round(235.2499, 0.02)
-
 	--select pg_backend_pid();
-
-
-
-
-
+ 
