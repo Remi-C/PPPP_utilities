@@ -5,8 +5,8 @@
 ------------------------------
 
   
-DROP FUNCTION IF EXISTS topology.rc_UpdateNodeisolation(varchar, int, geometry, int[] ); 
-CREATE OR REPLACE FUNCTION topology.rc_UpdateNodeisolation( IN atopology  varchar ,IN node_id  INT , IN node_geom geometry, OUT containing_face int, IN transfered_edges int[] DEFAULT NULL)
+DROP FUNCTION IF EXISTS rc_UpdateNodeisolation(varchar, int, geometry, int[] ); 
+CREATE OR REPLACE FUNCTION rc_UpdateNodeisolation( IN atopology  varchar ,IN node_id  INT , IN node_geom geometry, OUT containing_face int, IN transfered_edges int[] DEFAULT NULL)
 AS
 $BODY$
 		--@brief this function moves a node and update all connected edges geometry accordingly, then delete the old node, then update the new node isolation level.
@@ -39,8 +39,4 @@ $BODY$
 		END ;
 	$BODY$
 LANGUAGE plpgsql VOLATILE;
-
-
-
-
 

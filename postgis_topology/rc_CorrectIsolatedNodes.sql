@@ -8,8 +8,8 @@
 -- This function is lean because it avoids computing real face geometry when unecessary, and doesn't compute the same face real geometry several time. 
 
 
-DROP FUNCTION IF EXISTS topology.rc_CorrectIsolatedNodes(topology_name TEXT, isolated_node_to_update INT[], faces_to_delete INT[]  ) ;
-CREATE OR REPLACE FUNCTION topology.rc_CorrectIsolatedNodes(topology_name TEXT, isolated_node_to_update INT[], faces_to_delete INT[], OUT updated_node INT[] )
+DROP FUNCTION IF EXISTS rc_CorrectIsolatedNodes(topology_name TEXT, isolated_node_to_update INT[], faces_to_delete INT[]  ) ;
+CREATE OR REPLACE FUNCTION rc_CorrectIsolatedNodes(topology_name TEXT, isolated_node_to_update INT[], faces_to_delete INT[], OUT updated_node INT[] )
   AS
 $BODY$  
 	/**

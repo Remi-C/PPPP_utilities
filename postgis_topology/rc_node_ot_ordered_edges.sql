@@ -69,5 +69,5 @@ CREATE OR REPLACE FUNCTION rc_node_to_ordered_edges( atopology character varying
 		$BODY$
   LANGUAGE plpgsql VOLATILE;
 
-  SELECT *
-  FROM rc_node_to_ordered_edges('bdtopo_topological', 11000  );
+ -- SELECT *
+ -- FROM rc_node_to_ordered_edges('bdtopo_topological', 11000  );

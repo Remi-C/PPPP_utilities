@@ -9,7 +9,7 @@
 /**
 --scope : only allowed modifications : on edge_data (view) and node (view) 
 */
-
+/*
 --creating view for edition 
 DROP VIEW IF EXISTS bdtopo_topological.edge_editing CASCADE; 
 CREATE VIEW  bdtopo_topological.edge_editing  AS (
@@ -21,7 +21,11 @@ SELECT *
 FROM bdtopo_topological.edge_editing ;
 
 --INSERT INTO bdtopo_topological.edge_editing (edge_geom ) VALUES (ST_GeometryFromText('LINESTRING(1451.8 21353.4 , 1447.6 21253.7)',932011)) ; 
+
+*/
+
 --creating trigger for edition of edge
+--DROP FUNCTION IF EXISTS rc_edit_edge_topology() CASCADE;
 CREATE OR REPLACE FUNCTION rc_edit_edge_topology(  )
   RETURNS  trigger  AS
 $BODY$  
@@ -69,17 +73,18 @@ $BODY$
 	$BODY$
   LANGUAGE plpgsql VOLATILE;
 
+  /*
 DROP TRIGGER IF EXISTS  rc_edit_edge_topology ON bdtopo_topological.edge_editing; 
 CREATE  TRIGGER rc_edit_edge_topology  INSTEAD OF INSERT OR UPDATE OR DELETE
  ON bdtopo_topological.edge_editing
 FOR EACH ROW  
 EXECUTE PROCEDURE rc_edit_edge_topology();  
-
+*/
  
 
 
-DROP FUNCTION IF EXISTS topology.rc_InsertEdgeSafe(topology_name text , new_edge_id int ,new_geom geometry , OUT inserted_edge_id int, OUT inserted_edge_geom geometry)  ;
-CREATE OR REPLACE FUNCTION topology.rc_InsertEdgeSafe(topology_name text , new_edge_id int ,new_geom geometry , OUT inserted_edge_id int, OUT inserted_edge_geom geometry)  AS
+DROP FUNCTION IF EXISTS rc_InsertEdgeSafe(topology_name text , new_edge_id int ,new_geom geometry , OUT inserted_edge_id int, OUT inserted_edge_geom geometry)  ;
+CREATE OR REPLACE FUNCTION rc_InsertEdgeSafe(topology_name text , new_edge_id int ,new_geom geometry , OUT inserted_edge_id int, OUT inserted_edge_geom geometry)  AS
 $BODY$  
 	/**
 	@brief this function safely add a edge to a topology.
@@ -122,8 +127,11 @@ $BODY$
 	$BODY$
   LANGUAGE plpgsql VOLATILE;
 			
-DROP FUNCTION IF EXISTS topology.rc_MoveEdgeSafe(topology_name text , INOUT moved_edge_id int , INOUT moved_edge_geom geometry  )  ;
-CREATE OR REPLACE FUNCTION topology.rc_MoveEdgeSafe(topology_name text , INOUT moved_edge_id int , INOUT moved_edge_geom geometry  )  AS
+
+
+
+DROP FUNCTION IF EXISTS rc_MoveEdgeSafe(topology_name text , INOUT moved_edge_id int , INOUT moved_edge_geom geometry  )  ;
+CREATE OR REPLACE FUNCTION rc_MoveEdgeSafe(topology_name text , INOUT moved_edge_id int , INOUT moved_edge_geom geometry  )  AS
 $BODY$  
 	/**
 	@brief this function safely move an edge within a topology 
@@ -206,8 +214,8 @@ $BODY$
   LANGUAGE plpgsql VOLATILE; 
 
 			
-DROP FUNCTION IF EXISTS topology.rc_DeleteEdgeSafe(topology_name text , INOUT deleted_edge_id int , INOUT deleted_edge_geom geometry  )  ;
-CREATE OR REPLACE FUNCTION topology.rc_DeleteEdgeSafe(topology_name text , INOUT deleted_edge_id int , INOUT deleted_edge_geom geometry  )  AS
+DROP FUNCTION IF EXISTS rc_DeleteEdgeSafe(topology_name text , INOUT deleted_edge_id int , INOUT deleted_edge_geom geometry  )  ;
+CREATE OR REPLACE FUNCTION rc_DeleteEdgeSafe(topology_name text , INOUT deleted_edge_id int , INOUT deleted_edge_geom geometry  )  AS
 $BODY$  
 	/**
 	@brief this function safely delete an edge from a topology. 

@@ -9,8 +9,8 @@
 
 
 
-DROP FUNCTION IF EXISTS topology.rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[],
+DROP FUNCTION IF EXISTS rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[] ) ;
+CREATE OR REPLACE FUNCTION rc_RecomputeEdgeAndFaceLinking(topology_name TEXT, nodes_to_update INT[],
 OUT updated_edges INT[], OUT updated_nodes INT[], OUT created_faces INT[] , OUT deleted_faces INT[] )
  AS
 $BODY$  
@@ -48,8 +48,8 @@ $BODY$
 LANGUAGE plpgsql VOLATILE; 
 
 
-DROP FUNCTION IF EXISTS topology.rc_RecomputeEdgeLinking(topology_name TEXT, nodes_to_update INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_RecomputeEdgeLinking(topology_name TEXT, nodes_to_update INT[] )
+DROP FUNCTION IF EXISTS rc_RecomputeEdgeLinking(topology_name TEXT, nodes_to_update INT[] ) ;
+CREATE OR REPLACE FUNCTION rc_RecomputeEdgeLinking(topology_name TEXT, nodes_to_update INT[] )
  returnS int[] AS
 $BODY$  
 	/**
@@ -136,8 +136,8 @@ LANGUAGE plpgsql VOLATILE;
  
 
 
-DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges(topology_name TEXT, edges_to_update INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges(topology_name TEXT, edges_to_update INT[],
+DROP FUNCTION IF EXISTS rc_RecomputeFaceLinking_fewedges(topology_name TEXT, edges_to_update INT[] ) ;
+CREATE OR REPLACE FUNCTION rc_RecomputeFaceLinking_fewedges(topology_name TEXT, edges_to_update INT[],
 OUT updated_edges INT[], OUT updated_nodes INT[], OUT created_faces INT[] , OUT deleted_faces INT[]
  )
 AS
@@ -225,8 +225,8 @@ LANGUAGE plpgsql VOLATILE;
 
  
 
-DROP FUNCTION IF EXISTS topology.rc_DeleteUselessFace(topology_name TEXT) ;
-CREATE OR REPLACE FUNCTION topology.rc_DeleteUselessFace(topology_name TEXT , OUT deleted_faces INT[])
+DROP FUNCTION IF EXISTS rc_DeleteUselessFace(topology_name TEXT) ;
+CREATE OR REPLACE FUNCTION rc_DeleteUselessFace(topology_name TEXT , OUT deleted_faces INT[])
   AS
 $BODY$  
 	/**
@@ -264,8 +264,8 @@ LANGUAGE plpgsql VOLATILE;
 --SELECT topology.rc_CorrectIsolatedNode('bdtopo_topological'::text, ARRAY[212], NULL::int[] ) ;
 --SELECT topology.rc_DeleteUselessFace('bdtopo_topological');
 
-DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[],
+DROP FUNCTION IF EXISTS rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[] ) ;
+CREATE OR REPLACE FUNCTION rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[],
 	OUT inserted_face int[], OUT updated_edges INT[], OUT faces_to_delete INT[],OUT edges_in_non_face_ring TEXT[]  )
   AS
 $BODY$  
@@ -440,8 +440,8 @@ LANGUAGE plpgsql VOLATILE;
  
  
 
-DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name TEXT,   int[],  TEXT[] ,   INT[], INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name TEXT,  
+DROP FUNCTION IF EXISTS rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name TEXT,   int[],  TEXT[] ,   INT[], INT[] ) ;
+CREATE OR REPLACE FUNCTION rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name TEXT,  
 	 inserted_face int[],  edges_in_non_face_ring TEXT[]  ,  INOUT updated_edges INT[], INOUT faces_to_delete INT[] )
   AS
 $BODY$  

@@ -9,8 +9,8 @@
 
 
   
-DROP FUNCTION IF EXISTS topology.rc_MoveNode_noTopoChange(varchar, int, geometry,   edge_ids int[] , perform_edge_geom_change BOOLEAN); 
-CREATE OR REPLACE FUNCTION topology.rc_MoveNode_noTopoChange( IN atopology  varchar ,INOUT node_id INT , IN new_node_geom geometry 
+DROP FUNCTION IF EXISTS rc_MoveNode_noTopoChange(varchar, int, geometry,   edge_ids int[] , perform_edge_geom_change BOOLEAN); 
+CREATE OR REPLACE FUNCTION rc_MoveNode_noTopoChange( IN atopology  varchar ,INOUT node_id INT , IN new_node_geom geometry 
 ,  edge_ids int[] DEFAULT NULL, perform_edge_geom_change BOOLEAN DEFAULT TRUE)AS
 $BODY$
 		--@brief this function moves a node and update all connected edges geometry accordingly.
@@ -54,8 +54,8 @@ LANGUAGE plpgsql VOLATILE;
 
 
   
-DROP FUNCTION IF EXISTS topology.rc_MoveNonIsoNode_edges(varchar, int, geometry(point) , edge_ids int[],  float); 
-CREATE OR REPLACE FUNCTION topology.rc_MoveNonIsoNode_edges( IN atopology  varchar 
+DROP FUNCTION IF EXISTS rc_MoveNonIsoNode_edges(varchar, int, geometry(point) , edge_ids int[],  float); 
+CREATE OR REPLACE FUNCTION rc_MoveNonIsoNode_edges( IN atopology  varchar 
 	,INOUT node_id INT , IN new_node_geom geometry(point),edge_ids int[] DEFAULT NULL, topology_precision FLOAT default 0.0
 	)
   RETURNS int AS

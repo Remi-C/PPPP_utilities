@@ -8,8 +8,8 @@
 
 
  
-DROP FUNCTION IF EXISTS topology.rc_RecomputeFaceLinking(topology_name TEXT, edges_to_update INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_RecomputeFaceLinking(topology_name TEXT, edges_to_update INT[],
+DROP FUNCTION IF EXISTS rc_RecomputeFaceLinking(topology_name TEXT, edges_to_update INT[] ) ;
+CREATE OR REPLACE FUNCTION rc_RecomputeFaceLinking(topology_name TEXT, edges_to_update INT[],
 OUT updated_edges INT[], OUT updated_nodes INT[], OUT created_faces INT[] , OUT deleted_faces INT[]
  )
 AS
@@ -72,8 +72,8 @@ LANGUAGE plpgsql VOLATILE;
 
 
 
-	DROP FUNCTION IF EXISTS topology.rc_RingToFace(topology_name TEXT, signed_edges_of_ring INT[] ) ;
-	CREATE OR REPLACE FUNCTION  topology.rc_RingToFace(topology_name TEXT, signed_edges_of_ring INT[]  )
+	DROP FUNCTION IF EXISTS rc_RingToFace(topology_name TEXT, signed_edges_of_ring INT[] ) ;
+	CREATE OR REPLACE FUNCTION  rc_RingToFace(topology_name TEXT, signed_edges_of_ring INT[]  )
 	RETURNS BOOLEAN
 	AS $BODY$   
 		/** given a ring, will update correct left_face, right_face  of edges of ring, and manage face
@@ -170,8 +170,8 @@ LANGUAGE plpgsql VOLATILE;
 	$BODY$
 	LANGUAGE plpgsql VOLATILE STRICT; 
 
-	DROP FUNCTION IF EXISTS topology.rc_RingToFace_inside(topology_name TEXT, signed_edges_of_ring INT[] ) ;
-	CREATE OR REPLACE FUNCTION  topology.rc_RingToFace_inside(topology_name TEXT, signed_edges_of_ring INT[] 
+	DROP FUNCTION IF EXISTS rc_RingToFace_inside(topology_name TEXT, signed_edges_of_ring INT[] ) ;
+	CREATE OR REPLACE FUNCTION  rc_RingToFace_inside(topology_name TEXT, signed_edges_of_ring INT[] 
 		,OUT face_to_delete INT[], OUT face_created INT,OUT  edge_updated INT[], OUT face_updated INT)
 	AS $BODY$   
 		/** this is a helper function. Given a ring, will update correct left_face, right_face  of edges of ring, and manage face.
@@ -274,9 +274,9 @@ LANGUAGE plpgsql VOLATILE;
 
 
 
-	DROP FUNCTION IF EXISTS topology.rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] 
+	DROP FUNCTION IF EXISTS rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] 
 		, face_to_delete INT[]) ;
-	CREATE OR REPLACE FUNCTION  topology.rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] 
+	CREATE OR REPLACE FUNCTION  rc_RingToFace_outside(topology_name TEXT, signed_edges_of_ring INT[] 
 	, face_to_delete INT[]
 		 ,OUT  edge_updated INT[] 
 		 , OUT face_to_potentially_delete INT[])
@@ -371,8 +371,8 @@ LANGUAGE plpgsql VOLATILE;
 
 
 
-DROP FUNCTION IF EXISTS topology.Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int) ;
-	CREATE OR REPLACE FUNCTION  topology.Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int, OUT updated_edges INT[] ) 
+DROP FUNCTION IF EXISTS Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int) ;
+	CREATE OR REPLACE FUNCTION  Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int, OUT updated_edges INT[] ) 
 	AS $BODY$   
 		/** @brief given a ring, and a face_id, update the left/right_face of the edges of the ring 
 		*/

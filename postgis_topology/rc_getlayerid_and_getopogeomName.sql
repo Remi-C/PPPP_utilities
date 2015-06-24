@@ -5,8 +5,7 @@
 --some postgis_topology utilities functions
 --
 --
---This script expects a postgres >= 9.2.3, Postgis >= 2.0.2, postgis topology enabled
---we work on table "route", which contains all the road network in Ile De France and many attributes. It is provided by IGN
+--This script expects a postgres >= 9.2.3, Postgis >= 2.0.2, postgis topology enabled 
 --------------------------------------------
 
 
@@ -14,9 +13,8 @@
 
 	--getter 1
 
-	DROP FUNCTION IF EXISTS public.rc_getlayerid(text, text);
-
-	CREATE OR REPLACE FUNCTION public.rc_getlayerid(layer_name text, layer_schema text DEFAULT ''::text)
+	DROP FUNCTION IF EXISTS rc_getlayerid(text, text); 
+	CREATE OR REPLACE FUNCTION rc_getlayerid(layer_name text, layer_schema text DEFAULT ''::text)
 	  RETURNS integer AS
 	$BODY$
 	--Function to retrieve a layer id based on its name, giving schema name is optionnal
@@ -64,11 +62,9 @@
 		$BODY$
 	  LANGUAGE plpgsql VOLATILE;
 
-
-	--getter 2 
-	DROP FUNCTION IF EXISTS public.rc_getlayername(integer, text);
-
-	CREATE OR REPLACE FUNCTION public.rc_getlayername(layer_id integer, layer_schema text)
+ 
+	DROP FUNCTION IF EXISTS rc_getlayername(integer, text); 
+	CREATE OR REPLACE FUNCTION rc_getlayername(layer_id integer, layer_schema text)
 	  RETURNS text AS
 	$BODY$
 			--This function returns the layer name of a topological layer given the layer id and the layer schema name
@@ -82,10 +78,4 @@
 			$BODY$
 	  LANGUAGE sql VOLATILE;
 
-
-
-
-
-
-
-
+ 

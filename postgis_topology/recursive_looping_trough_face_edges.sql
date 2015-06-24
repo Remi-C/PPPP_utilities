@@ -4,7 +4,7 @@
 --
 -- here is an example of how to loop trough all the edges that are the border of a face. It is fast.
 ------------------------------
-
+/*
 WITH n_edge AS ( --getting all the edges that are at the border of the face
 	SELECT edge_id ,abs_next_left_edge AS next_edge_id , geom
 	FROM edge_data
@@ -35,3 +35,6 @@ WITH n_edge AS ( --getting all the edges that are at the border of the face
 			SELECT * FROM chain 
 			WHERE iteration !=1
 			) AS sub
+            
+            
+*/

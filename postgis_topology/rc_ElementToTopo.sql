@@ -8,8 +8,8 @@
 --This script expects a postgres >= 9.2.3, Postgis >= 2.0.2, postgis topology enabled 
 --------------------------------------------
 
-	DROP FUNCTION IF EXISTS public.rc_ElementToTopo(_element_id INT , topogeom_column_name  TEXT, table_name TEXT, schema_name TEXT);
-	CREATE FUNCTION public.rc_ElementToTopo(_element_id INT , topogeom_column_name  TEXT, table_name TEXT, schema_name TEXT)
+	DROP FUNCTION IF EXISTS rc_ElementToTopo(_element_id INT , topogeom_column_name  TEXT, table_name TEXT, schema_name TEXT);
+	CREATE FUNCTION rc_ElementToTopo(_element_id INT , topogeom_column_name  TEXT, table_name TEXT, schema_name TEXT)
 		RETURNS SETOF TOPOGEOMETRY AS
 		$BODY$
 		-- This function,takes an element_id and a topogeometry def,
@@ -55,9 +55,8 @@
 		$BODY$
 		LANGUAGE plpgsql IMMUTABLE;
 
-
-		SELECT public.rc_ElementToTopo( 
+/*
+		SELECT rc_ElementToTopo( 
 			1
 			,'tg'::text,'route_demo'::text,'demo_zone_test'::text);
-
-			
+*/

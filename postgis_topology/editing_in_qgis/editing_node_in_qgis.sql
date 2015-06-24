@@ -45,7 +45,7 @@ Change on node :
 */
 
 --creating view for edition
-
+/*
 DROP VIEW IF EXISTS bdtopo_topological.node_editing CASCADE; 
 CREATE VIEW  bdtopo_topological.node_editing  AS (
 	SELECT node_id, ST_Force2D(geom) as node_geom
@@ -53,8 +53,9 @@ CREATE VIEW  bdtopo_topological.node_editing  AS (
 ); 
  
 
-
+*/
 --creating trigger for edition of node
+--DROP FUNCTION IF EXISTS rc_edit_node_topology() CASCADE ; 
 CREATE OR REPLACE FUNCTION rc_edit_node_topology(  )
   RETURNS  trigger  AS
 $BODY$  
@@ -119,17 +120,18 @@ $BODY$
 	$BODY$
   LANGUAGE plpgsql VOLATILE;
 
+  /*
 DROP TRIGGER IF EXISTS  rc_edit_node_topology ON bdtopo_topological.node_editing; 
 CREATE  TRIGGER rc_edit_node_topology  INSTEAD OF INSERT OR UPDATE OR DELETE
  ON bdtopo_topological.node_editing
 FOR EACH ROW  
 EXECUTE PROCEDURE rc_edit_node_topology();  
-
+*/
  
 
 
-DROP FUNCTION IF EXISTS topology.rc_InsertNodeSafe(topology_name text , new_node_id int ,new_geom geometry , IN edge_to_ignore INT ,IN dont_update_face BOOLEAN,  OUT inserted_node_id int, OUT inserted_node_geom geometry)  ;
-CREATE OR REPLACE FUNCTION topology.rc_InsertNodeSafe(topology_name text , new_node_id int ,new_geom geometry , IN edge_to_ignore INT default NULL,IN dont_update_face BOOLEAN DEFAULT FALSE, OUT inserted_node_id int, OUT inserted_node_geom geometry)  AS
+DROP FUNCTION IF EXISTS rc_InsertNodeSafe(topology_name text , new_node_id int ,new_geom geometry , IN edge_to_ignore INT ,IN dont_update_face BOOLEAN,  OUT inserted_node_id int, OUT inserted_node_geom geometry)  ;
+CREATE OR REPLACE FUNCTION rc_InsertNodeSafe(topology_name text , new_node_id int ,new_geom geometry , IN edge_to_ignore INT default NULL,IN dont_update_face BOOLEAN DEFAULT FALSE, OUT inserted_node_id int, OUT inserted_node_geom geometry)  AS
 $BODY$  
 	/**
 	@brief this function safely add a node to a topology.
@@ -205,8 +207,8 @@ $BODY$
 	$BODY$
   LANGUAGE plpgsql VOLATILE;
 			
-DROP FUNCTION IF EXISTS topology.rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry  )  ;
-CREATE OR REPLACE FUNCTION topology.rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry  )  AS
+DROP FUNCTION IF EXISTS rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry  )  ;
+CREATE OR REPLACE FUNCTION rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry  )  AS
 $BODY$  
 	/**
 	@brief this function safely move a node within a topology
@@ -296,8 +298,8 @@ $BODY$
   LANGUAGE plpgsql VOLATILE; 
 
 			
-DROP FUNCTION IF EXISTS topology.rc_DeleteNodeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  ;
-CREATE OR REPLACE FUNCTION topology.rc_DeleteNodeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  AS
+DROP FUNCTION IF EXISTS rc_DeleteNodeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  ;
+CREATE OR REPLACE FUNCTION rc_DeleteNodeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  AS
 $BODY$  
 	/**
 	@brief this function safely delete a node from a topology. 
@@ -360,8 +362,8 @@ $BODY$
 
 
 --creating trigger for edition of node
-DROP FUNCTION IF EXISTS street_amp.rc_node_manage_identical(topology_name text , new_node_id int ,new_geom geometry(point), OUT update_topology int)  ;
-CREATE OR REPLACE FUNCTION street_amp.rc_node_manage_identical(topology_name text , new_node_id int ,new_geom geometry(point), OUT update_topology int)  AS
+DROP FUNCTION IF EXISTS rc_node_manage_identical(topology_name text , new_node_id int ,new_geom geometry(point), OUT update_topology int)  ;
+CREATE OR REPLACE FUNCTION rc_node_manage_identical(topology_name text , new_node_id int ,new_geom geometry(point), OUT update_topology int)  AS
 $BODY$  
 	/**
 	@brief this function is executed given a new/changed node in topology. It checks that no identical node exist, and deal with consequences
@@ -397,8 +399,8 @@ $BODY$
 
 
 --creating trigger for edition of node
-DROP FUNCTION IF EXISTS street_amp.rc_node_manage_edge_near(topology_name text , new_node_id int ,new_geom geometry(point), OUT update_topology int) ; 
-CREATE OR REPLACE FUNCTION street_amp.rc_node_manage_edge_near(topology_name text , new_node_id int ,new_geom geometry(point), OUT update_topology int)  AS
+DROP FUNCTION IF EXISTS rc_node_manage_edge_near(topology_name text , new_node_id int ,new_geom geometry(point), OUT update_topology int) ; 
+CREATE OR REPLACE FUNCTION rc_node_manage_edge_near(topology_name text , new_node_id int ,new_geom geometry(point), OUT update_topology int)  AS
 $BODY$  
 	/**
 	@brief this function is executed given a new/changed node in topology. It checks that the new position of node is not too close to an edge (excepting start/end)
@@ -437,8 +439,8 @@ $BODY$
 
   
 
-DROP FUNCTION IF EXISTS street_amp.rc_merge_nodes(topology_name text, node_id_1 int, node_id_2 int); 
-CREATE OR REPLACE FUNCTION street_amp.rc_merge_nodes(topology_name text, node_id_1 int, node_id_2 int)
+DROP FUNCTION IF EXISTS rc_merge_nodes(topology_name text, node_id_1 int, node_id_2 int); 
+CREATE OR REPLACE FUNCTION rc_merge_nodes(topology_name text, node_id_1 int, node_id_2 int)
 returns int AS 
 $BODY$  
 	/**

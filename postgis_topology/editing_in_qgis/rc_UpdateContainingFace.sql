@@ -8,8 +8,8 @@
 
 
 
-DROP FUNCTION IF EXISTS topology.rc_UpdateContainingFace(topology_name text , node_id int, node_geom  geometry, is_isolated int  ,  INOUT containing_face int  )  ;
-CREATE OR REPLACE FUNCTION topology.rc_UpdateContainingFace(topology_name text ,node_id int, node_geom geometry, is_isolated int DEFAULT -1,  INOUT containing_face int DEFAULT NULL) 
+DROP FUNCTION IF EXISTS rc_UpdateContainingFace(topology_name text , node_id int, node_geom  geometry, is_isolated int  ,  INOUT containing_face int  )  ;
+CREATE OR REPLACE FUNCTION rc_UpdateContainingFace(topology_name text ,node_id int, node_geom geometry, is_isolated int DEFAULT -1,  INOUT containing_face int DEFAULT NULL) 
   AS
 $BODY$  
 	/**

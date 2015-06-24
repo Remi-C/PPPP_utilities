@@ -6,8 +6,8 @@
 ----------------------
 -- a ring (signed edges), creates a face bounding it, and add it to my_topo.face
 	
-	DROP FUNCTION IF EXISTS topology.rc_CreateFaceFromRing(topology_name TEXT, signed_edges_of_ring INT[] ) ;
-	CREATE OR REPLACE FUNCTION  topology.rc_CreateFaceFromRing(topology_name TEXT, signed_edges_of_ring INT[]  , OUT face_id  INT)
+	DROP FUNCTION IF EXISTS rc_CreateFaceFromRing(topology_name TEXT, signed_edges_of_ring INT[] ) ;
+	CREATE OR REPLACE FUNCTION rc_CreateFaceFromRing(topology_name TEXT, signed_edges_of_ring INT[]  , OUT face_id  INT)
 	AS $BODY$   
 		/** @brief given a ring, creates a face bounding it, and add it to my_topo.face
 		@return return the face_id of the inserted face
@@ -37,8 +37,8 @@
 	$BODY$
 	LANGUAGE plpgsql VOLATILE STRICT; 
 
-	DROP FUNCTION IF EXISTS topology.rc_UpdateFaceMBRFromRing(topology_name TEXT, signed_edges_of_ring INT[] , face_id int) ;
-	CREATE OR REPLACE FUNCTION  topology.rc_UpdateFaceMBRFromRing(topology_name TEXT, signed_edges_of_ring INT[]  , INOUT face_id  INT)
+	DROP FUNCTION IF EXISTS rc_UpdateFaceMBRFromRing(topology_name TEXT, signed_edges_of_ring INT[] , face_id int) ;
+	CREATE OR REPLACE FUNCTION  rc_UpdateFaceMBRFromRing(topology_name TEXT, signed_edges_of_ring INT[]  , INOUT face_id  INT)
 	AS $BODY$   
 		/** @brief given a ring, update the boudnign box of the face
 		@return return the face_id of the updated face

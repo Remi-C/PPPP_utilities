@@ -8,8 +8,8 @@
 
 
   
-DROP FUNCTION IF EXISTS topology.rc_MoveNonIsoNode_edges(varchar, int, geometry(point)); 
-CREATE OR REPLACE FUNCTION topology.rc_MoveNonIsoNode_edges( IN _atopology  varchar ,INOUT _node_id INT , IN _new_node_geom geometry(point)
+DROP FUNCTION IF EXISTS rc_MoveNonIsoNode_edges(varchar, int, geometry(point)); 
+CREATE OR REPLACE FUNCTION rc_MoveNonIsoNode_edges( IN _atopology  varchar ,INOUT _node_id INT , IN _new_node_geom geometry(point)
 	)
   RETURNS int AS
 $BODY$
@@ -32,8 +32,8 @@ LANGUAGE plpgsql VOLATILE;
 
 
   
-DROP FUNCTION IF EXISTS topology.rc_MoveNonIsoNode(varchar, int, geometry ); 
-CREATE OR REPLACE FUNCTION topology.rc_MoveNonIsoNode( IN _atopology  varchar ,INOUT _node_id INT , IN _new_node_geom geometry 
+DROP FUNCTION IF EXISTS rc_MoveNonIsoNode(varchar, int, geometry ); 
+CREATE OR REPLACE FUNCTION rc_MoveNonIsoNode( IN _atopology  varchar ,INOUT _node_id INT , IN _new_node_geom geometry 
 	)
   RETURNS int AS
 $BODY$

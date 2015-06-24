@@ -3,8 +3,8 @@
 --02/2015
 -- function that tell if a edge sequence forms a true face or a flat face
 
-DROP FUNCTion if exists topology.rc_IsRingFace(s_edge_ids int[]) ;
-CREATE OR REPLACE FUNCTION topology.rc_IsRingFace(s_edge_ids int[])
+DROP FUNCTION IF EXISTS rc_IsRingFace(s_edge_ids int[]) ;
+CREATE OR REPLACE FUNCTION rc_IsRingFace(s_edge_ids int[])
   RETURNS BOOLEAN AS
 $BODY$
 /** @brief this function tels if a ring of edge form a face, in  a robust to precision issue way.
@@ -31,8 +31,8 @@ END
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100; 
-COMMENT ON FUNCTION topology.rc_IsRingFace(s_edge_ids int[]) IS 
+COMMENT ON FUNCTION rc_IsRingFace(s_edge_ids int[]) IS 
 	'args: s_edge_ids - Return True or False depending on the fact that the given edge sequence (ring) forms a true face or not';
 
-SELECT topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,390 ,-390 ,-391 ,-392 ]) ; 
-SELECT topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,-393 ,-394 ,-392 ]) ; 
+-- SELECT topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,390 ,-390 ,-391 ,-392 ]) ; 
+-- SELECT topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,-393 ,-394 ,-392 ]) ; 

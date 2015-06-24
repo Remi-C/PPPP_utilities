@@ -7,8 +7,8 @@
 -- given a linestring geom, 2 nodes and a precision,  check that it doesn't cross any edge and is not dwithin nodes except those provided
 
 
-DROP FUNCTION IF EXISTS topology.rc_CheckNewEdgeGeom( text ,  geometry,  int,  int,  int,  float ) ;
-CREATE OR REPLACE FUNCTION topology.rc_CheckNewEdgeGeom(topology_name text , edge_geom geometry, edge_id int, start_node_id int, end_node_id int, tolerance float ) returnS VOID AS
+DROP FUNCTION IF EXISTS rc_CheckNewEdgeGeom( text ,  geometry,  int,  int,  int,  float ) ;
+CREATE OR REPLACE FUNCTION rc_CheckNewEdgeGeom(topology_name text , edge_geom geometry, edge_id int, start_node_id int, end_node_id int, tolerance float ) returnS VOID AS
 $BODY$  
 	/**
 	@brief given a linestring geom, 2 nodes and a precision,  check that the linestring doesn't cross any edge and is not dwithin nodes except those provided

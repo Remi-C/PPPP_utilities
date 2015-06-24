@@ -10,7 +10,7 @@
 
 
 --creating view for edition
-
+/*
 DROP VIEW IF EXISTS bdtopo_topological.node_editing CASCADE; 
 CREATE VIEW  bdtopo_topological.node_editing  AS (
 	SELECT node_id, ST_Force2D(geom) as node_geom
@@ -18,8 +18,9 @@ CREATE VIEW  bdtopo_topological.node_editing  AS (
 ); 
  
 
-
+*/
 --creating trigger for edition of node
+DROP FUNCTION IF EXISTS rc_edit_node_topology() ; 
 CREATE OR REPLACE FUNCTION rc_edit_node_topology(  )
   RETURNS  trigger  AS
 $BODY$  
@@ -84,16 +85,17 @@ $BODY$
 	$BODY$
   LANGUAGE plpgsql VOLATILE;
 
+  /*
 DROP TRIGGER IF EXISTS  rc_edit_node_topology ON bdtopo_topological.node_editing; 
 CREATE  TRIGGER rc_edit_node_topology  INSTEAD OF INSERT OR UPDATE OR DELETE
  ON bdtopo_topological.node_editing
 FOR EACH ROW  
 EXECUTE PROCEDURE rc_edit_node_topology();  
+*/
 
 
-
-DROP FUNCTION IF EXISTS topology.rc_DeleteNodeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  ;
-CREATE OR REPLACE FUNCTION topology.rc_DeleteNodeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  AS
+DROP FUNCTION IF EXISTS rc_DeleteNodeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  ;
+CREATE OR REPLACE FUNCTION rc_DeleteNodeSafe(topology_name text , INOUT deleted_node_id int , INOUT deleted_node_geom geometry  )  AS
 $BODY$  
 	/**
 	@brief this function safely delete a node from a topology. 
@@ -186,8 +188,8 @@ $BODY$
 
 
   
-DROP FUNCTION IF EXISTS topology.rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry , is_isolated int   )  ;
-CREATE OR REPLACE FUNCTION topology.rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry ,is_isolated int DEFAULT -1 )  AS
+DROP FUNCTION IF EXISTS rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry , is_isolated int   )  ;
+CREATE OR REPLACE FUNCTION rc_MoveNodeSafe(topology_name text , INOUT moved_node_id int , INOUT moved_node_geom geometry ,is_isolated int DEFAULT -1 )  AS
 $BODY$  
 	/**
 	@brief this function safely update a node within a topology

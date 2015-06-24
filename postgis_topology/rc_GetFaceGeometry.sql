@@ -1,12 +1,15 @@
-﻿
-SET search_path TO street_amp, bdtopo_topological,  bdtopo,topology, public ;
+﻿---------------------------------------------
+--Copyright Remi-C Thales IGN 04/2015
+-- 
+--overide of classical function, precision error safe
+--------------------------------------------
+--SET search_path TO street_amp, bdtopo_topological,  bdtopo,topology, public ;
 
 
 -- Function: topology.st_getfacegeometry(character varying, integer)
 
--- DROP FUNCTION topology.st_getfacegeometry(character varying, integer);
-
-CREATE OR REPLACE FUNCTION public.rc_getfacegeometry(toponame character varying, aface integer)
+-- DROP FUNCTION rt_getfacegeometry(character varying, integer);
+CREATE OR REPLACE FUNCTION rc_getfacegeometry(toponame character varying, aface integer)
   RETURNS geometry AS
 $BODY$
 DECLARE
@@ -94,15 +97,8 @@ BEGIN
   RETURN NULL;
 END
 $BODY$
-  LANGUAGE plpgsql STABLE
-  COST 100;
-ALTER FUNCTION public.rc_getfacegeometry(character varying, integer)
-  OWNER TO postgres;
-COMMENT ON FUNCTION public.rc_getfacegeometry(character varying, integer) IS 'args: atopology, aface - Returns the polygon in the given topology with the specified face id.';
-
-
-
-
+  LANGUAGE plpgsql STABLE ;
+/*
 	SELECT face_id,  st_astext(mbr), st_astext(face_surface),ST_Astext(rc_face_surface) 
 	FROM face, st_getfacegeometry('bdtopo_topological', face_id) face_surface
 		, rc_getfacegeometry('bdtopo_topological', face_id) rc_face_surface
@@ -184,4 +180,4 @@ LIMIT 1000
 
 	 SELECT ST_Astext(rc_getfacegeometry('bdtopo_topological', 735))
 	 SELECT ST_Astext(st_getfacegeometry('bdtopo_topological', 735))
-	 
+*/ 

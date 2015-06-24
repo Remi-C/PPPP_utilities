@@ -6,8 +6,8 @@
 
 
 
-DROP FUNCTION IF EXISTS public.rc_find_common_face(e1 int,e2 int,topo_name text ) ; 
-CREATE OR REPLACE FUNCTION public.rc_find_common_face(e1 int,e2 int,topo_name text,  OUT face geometry) AS
+DROP FUNCTION IF EXISTS rc_find_common_face(e1 int,e2 int,topo_name text ) ; 
+CREATE OR REPLACE FUNCTION rc_find_common_face(e1 int,e2 int,topo_name text,  OUT face geometry) AS
 $BODY$
 --this function takes 2 edge id and returns the common face
 DECLARE  
@@ -41,5 +41,5 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE STRICT;
 
-SELECT ST_AsText(public.rc_find_common_face( 2523,2528,'bdtopo_topological'))
+-- SELECT ST_AsText(rc_find_common_face( 2523,2528,'bdtopo_topological'))
 

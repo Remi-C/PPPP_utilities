@@ -4,8 +4,8 @@
 ---------------
 
 
-DROP FUNCTION IF EXISTS topology.rc_SignedArea(topology_name TEXT ,  ring_of_edges INT[] ) ;
-CREATE OR REPLACE FUNCTION topology.rc_SignedArea( topology_name TEXT , ring_of_edges INT[] , OUT signedArea FLOAT)
+DROP FUNCTION IF EXISTS rc_SignedArea(topology_name TEXT ,  ring_of_edges INT[] ) ;
+CREATE OR REPLACE FUNCTION rc_SignedArea( topology_name TEXT , ring_of_edges INT[] , OUT signedArea FLOAT)
  AS
 $BODY$  
 	/**

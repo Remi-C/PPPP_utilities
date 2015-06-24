@@ -24,15 +24,15 @@
 --This file is organized as follow :
 --	doc
 --	function def
---		public.rc_GetRelatedTopogeom(source_topo topogeometry, target_topo_layer_id INT);
---			public.rc_FromNodeToTopo(input_element_id INT, output_topo_type INT);
---			public.rc_FromTopoToNode(input_element_id INT, input_topo_type INT);
---				public.rc_GetNodeFromEdge(edge_id INT);
---				public.rc_GetEdgeFromNode(input_node_id INT);
---				public.rc_GetFaceFromEdge(edge_id INT);
---				public.rc_GetEdgeFromFace(input_face_id INT);
+--		rc_GetRelatedTopogeom(source_topo topogeometry, target_topo_layer_id INT);
+--			rc_FromNodeToTopo(input_element_id INT, output_topo_type INT);
+--			rc_FromTopoToNode(input_element_id INT, input_topo_type INT);
+--				rc_GetNodeFromEdge(edge_id INT);
+--				rc_GetEdgeFromNode(input_node_id INT);
+--				rc_GetFaceFromEdge(edge_id INT);
+--				rc_GetEdgeFromFace(input_face_id INT);
 --	old_function def
---		public.rc_GetRelatedLineal(source_topogeom TOPOGEOMETRY,  topo_lid INT)
+--		rc_GetRelatedLineal(source_topogeom TOPOGEOMETRY,  topo_lid INT)
 --	test_querry
 --	Test
 --		creating test env
@@ -46,13 +46,13 @@
 ------------
 --Implemented function (reverse dependency order)
 --
---	public.rc_GetRelatedTopogeom(source_topo topogeometry, target_topo_layer_id INT);
---		public.rc_FromNodeToTopo(input_element_id INT, output_topo_type INT);
---		public.rc_FromTopoToNode(input_element_id INT, input_topo_type INT);
---			public.rc_GetNodeFromEdge(edge_id INT);
---			public.rc_GetEdgeFromNode(input_node_id INT);
---			public.rc_GetFaceFromEdge(edge_id INT);
---			public.rc_GetEdgeFromFace(input_face_id INT);
+--	rc_GetRelatedTopogeom(source_topo topogeometry, target_topo_layer_id INT);
+--		rc_FromNodeToTopo(input_element_id INT, output_topo_type INT);
+--		rc_FromTopoToNode(input_element_id INT, input_topo_type INT);
+--			rc_GetNodeFromEdge(edge_id INT);
+--			rc_GetEdgeFromNode(input_node_id INT);
+--			rc_GetFaceFromEdge(edge_id INT);
+--			rc_GetEdgeFromFace(input_face_id INT);
 --
 ------
 --Implementation notes : 
@@ -89,12 +89,12 @@
 -- __Preparing everything__
 	-- __Setting work env__
 		--setting path to avoid préfixing table
-		SET search_path TO demo_zone_test,bdtopo,bdtopo_bati,bdtopo_reseau_route,topology,public;
-		SET postgis.backend = 'sfcgal';
+--		SET search_path TO demo_zone_test,bdtopo,bdtopo_bati,bdtopo_reseau_route,topology,public;
+--		SET postgis.backend = 'sfcgal';
 
 	--__Preparing some test env__
 
---	DROP TABLE IF EXISTS  public.test_getrelated
+--	DROP TABLE IF EXISTS  test_getrelated
 
 
 
@@ -102,8 +102,8 @@
 
 
 
-DROP FUNCTION IF EXISTS public.rc_GetRelatedTopogeom(source_topo topogeometry, target_topo_layer_id INT);
-CREATE FUNCTION public.rc_GetRelatedTopogeom(source_topogeom TOPOGEOMETRY,  topo_lid INT)
+DROP FUNCTION IF EXISTS rc_GetRelatedTopogeom(source_topo topogeometry, target_topo_layer_id INT);
+CREATE FUNCTION rc_GetRelatedTopogeom(source_topogeom TOPOGEOMETRY,  topo_lid INT)
 		RETURNS SETOF TOPOGEOMETRY AS
 		$BODY$
 		-- This function, given a topogeometry, return all the topogeom of given layer_id that relate to the input topogeom, according to table edge_data
@@ -188,14 +188,14 @@ CREATE FUNCTION public.rc_GetRelatedTopogeom(source_topogeom TOPOGEOMETRY,  topo
 		LANGUAGE plpgsql IMMUTABLE;
 
 
-		--SELECT public.rc_GetRelatedTopogeom(  (13,1,100,2)::topogeometry ,1);
+		--SELECT rc_GetRelatedTopogeom(  (13,1,100,2)::topogeometry ,1);
 
 
 
 
 
-DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_topo_type INT);
-		CREATE FUNCTION  public.rc_FromTopoToNode(input_element_id INT, input_topo_type INT)
+DROP FUNCTION IF EXISTS rc_FromTopoToNode(input_element_id INT, input_topo_type INT);
+		CREATE FUNCTION  rc_FromTopoToNode(input_element_id INT, input_topo_type INT)
 		RETURNS SETOF int AS
 		$BODY$
 		-- This function takes an element_id and depending on type call cascaded functions to convert from an element id to node_id
@@ -225,8 +225,8 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 	--SELECT  rc_FromTopoToNode(51,1);
 
 
-	DROP FUNCTION IF EXISTS public.rc_FromNodeToTopo(input_element_id INT, output_topo_type INT);
-		CREATE FUNCTION  public.rc_FromNodeToTopo(input_element_id INT, output_topo_type INT)
+	DROP FUNCTION IF EXISTS rc_FromNodeToTopo(input_element_id INT, output_topo_type INT);
+		CREATE FUNCTION  rc_FromNodeToTopo(input_element_id INT, output_topo_type INT)
 		RETURNS SETOF int AS
 		$BODY$
 		-- This function takes an element_id and depending on type call cascaded functions to convert from an element id to node_id
@@ -257,8 +257,8 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 
 
 
-	DROP FUNCTION IF EXISTS public.rc_GetNodeFromEdge(edge_id INT);
-		CREATE FUNCTION  public.rc_GetNodeFromEdge(input_edge_id INT)
+	DROP FUNCTION IF EXISTS rc_GetNodeFromEdge(edge_id INT);
+		CREATE FUNCTION  rc_GetNodeFromEdge(input_edge_id INT)
 		RETURNS SETOF int AS
 		$BODY$
 		-- This function takes an edge_id and return the starting and ending node of this edge from the table edge_data
@@ -280,8 +280,8 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 	--SELECT  rc_GetNodeFromEdge(10);
 
 
-	DROP FUNCTION IF EXISTS public.rc_GetEdgeFromNode(input_node_id INT);
-		CREATE FUNCTION  public.rc_GetEdgeFromNode(input_node_id INT)
+	DROP FUNCTION IF EXISTS rc_GetEdgeFromNode(input_node_id INT);
+		CREATE FUNCTION  rc_GetEdgeFromNode(input_node_id INT)
 		RETURNS SETOF int AS
 		$BODY$
 		-- This function takes an edge_id and return the starting and ending node of this edge from the table edge_data
@@ -302,8 +302,8 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 	----
 	--source of a bug
 	---- WHY??
-	DROP FUNCTION IF EXISTS public.rc_GetFaceFromEdge(edge_id INT);
-		CREATE FUNCTION  public.rc_GetFaceFromEdge(input_edge_id INT)
+	DROP FUNCTION IF EXISTS rc_GetFaceFromEdge(edge_id INT);
+		CREATE FUNCTION  rc_GetFaceFromEdge(input_edge_id INT)
 		RETURNS SETOF int AS
 		$BODY$
 		-- This function takes an edge_id and return the starting and ending node of this edge from the table edge_data
@@ -324,8 +324,8 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 		LANGUAGE plpgsql IMMUTABLE;
 	--SELECT  rc_GetFaceFromEdge(10);
 
-	DROP FUNCTION IF EXISTS public.rc_GetEdgeFromFace(input_face_id INT);
-		CREATE FUNCTION  public.rc_GetEdgeFromFace(input_face_id INT)
+	DROP FUNCTION IF EXISTS rc_GetEdgeFromFace(input_face_id INT);
+		CREATE FUNCTION  rc_GetEdgeFromFace(input_face_id INT)
 		RETURNS SETOF int AS
 		$BODY$
 		-- This function takes an edge_id and return the starting and ending node of this edge from the table edge_data
@@ -361,10 +361,10 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 
 
 
-		DROP TABLE IF EXISTS public.temp_test_topogeom;
-		CREATE TABLE public.temp_test_topogeom AS
+		DROP TABLE IF EXISTS temp_test_topogeom;
+		CREATE TABLE temp_test_topogeom AS
 		--SELECT row_number() over() AS qgis_id,  (13,1,100,2)::topogeometry AS tg
-		SELECT row_number() over() AS qgis_id,  public.rc_GetRelatedTopogeom( 
+		SELECT row_number() over() AS qgis_id,  rc_GetRelatedTopogeom( 
 			--(13,1,100,2)::topogeometry ,3) AS tg;
 			(13,3,15,1)::topogeometry ,1) AS tg;
 		
@@ -573,8 +573,8 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 
 --		puntal , puntal	: 
 
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM puntal1
@@ -582,15 +582,15 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('puntal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('puntal2','tst_getrelated')::int ) f;
 
 			
 
 
 --lineal - *
 	--		lineal , puntal		:
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM lineal1
@@ -598,14 +598,14 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('puntal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('puntal2','tst_getrelated')::int ) f;
 
 					
 	
 	--		areal , puntal		:
 
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM areal1
@@ -613,12 +613,12 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('puntal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('puntal2','tst_getrelated')::int ) f;
 
 	--		puntal , lineal		:
 
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM puntal1
@@ -626,13 +626,13 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('lineal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('lineal2','tst_getrelated')::int ) f;
 
 					
 	--		lineal , lineal		:
 
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM lineal1
@@ -640,11 +640,11 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('lineal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('lineal2','tst_getrelated')::int ) f;
 
 	--		areal , lineal		:
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM areal1
@@ -652,13 +652,13 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('lineal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('lineal2','tst_getrelated')::int ) f;
 
 	
 	-- 		puntal , areal 		:
 
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM puntal1
@@ -666,13 +666,13 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('areal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('areal2','tst_getrelated')::int ) f;
 
 
 	--		lineal , areal		:
 
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM lineal1
@@ -680,13 +680,13 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('areal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('areal2','tst_getrelated')::int ) f;
 
 
 	--		areal , areal 		:
 
-				DROP TABLE IF EXISTS public.temp_getrelated;
-				CREATE TABLE public.temp_getrelated AS 
+				DROP TABLE IF EXISTS temp_getrelated;
+				CREATE TABLE temp_getrelated AS 
 					WITH the_topogeom AS(
 						SELECT tg
 						FROM areal1
@@ -694,7 +694,7 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 						LIMIT 1
 					)
 					SELECT row_number() over() as qgis_id, f::topogeometry, f::topogeometry::geometry AS geom
-					FROM the_topogeom tt,public.rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('areal2','tst_getrelated')::int ) f;
+					FROM the_topogeom tt,rc_GetRelatedTopogeom(tt.tg, rc_getlayerid('areal2','tst_getrelated')::int ) f;
 
 
 */
@@ -702,8 +702,8 @@ DROP FUNCTION IF EXISTS public.rc_FromTopoToNode(input_element_id INT, input_top
 
 
 
-DROP FUNCTION IF EXISTS public.rc_FromTopogeomToNode(atopology TEXT,source_topo topogeometry );
-CREATE FUNCTION public.rc_FromTopogeomToNode(atopology TEXT, source_topo topogeometry  )
+DROP FUNCTION IF EXISTS rc_FromTopogeomToNode(atopology TEXT,source_topo topogeometry );
+CREATE FUNCTION rc_FromTopogeomToNode(atopology TEXT, source_topo topogeometry  )
 		RETURNS SETOF int AS
 		$BODY$
 		-- This function, given a topogeometry, return all the node that may be affected by a change in this topogeometry
@@ -759,15 +759,15 @@ CREATE FUNCTION public.rc_FromTopogeomToNode(atopology TEXT, source_topo topogeo
 		$BODY$
 		LANGUAGE plpgsql VOLATILE;
 
-		SELECT *
-		FROM public.rc_FromTopogeomToNode('bdtopo_topological',(17,6,79,1)::topogeometry );
+--		SELECT *
+--		FROM rc_FromTopogeomToNode('bdtopo_topological',(17,6,79,1)::topogeometry );
 
 
 
 		
 
-DROP FUNCTION IF EXISTS public.rc_FromNodeToTopogeom(atopology TEXT,node_id int, target_topo_layer_id INT);
-CREATE FUNCTION public.rc_FromNodeToTopogeom(atopology TEXT, node_id int , target_topo_layer_id INT)
+DROP FUNCTION IF EXISTS rc_FromNodeToTopogeom(atopology TEXT,node_id int, target_topo_layer_id INT);
+CREATE FUNCTION rc_FromNodeToTopogeom(atopology TEXT, node_id int , target_topo_layer_id INT)
 		RETURNS SETOF topogeometry AS
 		$BODY$
 		-- This function, given a topogeometry, return all the node that may be affected by a change in this topogeometry
@@ -820,16 +820,16 @@ CREATE FUNCTION public.rc_FromNodeToTopogeom(atopology TEXT, node_id int , targe
 		$BODY$
 		LANGUAGE plpgsql VOLATILE;
 
-		SELECT *
-		FROM public.rc_FromNodeToTopogeom('bdtopo_topological',15,rc_getlayerid('route_topogeom', 'bdtopo_topological')  ) ; 
+--		SELECT *
+--		FROM rc_FromNodeToTopogeom('bdtopo_topological',15,rc_getlayerid('route_topogeom', 'bdtopo_topological')  ) ; 
 
 
 
 		
 		
 
-DROP FUNCTION IF EXISTS public.rc_FromBaseToTopogeom(atopology TEXT,base_id int, target_topo_layer_id INT);
-CREATE FUNCTION public.rc_FromBaseToTopogeom(atopology TEXT,base_id int, target_topo_layer_id INT)
+DROP FUNCTION IF EXISTS rc_FromBaseToTopogeom(atopology TEXT,base_id int, target_topo_layer_id INT);
+CREATE FUNCTION rc_FromBaseToTopogeom(atopology TEXT,base_id int, target_topo_layer_id INT)
 		RETURNS SETOF topogeometry AS
 		$BODY$
 		-- This function, given an id of a (node, face,edge), return the corresponding topogeom in thegiven layer
@@ -878,11 +878,11 @@ CREATE FUNCTION public.rc_FromBaseToTopogeom(atopology TEXT,base_id int, target_
 		$BODY$
 		LANGUAGE plpgsql VOLATILE;
 
-		SELECT *
-		FROM public.rc_FromBaseToTopogeom('bdtopo_topological',15,rc_getlayerid('intersection_center', 'bdtopo_topological')  ) ; 
+--		SELECT *
+--		FROM rc_FromBaseToTopogeom('bdtopo_topological',15,rc_getlayerid('intersection_center', 'bdtopo_topological')  ) ; 
 
 
-	SELECT *
-	FROM bdtopo_topological.intersection_center
-	WHERE tg::int[] =  ARRAY[17,6,15986,1]; 
+--	SELECT *
+--	FROM bdtopo_topological.intersection_center
+--	WHERE tg::int[] =  ARRAY[17,6,15986,1]; 
 		

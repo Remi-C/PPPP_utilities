@@ -6,8 +6,8 @@
 ------------------------------
 
   
-DROP FUNCTION IF EXISTS topology.rc_IsNodeIsolated(varchar, int ); 
-CREATE OR REPLACE FUNCTION topology.rc_IsNodeIsolated( IN atopology  varchar ,IN node_id  INT ,OUT is_isolated boolean)AS
+DROP FUNCTION IF EXISTS rc_IsNodeIsolated(varchar, int ); 
+CREATE OR REPLACE FUNCTION rc_IsNodeIsolated( IN atopology  varchar ,IN node_id  INT ,OUT is_isolated boolean)AS
 $BODY$
 		--@brief this function looks into edge_data to find if a node is isolated (no edge connected to it)
 		DECLARE  
@@ -24,11 +24,11 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
-SELECT * FROM topology.rc_IsNodeIsolated('bdtopo_topological',2113) ;
+-- SELECT * FROM topology.rc_IsNodeIsolated('bdtopo_topological',2113) ;
 
 
-DROP FUNCTION IF EXISTS topology.rc_NodeConnectivity(varchar, int ); 
-CREATE OR REPLACE FUNCTION topology.rc_NodeConnectivity( IN atopology  varchar ,IN node_id  INT ,OUT connectivity int)AS
+DROP FUNCTION IF EXISTS rc_NodeConnectivity(varchar, int ); 
+CREATE OR REPLACE FUNCTION rc_NodeConnectivity( IN atopology  varchar ,IN node_id  INT ,OUT connectivity int)AS
 $BODY$
 		--@brief this function looks into edge_data how many edges are connected to the node
 		DECLARE  
@@ -48,6 +48,6 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
-SELECT * FROM topology.rc_NodeConnectivity('bdtopo_topological',2123) ;
+--SELECT * FROM topology.rc_NodeConnectivity('bdtopo_topological',2123) ;
 
 

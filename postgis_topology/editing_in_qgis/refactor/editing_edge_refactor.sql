@@ -8,6 +8,7 @@
 -- aim of this project is to support edition of a linestring topology in qgis, via triggers on postgis topology 
 
 
+/*
 --creating view for edition 
 DROP VIEW IF EXISTS bdtopo_topological.edge_editing CASCADE; 
 CREATE VIEW  bdtopo_topological.edge_editing  AS (
@@ -18,10 +19,11 @@ CREATE VIEW  bdtopo_topological.edge_editing  AS (
 SELECT *
 FROM bdtopo_topological.edge_editing ;
 
-
+*/
 
 --INSERT INTO bdtopo_topological.edge_editing (edge_geom ) VALUES (ST_GeometryFromText('LINESTRING(1451.8 21353.4 , 1447.6 21253.7)',932011)) ; 
 --creating trigger for edition of edge
+DROP FUNCTION IF EXISTS rc_edit_edge_topology(  ); 
 CREATE OR REPLACE FUNCTION rc_edit_edge_topology(  )
   RETURNS  trigger  AS
 $BODY$  
@@ -69,8 +71,11 @@ $BODY$
 	$BODY$
   LANGUAGE plpgsql VOLATILE;
 
+  
+  /*
 DROP TRIGGER IF EXISTS  rc_edit_edge_topology ON bdtopo_topological.edge_editing; 
 CREATE  TRIGGER rc_edit_edge_topology  INSTEAD OF INSERT OR UPDATE OR DELETE
  ON bdtopo_topological.edge_editing
 FOR EACH ROW  
 EXECUTE PROCEDURE rc_edit_edge_topology();  
+*/

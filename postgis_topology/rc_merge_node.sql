@@ -6,8 +6,8 @@
 ------------------------------
 
   
-DROP FUNCTION IF EXISTS topology.rc_MergeNodeIntoAnother(varchar, int, int, geometry, geometry, int[],boolean ); 
-CREATE OR REPLACE FUNCTION topology.rc_MergeNodeIntoAnother( IN atopology  varchar ,INOUT from_node_id  INT ,INOUT to_node_id  INT, IN from_node_geom geometry 
+DROP FUNCTION IF EXISTS rc_MergeNodeIntoAnother(varchar, int, int, geometry, geometry, int[],boolean ); 
+CREATE OR REPLACE FUNCTION rc_MergeNodeIntoAnother( IN atopology  varchar ,INOUT from_node_id  INT ,INOUT to_node_id  INT, IN from_node_geom geometry 
 ,  to_node_geom geometry, edge_to_transfer int[] DEFAULT NULL, perform_edge_geom_change BOOLEAN DEFAULT TRUE)AS
 $BODY$
 		--@brief this function moves a node and update all connected edges geometry accordingly, then delete the old node, then update the new node isolation level.

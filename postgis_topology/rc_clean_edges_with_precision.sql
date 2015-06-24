@@ -7,12 +7,12 @@
 
 
 
-SET search_path TO  bdtopo_topological, topology, public ;
+-- SET search_path TO  bdtopo_topological, topology, public ;
  
 
 DROP FUNCTION IF EXISTS rc_CleanEdge_geom(toponame character varying, IN  iedge_id integer, INOUT igeom GEOMETRY, IN tolerance FLOAT  );
   
-CREATE OR REPLACE FUNCTION public.rc_CleanEdge_geom(toponame character varying, IN  iedge_id integer, INOUT igeom GEOMETRY, IN tolerance FLOAT DEFAULT 0.01 )   AS
+CREATE OR REPLACE FUNCTION rc_CleanEdge_geom(toponame character varying, IN  iedge_id integer, INOUT igeom GEOMETRY, IN tolerance FLOAT DEFAULT 0.01 )   AS
 $BODY$
 	--@brief given a precision , for an edge in edge_data (we use the geom that is provided), snap the start/end point to node if it is within the correct distance
 DECLARE 
@@ -42,14 +42,14 @@ END
 $BODY$
   LANGUAGE plpgsql VOLATILE ;
 
+  /*
  SELECT  rc_CleanEdge_geom('bdtopo_topological', 2541,geom)   
  FROM edge_data 
  WHERE edge_id = 2541
-
+*/
  
---DROP FUNCTION public.rc_CleanEdge(character varying, integer, float);
-
-CREATE OR REPLACE FUNCTION public.rc_CleanEdge(toponame character varying, IN  iedge_id integer, IN tolerance FLOAT DEFAULT 0.01 )  
+DROP FUNCTION IF EXISTS rc_CleanEdge(character varying, integer, float);
+CREATE OR REPLACE FUNCTION rc_CleanEdge(toponame character varying, IN  iedge_id integer, IN tolerance FLOAT DEFAULT 0.01 )  
 RETURNS BOOLEAN AS
 $BODY$
 	--@brief given a precision , for an edge in edge_data, snap the start/end point to node if it is within the correct distance

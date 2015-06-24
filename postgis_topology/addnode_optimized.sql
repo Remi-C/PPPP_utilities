@@ -1,8 +1,12 @@
-﻿-- Function: topology.addnode(character varying, geometry, boolean, boolean)
-
--- DROP FUNCTION topology.addnode(character varying, geometry, boolean, boolean);
-
-CREATE OR REPLACE FUNCTION topology.addnode(atopology character varying, apoint geometry, allowedgesplitting boolean, setcontainingface boolean DEFAULT false)
+﻿---------------------------------------------
+--Copyright Remi-C Thales IGN 04/2015
+-- 
+--overide of classical function, with perfo boost
+-------------------------------------------- 
+-- Function: topology.addnode(character varying, geometry, boolean, boolean)
+ 
+-- DROP FUNCTION IF EXISTS addnode(atopology character varying, apoint geometry, allowedgesplitting boolean, setcontainingface boolean  );
+CREATE OR REPLACE FUNCTION addnode(atopology character varying, apoint geometry, allowedgesplitting boolean, setcontainingface boolean DEFAULT false)
   RETURNS integer AS
 $BODY$
 DECLARE
@@ -57,7 +61,4 @@ BEGIN
 END
 $BODY$
   LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION topology.addnode(character varying, geometry, boolean, boolean)
-  OWNER TO postgres;
-COMMENT ON FUNCTION topology.addnode(character varying, geometry, boolean, boolean) IS 'args: toponame, apoint, allowEdgeSplitting=false, computeContainingFace=false - Adds a point node to the node table in the specified topology schema and returns the nodeid of new node. If point already exists as node, the existing nodeid is returned.';
+  COST 100; 

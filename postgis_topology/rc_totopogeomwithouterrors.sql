@@ -9,11 +9,12 @@
 --------------------------------------------
 
 
--- Function: public.rc_totopogeomwithouterrors(geometry, character varying, integer, double precision)
+-- Function: rc_totopogeomwithouterrors(geometry, character varying, integer, double precision)
 
--- DROP FUNCTION public.rc_totopogeomwithouterrors(geometry, character varying, integer, double precision);
+-- DROP FUNCTION rc_totopogeomwithouterrors(geometry, character varying, integer, double precision);
 
-CREATE OR REPLACE FUNCTION public.rc_totopogeomwithouterrors(ageom geometry, atopology character varying, alayer integer, atolerance double precision DEFAULT 0)
+DROP FUNCTION IF EXISTS rc_totopogeomwithouterrors(ageom geometry, atopology character varying, alayer integer, atolerance double precision ) ;
+CREATE OR REPLACE FUNCTION rc_totopogeomwithouterrors(ageom geometry, atopology character varying, alayer integer, atolerance double precision DEFAULT 0)
   RETURNS topogeometry AS
 $BODY$
 DECLARE
@@ -153,7 +154,4 @@ EXCEPTION
 END;
 END
 $BODY$
-  LANGUAGE plpgsql VOLATILE STRICT
-  COST 100;
-ALTER FUNCTION public.rc_totopogeomwithouterrors(geometry, character varying, integer, double precision)
-  OWNER TO postgres;
+  LANGUAGE plpgsql VOLATILE STRICT ;

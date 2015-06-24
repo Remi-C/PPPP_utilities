@@ -4,8 +4,8 @@
 --02/2015
 -- changing st_modedgesplit ot take into account precision
 
-DROP FUNCTion if exists topology.rc_modedgesplit(atopology character varying, anedge integer,  apoint geometry, anode_id int ) ;
-CREATE OR REPLACE FUNCTION topology.rc_modedgesplit(atopology character varying, anedge integer, apoint geometry, anode_id int DEFAULT NULL)
+DROP FUNCTion if exists rc_modedgesplit(atopology character varying, anedge integer,  apoint geometry, anode_id int ) ;
+CREATE OR REPLACE FUNCTION rc_modedgesplit(atopology character varying, anedge integer, apoint geometry, anode_id int DEFAULT NULL)
   RETURNS integer AS
 $BODY$
 DECLARE

@@ -13,8 +13,8 @@
 
 /* --Custom Version
 		--creating the egal operator for topology.topogeometry type
-		DROP FUNCTION IF EXISTS  public.rc_topogeometry_egal(tg1 topogeometry,tg2 topogeometry) CASCADE;
-		CREATE FUNCTION  public.rc_topogeometry_egal(tg1 topogeometry,tg2 topogeometry)
+		DROP FUNCTION IF EXISTS  rc_topogeometry_egal(tg1 topogeometry,tg2 topogeometry) CASCADE;
+		CREATE FUNCTION  rc_topogeometry_egal(tg1 topogeometry,tg2 topogeometry)
 		    RETURNS boolean AS
 		    $BODY$
 				-- This function returns true if every field of topogeom1 are egal to topogeom2 (int = meaning) in the same order, false else.
@@ -34,15 +34,15 @@
 		CREATE OPERATOR == (
 		    leftarg = topogeometry,
 		    rightarg = topogeometry,
-		    procedure = public.rc_topogeometry_egal,
+		    procedure = rc_topogeometry_egal,
 		    commutator = ==
 		);
 
 
 		--
 		--creating a cast from topology.topogeom to int[]
-		DROP FUNCTION IF EXISTS public.rc_topogeometry_CastToIntArr(tg1 topology.topogeometry) CASCADE;
-		CREATE FUNCTION  public.rc_topogeometry_CastToIntArr(tg1 topology.topogeometry)
+		DROP FUNCTION IF EXISTS rc_topogeometry_CastToIntArr(tg1 topology.topogeometry) CASCADE;
+		CREATE FUNCTION  rc_topogeometry_CastToIntArr(tg1 topology.topogeometry)
 		    RETURNS int[] AS
 		    $BODY$
 				-- This function rast a topology.topogeom into an int[]
@@ -53,10 +53,10 @@
 		    $BODY$
 				LANGUAGE plpgsql IMMUTABLE;
 
-			SELECT  public.rc_topogeometry_CastToIntArr((NULL,2,3,4)::topology.topogeometry);
+			SELECT  rc_topogeometry_CastToIntArr((NULL,2,3,4)::topology.topogeometry);
 			
 		CREATE CAST (topogeometry AS int[])
-		    WITH FUNCTION  public.rc_topogeometry_CastToIntArr(topology.topogeometry)
+		    WITH FUNCTION  rc_topogeometry_CastToIntArr(topology.topogeometry)
 		    AS IMPLICIT ;
 
 		SELECT (1,2,3,4)::topogeometry::int[];
