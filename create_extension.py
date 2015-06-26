@@ -5,26 +5,37 @@ this script concatenates all the function in different files into one, so it is 
 create/remove all function using postgres extension mechanism
 """
 
-def test_extension_create():
+def make():
+    """"""
+    #parameters
+    with_install = True  #shall we copy the files into postgres/extension (require run as postgres or admin rights)
+    targets = ["postgres","postgis","postgis_topology","pointcloud"]  #what extension should be built
+    version = 1.0 #version, if wanting to erase previous versions
+    output_path = './extension_creation' #vers the extension files sall be written
+    ignore_plpythonu = False # shall we take into account plpythonu functions?
+    ignore_plr = True # shall we take into account plr functions?
+    
+    for target in targets:
+        create_extension_and_install(target,version,output_path,ignore_plpythonu,ignore_plr, with_install)
+    return
+
+def create_extension_and_install(target,version,output_path,ignore_plpythonu,ignore_plr, with_install=True):
     """tests the function that will create a file to create the extension 
     and a file to delete the extension"""
 
-    #parameters
-    target = "pointcloud" # get the name of the directory, it is the name of the target
-    version = 1.0
-    test_output_path = './extension_creation'
-    ignore_plpythonu = True
-    ignore_plr = True
+    
     
     #dealign with paths 
-    output_path,function_path,target_install,target_uninstall,target_control = create_target(test_output_path,target,version)
+    output_path,function_path,target_install,target_uninstall,target_control = create_target(output_path,target,version)
     
     #creating the file to install extension
     create_extension_file(target, version, function_path, target_install,target_uninstall, target_control
         ,ignore_plpythonu, ignore_plr)
          
     #putting the extension file at the right place
-    installing_into_postgres(output_path,target,version)
+    if with_install == True:
+        installing_into_postgres(output_path,target,version)
+    
     return
 
 def installing_into_postgres(output_path,target,version):  
@@ -36,7 +47,7 @@ def installing_into_postgres(output_path,target,version):
         p = subprocess.Popen(["pg_config", "--sharedir"], stdout=subprocess.PIPE)
         output, err = p.communicate()
     except:
-        print('error trying to get the place to install extension files')
+        print('error tryingmarking_surface to get the place to install extension files')
         exit(-1)
     #adding extension to the path
     output = output.rstrip() #removing the \n at the end
@@ -89,10 +100,11 @@ def create_extension_file(target, version, function_path, target_install,target_
     skip file containgn plr function or plpythonu funtion depending on the parameter"""
     import os
     import fnmatch
+    import codecs
     """ @TODO : add test to check that file can be opened"""
-    install_file = open(target_install, 'w')
-    uninstall_file = open(target_uninstall, 'w')
-    control_file = open(target_control,'w') 
+    install_file = codecs.open(target_install, 'w', encoding = 'utf-8')
+    uninstall_file = codecs.open(target_uninstall, 'w', encoding = 'utf-8')
+    control_file = codecs.open(target_control,'w', encoding = 'utf-8') 
     #putting misc stuff into files, to create/drop schema and so
     fill_headers(target, version, install_file, uninstall_file,control_file)
     
@@ -119,7 +131,7 @@ def fill_extension_files(function_file_path, install_file, uninstall_file,ignore
     import codecs
     #opening the function_file_path
     """ @TODO : add test to check that the file can be opened"""
-    function_file = open(function_file_path, 'r')
+    function_file = codecs.open(function_file_path, 'r', encoding = "UTF-8")
     
     #testing if the file contains plr or plpythonu function, based on parameters
     need_to_skip = False ; 
@@ -140,8 +152,14 @@ def fill_extension_files(function_file_path, install_file, uninstall_file,ignore
         #adding the file name as comment
         install_file.write('\n-- '+os.path.basename(function_file_path)+'\n')
         #appending to install file
-        install_file.write(function_file.read().lstrip( unicode( codecs.BOM_UTF8, "utf8" ) ))
         
+        function_file_content = function_file.read()
+        try:    
+            function_file_content = function_file_content.lstrip( unicode( codecs.BOM_UTF8, "utf8" ) )
+        except:
+            print('couldnt remove BOM of file ',function_file_path)
+        install_file.write(function_file_content)
+            #install_file.write(function_file.read().lstrip( unicode( codecs.BOM_UTF8, "utf8" ) ))
         #appending only the DROP "FUNCTION .* ;"(lazzy) to uninstall file
         drop_statements = extract_drop_statement(function_file)
         uninstall_file.write('\n-- '+os.path.basename(function_file_path)+'\n')
@@ -252,4 +270,4 @@ include $(PGXS)
     return
 
 
-test_extension_create()
+make()
