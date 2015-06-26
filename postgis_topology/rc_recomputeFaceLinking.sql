@@ -253,7 +253,7 @@ LANGUAGE plpgsql VOLATILE;
 					FROM list_of_edge_faces AS lo 
 				)
 				, updating_edges AS(
-					SELECT topology.Update_face_of_RingEdges(topology_name, array_agg(edge_id) ,face_id) AS updated_edges
+					SELECT rc_lib_postgis_topology.rc_Update_face_of_RingEdges(topology_name, array_agg(edge_id) ,face_id) AS updated_edges
 					FROM problematic_rings, rings, creating_face
 					GROUP BY face_id --useless
 				)  
@@ -353,7 +353,7 @@ LANGUAGE plpgsql VOLATILE;
 				FROM exact_face as ef , list_of_edges as ei 
 			)
 			, updating_edges AS(
-				SELECT topology.Update_face_of_RingEdges(topology_name, array_agg(s_edge_id ORDER BY ordinality ASC) ,potential_face_id) AS updated_edges
+				SELECT  rc_lib_postgis_topology.rc_Update_face_of_RingEdges(topology_name, array_agg(s_edge_id ORDER BY ordinality ASC) ,potential_face_id) AS updated_edges
 				FROM preparing_update 
 				GROUP BY potential_face_id --useless
 			)  
@@ -371,8 +371,8 @@ LANGUAGE plpgsql VOLATILE;
 
 
 
-DROP FUNCTION IF EXISTS Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int) ;
-	CREATE OR REPLACE FUNCTION  Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int, OUT updated_edges INT[] ) 
+DROP FUNCTION IF EXISTS rc_Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int) ;
+	CREATE OR REPLACE FUNCTION  rc_Update_face_of_RingEdges(topology_name TEXT, signed_edges_of_ring INT[] , new_face_id int, OUT updated_edges INT[] ) 
 	AS $BODY$   
 		/** @brief given a ring, and a face_id, update the left/right_face of the edges of the ring 
 		*/
