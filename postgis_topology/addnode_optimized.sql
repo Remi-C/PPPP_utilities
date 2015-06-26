@@ -1,4 +1,5 @@
-﻿---------------------------------------------
+﻿
+---------------------------------------------
 --Copyright Remi-C Thales IGN 04/2015
 -- 
 --overide of classical function, with perfo boost

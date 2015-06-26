@@ -56,7 +56,7 @@ $BODY$
 			FROM edges_to_up, topology.GetRingEdges(topology_name,edge_id ) AS f 
 			ORDER BY edge_id , base_id
 		) 
-		SELECT topology.rc_RingToFace(topology_name, array_agg(edge_id ORDER BY ordinality))
+		SELECT rc_lib_postgis_topology.rc_RingToFace(topology_name, array_agg(edge_id ORDER BY ordinality))
 			INTO _r
 		FROM rings
 		GROUP BY base_id ; 
@@ -103,21 +103,21 @@ LANGUAGE plpgsql VOLATILE;
 		BEGIN
 			--RAISE EXCEPTION 'toto' ; 
 			--is the ring inside or outside?
-			_is_inside := topology.rc_SignedArea(topology_name, signed_edges_of_ring ) >0 ; 
+			_is_inside := rc_lib_postgis_topology.rc_SignedArea(topology_name, signed_edges_of_ring ) >0 ; 
 			--is the ring flat?
-			_is_flat := topology.rc_IsRingFace(signed_edges_of_ring) ; 
+			_is_flat := rc_lib_postgis_topology.rc_IsRingFace(signed_edges_of_ring) ; 
 
 			--deal first with the simple is_inside case
 			IF _is_inside = TRUE THEN
 			
 				SELECT *
-				FROM  topology.rc_RingToFace_inside(topology_name, signed_edges_of_ring) 
+				FROM  rc_lib_postgis_topology.rc_RingToFace_inside(topology_name, signed_edges_of_ring) 
 				INTO _face_to_delete, _face_created, _edge_updated, _face_updated ;
 			ELSE
 				--RAISE EXCEPTION 'ring is an outside ring "%" or a flat ring "%"',NOT _is_inside,_is_flat  ; 
 				--outside ring, or flat ring 
 				SELECT *
-				FROM  topology.rc_RingToFace_outside(topology_name, signed_edges_of_ring,_face_to_delete) 
+				FROM  rc_lib_postgis_topology.rc_RingToFace_outside(topology_name, signed_edges_of_ring,_face_to_delete) 
 				INTO  _edge_updated_outside,_face_to_potentially_delete ;
 				
 			END IF ; 
@@ -236,11 +236,11 @@ LANGUAGE plpgsql VOLATILE;
 						WHERE face_id != 0
 				)  
 				, creating_face AS (
-					SELECT topology.rc_CreateFaceFromRing(topology_name, array_agg(edge_id)) AS face_id
+					SELECT rc_lib_postgis_topology.rc_CreateFaceFromRing(topology_name, array_agg(edge_id)) AS face_id
 					FROM problematic_rings, rings 
 				) 
 				, updating_face_MBR AS ( --updating the face MBR if the face wasn't created
-					SELECT topology.rc_UpdateFaceMBRFromRing(topology_name, array_agg(lo.edge_id)  
+					SELECT rc_lib_postgis_topology.rc_UpdateFaceMBRFromRing(topology_name, array_agg(lo.edge_id)  
 						, (
 						SELECT face_id 
 						FROM list_fo_face

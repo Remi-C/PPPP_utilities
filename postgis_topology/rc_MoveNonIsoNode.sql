@@ -54,7 +54,7 @@ $BODY$
 			EXECUTE format('UPDATE %s.node AS n SET (containing_face,geom) = ($2,$3) WHERE n.node_id = $1 ',_atopology) USING _node_id, _face_id, _new_node_geom ; 
 			
 			--updating the edges 
-			PERFORM topology.rc_MoveNonIsoNode_edges(_atopology, _node_id, _new_node_geom) ; 
+			PERFORM rc_lib_postgis_topology.rc_MoveNonIsoNode_edges(_atopology, _node_id, _new_node_geom) ; 
 			return; 
 		END ;
 	$BODY$

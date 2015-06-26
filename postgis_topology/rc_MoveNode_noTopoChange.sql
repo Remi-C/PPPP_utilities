@@ -40,7 +40,7 @@ $BODY$
 			
 			--updating the edges , only if not override by arguments
 			IF perform_edge_geom_change = TRUE THEN 
-				PERFORM topology.rc_MoveNonIsoNode_edges(atopology, node_id, new_node_geom,edge_ids, _topology_precision) ; 
+				PERFORM rc_lib_postgis_topology.rc_MoveNonIsoNode_edges(atopology, node_id, new_node_geom,edge_ids, _topology_precision) ; 
 			END IF ; 
 			return; 
 		END ;

@@ -57,7 +57,7 @@ $BODY$
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
 /* 
-SELECT topology.rc_CheckNewEdgeGeom('bdtopo_topological'::text
+SELECT rc_lib_postgis_topology.rc_CheckNewEdgeGeom('bdtopo_topological'::text
 	, ST_SetSRID(ST_MakeLine(ST_MakePoint(5983.5,22331.1), ST_MakePoint(6037.9,22309.9)),932011)
 	,-1::int
 	,-1::int

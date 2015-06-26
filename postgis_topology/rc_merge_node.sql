@@ -36,7 +36,7 @@ $BODY$
 
 			--updating the tansfered edges 
 			IF perform_edge_geom_change = TRUE THEN 
-				PERFORM topology.rc_MoveNonIsoNode_edges(atopology, to_node_id, to_node_geom,_edges_to_transfer, _topology_precision) ;  
+				PERFORM rc_lib_postgis_topology.rc_MoveNonIsoNode_edges(atopology, to_node_id, to_node_geom,_edges_to_transfer, _topology_precision) ;  
 			END IF ;
 			END IF ; 
 		
@@ -45,7 +45,7 @@ $BODY$
 
 			
 			--update new node isolation if needed.
-			PERFORM topology.rc_UpdateNodeisolation( atopology, to_node_id ,to_node_geom, _edges_to_transfer); 
+			PERFORM rc_lib_postgis_topology.rc_UpdateNodeisolation( atopology, to_node_id ,to_node_geom, _edges_to_transfer); 
 			
 			--RAISE EXCEPTION '_edges_to_transfer : % ',_edges_to_transfer  ; 
 			

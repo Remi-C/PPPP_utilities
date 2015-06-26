@@ -38,8 +38,8 @@ $BODY$
 				--list edge clockwise order
 				-- if edge is coming to node, set next_left_edge
 				-- if edge is going out of node, set next_right_edge 
-		SELECT  * FROM topology.rc_RecomputeEdgeLinking(topology_name , nodes_to_update) into updated_edges ; 
-		SELECT  * FROM topology.rc_RecomputeFaceLinking_fewedges(topology_name , updated_edges) into 
+		SELECT  * FROM rc_lib_postgis_topology.rc_RecomputeEdgeLinking(topology_name , nodes_to_update) into updated_edges ; 
+		SELECT  * FROM rc_lib_postgis_topology.rc_RecomputeFaceLinking_fewedges(topology_name , updated_edges) into 
 		 updated_edges , updated_nodes,created_faces ,deleted_faces  ; 
 	--RAISE EXCEPTION 'not implemetned yet %',updated_edges;
 		RETURN  ;
@@ -191,13 +191,13 @@ $BODY$
 		--RAISE NOTICE 'edges to update : %', edges_to_update  ;
 		--RAISE EXCEPTION 'input : edges_to_update %',edges_to_update  ; 
 		--create new face, update edge left and right face when dealing with regular face (ie non-flat face)
-		SELECT * FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name  , edges_to_update)
+		SELECT * FROM rc_lib_postgis_topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name  , edges_to_update)
 		INTO  _inserted_face,_updated_edges,  _faces_to_delete, _edges_in_non_face_ring ;    
 
 		--RAISE EXCEPTION '_inserted_face %,_updated_edges %,  _faces_to_delete %, _edges_in_non_face_ring %',_inserted_face,_updated_edges,  _faces_to_delete, _edges_in_non_face_ring ; 
 
 		--deal with flat face, that are within another face necessarly 
-		SELECT * FROM  topology.rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name
+		SELECT * FROM  rc_lib_postgis_topology.rc_RecomputeFaceLinking_fewedges_onlyflatface(topology_name
 			,   _inserted_face
 			, _edges_in_non_face_ring
 			,  _updated_edges
@@ -206,12 +206,12 @@ $BODY$
 		--RAISE EXCEPTION '% %',_updated_edges, _faces_to_delete ;
 
 		--update isolated node :  
-		SELECT  * FROM topology.rc_CorrectIsolatedNodes(topology_name,  NULL,  _faces_to_delete  )
+		SELECT  * FROM rc_lib_postgis_topology.rc_CorrectIsolatedNodes(topology_name,  NULL,  _faces_to_delete  )
 		INTO  _updated_nodes; 
 		--RAISE EXCEPTION '_updated_nodes %',_updated_nodes ; 
 		--delete face_to_delete from face table
 			--delete face that dont have edges anymore
-		SELECT * FROM topology.rc_DeleteUselessFace('bdtopo_topological') INTO _deleted_faces;
+		SELECT * FROM rc_lib_postgis_topology.rc_DeleteUselessFace('bdtopo_topological') INTO _deleted_faces;
 		
 		updated_edges := _updated_edges ;
 		updated_nodes := _updated_nodes ;
@@ -261,8 +261,8 @@ $BODY$
 	$BODY$
 LANGUAGE plpgsql VOLATILE; 
 
---SELECT topology.rc_CorrectIsolatedNode('bdtopo_topological'::text, ARRAY[212], NULL::int[] ) ;
---SELECT topology.rc_DeleteUselessFace('bdtopo_topological');
+--SELECT rc_lib_postgis_topology.rc_CorrectIsolatedNode('bdtopo_topological'::text, ARRAY[212], NULL::int[] ) ;
+--SELECT rc_lib_postgis_topology.rc_DeleteUselessFace('bdtopo_topological');
 
 DROP FUNCTION IF EXISTS rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[] ) ;
 CREATE OR REPLACE FUNCTION rc_RecomputeFaceLinking_fewedges_onlyvalidface(topology_name TEXT, edges_to_update INT[],
@@ -310,7 +310,7 @@ $BODY$
 			ORDER BY edge_id , base_id
 		)
 		,real_faces AS ( --check wether the ring form a real face (i.e not a flat face)
-			SELECT base_id, topology.rc_IsRingFace(array_agg(edge_id)) as is_this_ring_a_real_face
+			SELECT base_id, rc_lib_postgis_topology.rc_IsRingFace(array_agg(edge_id)) as is_this_ring_a_real_face
 			FROM rings
 			GROUP BY base_id 
 		)
@@ -471,7 +471,7 @@ $BODY$
  				 ,updated_edges
 				, faces_to_delete
 				, edges_in_non_face_ring::text[]
-		--FROM topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface('bdtopo_topological'  , ARRAY[405,406,407,411,410] )
+		--FROM rc_lib_postgis_topology.rc_RecomputeFaceLinking_fewedges_onlyvalidface('bdtopo_topological'  , ARRAY[405,406,407,411,410] )
 		 )
 		 ,faces_to_delete AS (
 			SELECT face_to_delete
@@ -575,4 +575,4 @@ LANGUAGE plpgsql VOLATILE;
 	 
 
 -- SELECT *
--- FROM  topology.rc_CorrectIsolatedNode('bdtopo_topological', NULL, ARRAY[212])  ;
+-- FROM  rc_lib_postgis_topology.rc_CorrectIsolatedNode('bdtopo_topological', NULL, ARRAY[212])  ;
