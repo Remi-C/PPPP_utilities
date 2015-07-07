@@ -221,8 +221,8 @@ def fill_headers(target,version, install_file,uninstall_file,control_file):
 --------------------------------
 --extension to benefit from a lot of misc functions
 --------------------------------
---CREATE SCHEMA IF NOT EXISTS rc_lib_{0!s} ;  
---SET search_path TO  rc_lib_{0!s}, public ; \n\n\n
+--CREATE SCHEMA IF NOT EXISTS rc_lib ;  
+--SET search_path TO  rc_lib, public ; \n\n\n
 
 --------------------------------
 -----installing functions ------
@@ -235,8 +235,8 @@ def fill_headers(target,version, install_file,uninstall_file,control_file):
 --------installing------------------------
 --extension to benefit from a lot of misc functions
 --------------------------------
-DROP SCHEMA IF EXISTS rc_lib_{0!s} ;
-SET search_path TO  rc_lib_{0!s}, public ;\n\n\n
+-- DROP SCHEMA IF EXISTS rc_lib_{0!s} ;
+SET search_path TO  rc_lib, public ;\n\n\n
 
 --------------------------------
 -----dropping functions ------
@@ -247,7 +247,7 @@ SET search_path TO  rc_lib_{0!s}, public ;\n\n\n
 comment = 'this extension adds misc function for {0!s}'
 default_version = '{1!s}'
 relocatable = 'false'
-schema = 'rc_lib_{0!s}'""".format(target,version)
+schema = 'rc_lib'""".format(target,version)
 
     make_text = """# rc_lib_{0!s} extension
 #can be installed manually : just copy files into postgres/extension
