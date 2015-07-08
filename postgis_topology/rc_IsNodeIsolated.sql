@@ -24,7 +24,7 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
--- SELECT * FROM rc_lib_postgis_topology.rc_IsNodeIsolated('bdtopo_topological',2113) ;
+-- SELECT * FROM rc_lib.rc_IsNodeIsolated('bdtopo_topological',2113) ;
 
 
 DROP FUNCTION IF EXISTS rc_NodeConnectivity(varchar, int ); 
@@ -48,6 +48,6 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
---SELECT * FROM rc_lib_postgis_topology.rc_NodeConnectivity('bdtopo_topological',2123) ;
+--SELECT * FROM rc_lib.rc_NodeConnectivity('bdtopo_topological',2123) ;
 
 

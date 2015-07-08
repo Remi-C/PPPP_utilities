@@ -34,5 +34,5 @@ $BODY$
 COMMENT ON FUNCTION rc_IsRingFace(s_edge_ids int[]) IS 
 	'args: s_edge_ids - Return True or False depending on the fact that the given edge sequence (ring) forms a true face or not';
 
--- SELECT rc_lib_postgis_topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,390 ,-390 ,-391 ,-392 ]) ; 
--- SELECT rc_lib_postgis_topology.rc_IsRingFace(ARRAY[392 ,393 ,394 ,-393 ,-394 ,-392 ]) ; 
+-- SELECT rc_lib.rc_IsRingFace(ARRAY[392 ,393 ,394 ,390 ,-390 ,-391 ,-392 ]) ; 
+-- SELECT rc_lib.rc_IsRingFace(ARRAY[392 ,393 ,394 ,-393 ,-394 ,-392 ]) ; 

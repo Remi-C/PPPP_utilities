@@ -56,7 +56,7 @@ $BODY$
 			FROM edges_to_up, topology.GetRingEdges(topology_name,edge_id ) AS f 
 			ORDER BY edge_id , base_id
 		) 
-		SELECT rc_lib_postgis_topology.rc_RingToFace(topology_name, array_agg(edge_id ORDER BY ordinality))
+		SELECT rc_lib.rc_RingToFace(topology_name, array_agg(edge_id ORDER BY ordinality))
 			INTO _r
 		FROM rings
 		GROUP BY base_id ; 
@@ -103,21 +103,21 @@ LANGUAGE plpgsql VOLATILE;
 		BEGIN
 			--RAISE EXCEPTION 'toto' ; 
 			--is the ring inside or outside?
-			_is_inside := rc_lib_postgis_topology.rc_SignedArea(topology_name, signed_edges_of_ring ) >0 ; 
+			_is_inside := rc_lib.rc_SignedArea(topology_name, signed_edges_of_ring ) >0 ; 
 			--is the ring flat?
-			_is_flat := rc_lib_postgis_topology.rc_IsRingFace(signed_edges_of_ring) ; 
+			_is_flat := rc_lib.rc_IsRingFace(signed_edges_of_ring) ; 
 
 			--deal first with the simple is_inside case
 			IF _is_inside = TRUE THEN
 			
 				SELECT *
-				FROM  rc_lib_postgis_topology.rc_RingToFace_inside(topology_name, signed_edges_of_ring) 
+				FROM  rc_lib.rc_RingToFace_inside(topology_name, signed_edges_of_ring) 
 				INTO _face_to_delete, _face_created, _edge_updated, _face_updated ;
 			ELSE
 				--RAISE EXCEPTION 'ring is an outside ring "%" or a flat ring "%"',NOT _is_inside,_is_flat  ; 
 				--outside ring, or flat ring 
 				SELECT *
-				FROM  rc_lib_postgis_topology.rc_RingToFace_outside(topology_name, signed_edges_of_ring,_face_to_delete) 
+				FROM  rc_lib.rc_RingToFace_outside(topology_name, signed_edges_of_ring,_face_to_delete) 
 				INTO  _edge_updated_outside,_face_to_potentially_delete ;
 				
 			END IF ; 
@@ -236,11 +236,11 @@ LANGUAGE plpgsql VOLATILE;
 						WHERE face_id != 0
 				)  
 				, creating_face AS (
-					SELECT rc_lib_postgis_topology.rc_CreateFaceFromRing(topology_name, array_agg(edge_id)) AS face_id
+					SELECT rc_lib.rc_CreateFaceFromRing(topology_name, array_agg(edge_id)) AS face_id
 					FROM problematic_rings, rings 
 				) 
 				, updating_face_MBR AS ( --updating the face MBR if the face wasn't created
-					SELECT rc_lib_postgis_topology.rc_UpdateFaceMBRFromRing(topology_name, array_agg(lo.edge_id)  
+					SELECT rc_lib.rc_UpdateFaceMBRFromRing(topology_name, array_agg(lo.edge_id)  
 						, (
 						SELECT face_id 
 						FROM list_fo_face
@@ -253,7 +253,7 @@ LANGUAGE plpgsql VOLATILE;
 					FROM list_of_edge_faces AS lo 
 				)
 				, updating_edges AS(
-					SELECT rc_lib_postgis_topology.rc_Update_face_of_RingEdges(topology_name, array_agg(edge_id) ,face_id) AS updated_edges
+					SELECT rc_lib.rc_Update_face_of_RingEdges(topology_name, array_agg(edge_id) ,face_id) AS updated_edges
 					FROM problematic_rings, rings, creating_face
 					GROUP BY face_id --useless
 				)  
@@ -353,7 +353,7 @@ LANGUAGE plpgsql VOLATILE;
 				FROM exact_face as ef , list_of_edges as ei 
 			)
 			, updating_edges AS(
-				SELECT  rc_lib_postgis_topology.rc_Update_face_of_RingEdges(topology_name, array_agg(s_edge_id ORDER BY ordinality ASC) ,potential_face_id) AS updated_edges
+				SELECT  rc_lib.rc_Update_face_of_RingEdges(topology_name, array_agg(s_edge_id ORDER BY ordinality ASC) ,potential_face_id) AS updated_edges
 				FROM preparing_update 
 				GROUP BY potential_face_id --useless
 			)  
