@@ -24,3 +24,25 @@ BEGIN
 RETURN ; 
 END;
 $$ LANGUAGE 'plpgsql' IMMUTABLE STRICT ;
+
+
+DROP FUNCTION IF EXISTS rc_array_allsamevalue(IN iarray anyarray, OUT allsamevalue boolean) ; 
+CREATE OR REPLACE FUNCTION  rc_array_allsamevalue(IN iarray anyarray, OUT allsamevalue boolean)
+  RETURNS boolean AS
+$BODY$
+ --given an array, return true if all values of the array are equal
+		DECLARE    
+		BEGIN 
+ 
+			SELECT count(*)=1 INTO allsamevalue
+			FROM (
+			SELECT 1
+			FROM unnest(iarray) AS ar
+			GROUP BY ar
+			) as sub ; 
+			 
+		RETURN; 
+		END ;  
+		$BODY$
+  LANGUAGE plpgsql IMMUTABLE STRICT
+  COST 100; 
