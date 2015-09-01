@@ -38,6 +38,14 @@ $BODY$
 	DECLARE    
 	 
 	BEGIN  
+		IF ST_GeometryType(buffer) ILIKE '%line%'  THEN 
+			buffer := ST_GeometryN(buffer,1) ; 
+		ELSIF ST_GeometryType(buffer) ILIKE '%polygon%'  THEN 
+			buffer := ST_ExteriorRing(ST_GeometryN(buffer,1)) ; 
+		ELSE
+			RETURN ; 
+		END IF ;
+		
 		WITH cutting_blade AS (
 			SELECT f.oline AS cb
 			FROM rc_lib.rc_generate_angled_line(
@@ -48,7 +56,7 @@ $BODY$
 					, support_line_size     )   AS f
 		) 
 		SELECT DISTINCT ON (TRUE) dmp.geom INTO opoint
-		FROM cutting_blade, ST_Intersection(cb, ST_ExteriorRing(buffer)) AS inter, ST_DumpPoints(inter) as dmp
+		FROM cutting_blade, ST_Intersection(cb, buffer ) AS inter, ST_DumpPoints(inter) as dmp
 		ORDER BY TRUE, ST_Distance(dmp.geom, rc_lib.rc_PointN(iline,1))  ;
 
 		
@@ -67,3 +75,5 @@ FROM  ST_MakePoint(1 ,1)  AS ipoint
 	, ST_Buffer(iline, 4 ) as ibuff
 	, rc_project_point_on_buffer(iline, ipoint, ibuff, 100, radians(-90), 0.1)  as f
 */
+
+ 
