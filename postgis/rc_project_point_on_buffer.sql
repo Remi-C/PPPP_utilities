@@ -74,6 +74,4 @@ FROM  ST_MakePoint(1 ,1)  AS ipoint
 	, ST_GeomFromText('LINESTRING(-10 -10, 10 10)') as iline 
 	, ST_Buffer(iline, 4 ) as ibuff
 	, rc_project_point_on_buffer(iline, ipoint, ibuff, 100, radians(-90), 0.1)  as f
-*/
-
- 
+*/ 
