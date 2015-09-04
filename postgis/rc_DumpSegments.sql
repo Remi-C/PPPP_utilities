@@ -5,6 +5,8 @@
 --breaking geometry into segments, while conserving the order	 
 ------------------------------
 
+-- SET search_path to rc_lib, public ; 
+
 	DROP FUNCTION IF EXISTS rc_DumpSegments(_line geometry ) ;
 	CREATE OR REPLACE FUNCTION rc_DumpSegments(_line geometry)
 		RETURNS SETOF geometry_dump
@@ -24,7 +26,7 @@
 
 				--_srid := ST_SRID(_line);
 
-				FOR _r in SELECT rc_DumpLines(_line) AS dp
+				FOR _r in SELECT rc_lib.rc_DumpLines(_line) AS dp
 				LOOP
 					RETURN QUERY 
 						WITH line AS( 
