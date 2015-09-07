@@ -36,7 +36,7 @@ BEGIN
  
 			
 			ipoint_curvabs  := ST_LineLocatePoint(iline , ipoint) ; 
-			curvwidth := LEAST(support_line_size / ST_Length(iline),1) ; 
+			curvwidth := LEAST(support_line_size / ST_Length(iline),1) /2.0; 
 			subline  := ST_LineSubstring(iline,GREATEST(ipoint_curvabs - curvwidth,0), LEAST( ipoint_curvabs+curvwidth,1)  );  
  
 			RETURN ; 
