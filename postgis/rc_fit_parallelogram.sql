@@ -35,11 +35,12 @@ $BODY$
 			RETURN ; 
 		ELSE
 			WITH i_data AS (
-				SELECT axis_geom AS  _axis_geom , ST_CollectionExtract($2,3) AS _u_pcross, $3 AS positionning_orientation_type
+				SELECT axis_geom AS  _axis_geom ,_u_pcross,  $3 AS positionning_orientation_type
 					,allowed_angle_margin AS marg
-					, support_line_size AS _support_line_size
-				 
-			) 
+					, GREATEST(f.l1,f.l2) AS _support_line_size 
+				FROM  ST_CollectionExtract($2,3) AS _u_pcross 
+					, rc_lib.rc_BboxOrientedFromGeom(_u_pcross) AS f 
+			)
 			, getting_edge_information AS (
 				SELECT axis_geom AS edge_geom 
 				FROM i_data 
@@ -57,13 +58,16 @@ $BODY$
 				FROM i_data, rc_lib.rc_DumpSegments( _u_pcross ) as f
 			)
 			 , filtering_seg AS ( --keeping on ly segs that have an angle compatible with the axis perpendicular +- margin
+				--note :this code is a mess, somthing simpler should exist ! 
 				SELECT seg_geom,  az_seg  AS possible_angle  
-					, az_axis BETWEEN ( (az_seg + 90) -marg ) - 180*factor AND( (az_seg + 90) +marg ) - 180*factor AS lateral_seg
-				FROM i_data, getting_edge_geom_around_centroid AS eg,   getting_all_seg AS seg  
-					, CAST(round(  (az_seg + 90 + marg )::int/180,1) AS INT) AS factor
+					, az_axis BETWEEN l_bound AND u_bound OR az_axis +180 BETWEEN l_bound AND u_bound AS lateral_seg
+				FROM i_data, getting_edge_geom_around_centroid AS eg,   getting_all_seg AS seg   
+					, CAST(  LEAST((az_seg + 360 + 90 -marg)::int/180::int, (az_seg + 360 + 90 +marg)::int/180::int)  AS int) AS factor2
+					, CAST (  ((az_seg +360+ 90) -marg ) - 180*factor2  AS int) AS l_bound
+					, CAST( ((az_seg +360 + 90) +marg ) - 180*factor2 AS int) AS u_bound
 			)
 			, final_angle_1 AS ( --averaging possible angle to compute last
-				SELECT sum((possible_angle % 180 )*st_length(seg_geom))/sum(st_length(seg_geom))  as angle --, rc_lib.rc_msg_vol('here is the found angle : '||avg(possible_angle % 180)  ) 
+				SELECT sum(( (possible_angle +180 ) % 180 )*st_length(seg_geom))/sum(st_length(seg_geom))  as angle --, rc_lib.rc_msg_vol('here is the found angle : '||avg(possible_angle % 180)  ) 
 				FROM filtering_seg
 				WHERE lateral_seg = TRUE
 			)
