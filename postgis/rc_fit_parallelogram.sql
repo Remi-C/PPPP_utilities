@@ -29,89 +29,82 @@ $BODY$
 		_npoints int  := ST_NumPoints($2) ;  
 	BEGIN  
 
-		IF _npoints = 2 THEN
-			--insert rectangle  
-				--angle is 90 degrees in relative
-			RETURN ; 
-		ELSE
-			WITH i_data AS (
-				SELECT axis_geom AS  _axis_geom ,_u_pcross,  $3 AS positionning_orientation_type
-					,allowed_angle_margin AS marg
-					, GREATEST(f.l1,f.l2) AS _support_line_size 
-				FROM  ST_CollectionExtract($2,3) AS _u_pcross 
-					, rc_lib.rc_BboxOrientedFromGeom(_u_pcross) AS f 
-			)
-			, getting_edge_information AS (
-				SELECT axis_geom AS edge_geom 
-				FROM i_data 
-			)
-			, getting_edge_geom_around_centroid AS(
-				SELECT f.*  , degrees(ST_Azimuth(rc_lib.rc_PointN(subline,1) , rc_lib.rc_PointN(subline,-1) ))::int % 180 AS az_axis
-				FROM i_data,  getting_edge_information AS gi,
-					rc_lib.rc_extract_subline(  
-						edge_geom
-						, ST_Centroid(_u_pcross)   
-						, _support_line_size  ) as f
-			)
-			 ,getting_all_seg AS ( --extract all segments 
-				SELECT row_number() over() AS uid, f.geom AS seg_geom , (degrees(ST_Azimuth( rc_lib.rc_PointN(f.geom,1) , rc_lib.rc_PointN(f.geom,-1))))::int as az_seg
-				FROM i_data, rc_lib.rc_DumpSegments( _u_pcross ) as f
-			)
-			 , filtering_seg AS ( --keeping on ly segs that have an angle compatible with the axis perpendicular +- margin
-				--note :this code is a mess, somthing simpler should exist ! 
-				SELECT seg_geom,  az_seg  AS possible_angle  
-					, az_axis BETWEEN l_bound AND u_bound OR az_axis +180 BETWEEN l_bound AND u_bound AS lateral_seg
-				FROM i_data, getting_edge_geom_around_centroid AS eg,   getting_all_seg AS seg   
-					, CAST(  LEAST((az_seg + 360 + 90 -marg)::int/180::int, (az_seg + 360 + 90 +marg)::int/180::int)  AS int) AS factor2
-					, CAST (  ((az_seg +360+ 90) -marg ) - 180*factor2  AS int) AS l_bound
-					, CAST( ((az_seg +360 + 90) +marg ) - 180*factor2 AS int) AS u_bound
-			)
-			, final_angle_1 AS ( --averaging possible angle to compute last
-				SELECT sum(( (possible_angle +180 ) % 180 )*st_length(seg_geom))/sum(st_length(seg_geom))  as angle --, rc_lib.rc_msg_vol('here is the found angle : '||avg(possible_angle % 180)  ) 
-				FROM filtering_seg
-				WHERE lateral_seg = TRUE
-			)
-			, final_angle_2 AS ( --averaging possible angle to compute last
-				SELECT CASE WHEN ST_NumPoints(ST_ExteriorRing(_u_pcross)) >2 THEN angle ELSE 90 END as angle
-				FROM i_data, final_angle_1 
-			)
-			,final_angle_rel AS (
-				SELECT CASE WHEN id.positionning_orientation_type >=0 THEN  (- angle::int + az_axis::int+360)::int %180 ELSE angle  END AS angle
-					--, rc_lib.rc_msg_vol('here is the found angle after correction on num points: '||angle)   
-				FROM i_data AS id, getting_edge_geom_around_centroid, final_angle_2
-			)
-			,  finding_seg_left_right AS (  
-				SELECT seg_geom,   three_angle >= pi() AS is_left
-				FROM getting_edge_geom_around_centroid 
-					, filtering_seg
-					, rc_lib.rc_PointN(subline,-1) AS lpt
-					, rc_lib.rc_PointN(subline,1)  AS fpt
-					, rc_lib.rc_angle( fpt, lpt,rc_lib.rc_pointN(seg_geom,1)) AS three_angle
-				WHERE lateral_seg = FALSE
+	 
+		WITH i_data AS (
+			SELECT axis_geom AS  _axis_geom ,_u_pcross,  $3 AS positionning_orientation_type
+				,allowed_angle_margin AS marg
+				, GREATEST(f.l1,f.l2) AS _support_line_size 
+			FROM  ST_CollectionExtract($2,3) AS _u_pcross 
+				, rc_lib.rc_BboxOrientedFromGeom(_u_pcross) AS f 
+		)
+		, getting_edge_information AS (
+			SELECT axis_geom AS edge_geom 
+			FROM i_data 
+		)
+		, getting_edge_geom_around_centroid AS(
+			SELECT f.*  , degrees(ST_Azimuth(rc_lib.rc_PointN(subline,1) , rc_lib.rc_PointN(subline,-1) ))::int % 180 AS az_axis
+			FROM i_data,  getting_edge_information AS gi,
+				rc_lib.rc_extract_subline(  
+					edge_geom
+					, ST_Centroid(_u_pcross)   
+					, _support_line_size  ) as f
+		)
+		 ,getting_all_seg AS ( --extract all segments 
+			SELECT row_number() over() AS uid, f.geom AS seg_geom , (degrees(ST_Azimuth( rc_lib.rc_PointN(f.geom,1) , rc_lib.rc_PointN(f.geom,-1))))::int as az_seg
+			FROM i_data, rc_lib.rc_DumpSegments( _u_pcross ) as f
+		)
+		 , filtering_seg AS ( --keeping on ly segs that have an angle compatible with the axis perpendicular +- margin
+			--note :this code is a mess, somthing simpler should exist ! 
+			SELECT seg_geom,  az_seg  AS possible_angle  
+				, az_axis BETWEEN l_bound AND u_bound OR az_axis +180 BETWEEN l_bound AND u_bound AS lateral_seg
+			FROM i_data, getting_edge_geom_around_centroid AS eg,   getting_all_seg AS seg   
+				, CAST(  LEAST((az_seg + 360 + 90 -marg)::int/180::int, (az_seg + 360 + 90 +marg)::int/180::int)  AS int) AS factor2
+				, CAST (  ((az_seg +360+ 90) -marg ) - 180*factor2  AS int) AS l_bound
+				, CAST( ((az_seg +360 + 90) +marg ) - 180*factor2 AS int) AS u_bound
+		)
+		, final_angle_1 AS ( --averaging possible angle to compute last
+			SELECT sum(( (possible_angle +180 ) % 180 )*st_length(seg_geom))/sum(st_length(seg_geom))  as angle --, rc_lib.rc_msg_vol('here is the found angle : '||avg(possible_angle % 180)  ) 
+			FROM filtering_seg
+			WHERE lateral_seg = TRUE
+		)
+		, final_angle_2 AS ( --averaging possible angle to compute last
+			SELECT CASE WHEN ST_NumPoints(ST_ExteriorRing(_u_pcross)) >2 THEN angle ELSE 90 END as angle
+			FROM i_data, final_angle_1 
+		)
+		,final_angle_rel AS (
+			SELECT CASE WHEN id.positionning_orientation_type >=0 THEN  (- angle::int + az_axis::int+360)::int %180 ELSE angle  END AS angle
+				--, rc_lib.rc_msg_vol('here is the found angle after correction on num points: '||angle)   
+			FROM i_data AS id, getting_edge_geom_around_centroid, final_angle_2
+		)
+		,  finding_seg_left_right AS (  
+			SELECT seg_geom,   three_angle >= pi() AS is_left
+			FROM getting_edge_geom_around_centroid 
+				, filtering_seg
+				, rc_lib.rc_PointN(subline,-1) AS lpt
+				, rc_lib.rc_PointN(subline,1)  AS fpt
+				, rc_lib.rc_angle( fpt, lpt,rc_lib.rc_pointN(seg_geom,1)) AS three_angle
+			WHERE lateral_seg = FALSE
 
-		
-			)
-			, finding_spacing AS(
-				SELECT ST_LineLocatePoint(edge_geom , rc_lib.rc_pointN(seg_geom ,1)) AS curvabs, is_left 
-				FROM getting_edge_information, finding_seg_left_right AS slr
-				UNION ALL 
-				SELECT ST_LineLocatePoint(edge_geom , rc_lib.rc_pointN(seg_geom ,-1)) AS curvabs, is_left 
-				FROM getting_edge_information, finding_seg_left_right AS slr
-			)
-			, possible_size AS (
-				SELECT (max(curvabs) - min(curvabs) ) * ST_Length(edge_geom) AS possible_size
-				FROM getting_edge_information, finding_spacing
-				GROUP BY ST_Length(edge_geom)  , is_left
-			)
-			, final_size AS (
-				SELECT avg(possible_size) as _size
-				FROM possible_size
-			)
-			SELECT angle , _size  INTO orientation, size
-			FROM final_angle_rel, final_size ; 
-
-			-- RAISE NOTICE  'orientation %',orientation ; 
-		END IF ; -- if on npoints
+	
+		)
+		, finding_spacing AS(
+			SELECT ST_LineLocatePoint(edge_geom , rc_lib.rc_pointN(seg_geom ,1)) AS curvabs, is_left 
+			FROM getting_edge_information, finding_seg_left_right AS slr
+			UNION ALL 
+			SELECT ST_LineLocatePoint(edge_geom , rc_lib.rc_pointN(seg_geom ,-1)) AS curvabs, is_left 
+			FROM getting_edge_information, finding_seg_left_right AS slr
+		)
+		, possible_size AS (
+			SELECT (max(curvabs) - min(curvabs) ) * ST_Length(edge_geom) AS possible_size
+			FROM getting_edge_information, finding_spacing
+			GROUP BY ST_Length(edge_geom)  , is_left
+		)
+		, final_size AS (
+			SELECT avg(possible_size) as _size
+			FROM possible_size
+		)
+		SELECT angle , _size  INTO orientation, size
+		FROM final_angle_rel, final_size ;  
 		RETURN ; 
 	END ; $BODY$
 LANGUAGE plpgsql VOLATILE CALLED ON NULL INPUT ; 
