@@ -80,10 +80,16 @@ $BODY$
 					--, rc_lib.rc_msg_vol('here is the found angle after correction on num points: '||angle)   
 				FROM i_data AS id, getting_edge_geom_around_centroid, final_angle_2
 			)
-			,  finding_seg_left_right AS (
-				SELECT seg_geom , degrees(rc_lib.rc_angle(ST_Centroid(seg_geom),rc_lib.rc_PointN(subline,1) , rc_lib.rc_PointN(subline,-1) ) )  > 180  AS is_left 
-				FROM getting_edge_geom_around_centroid , filtering_seg
+			,  finding_seg_left_right AS (  
+				SELECT seg_geom,   three_angle >= pi() AS is_left
+				FROM getting_edge_geom_around_centroid 
+					, filtering_seg
+					, rc_lib.rc_PointN(subline,-1) AS lpt
+					, rc_lib.rc_PointN(subline,1)  AS fpt
+					, rc_lib.rc_angle( fpt, lpt,rc_lib.rc_pointN(seg_geom,1)) AS three_angle
 				WHERE lateral_seg = FALSE
+
+		
 			)
 			, finding_spacing AS(
 				SELECT ST_LineLocatePoint(edge_geom , rc_lib.rc_pointN(seg_geom ,1)) AS curvabs, is_left 
