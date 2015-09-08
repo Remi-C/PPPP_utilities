@@ -5,6 +5,10 @@
 ----------------------------
 --function to create an oriented bbox from center, axis, rotation.
 ------
+
+-- SET search_path to rc_lib, public; 
+
+
 	DROP FUNCTION IF EXISTS rc_BboxOrientedFromAxis(x_center float,y_center float,z_center float,axis_1 float, axis_2 float , angle float)  ; 
 	CREATE OR REPLACE FUNCTION rc_BboxOrientedFromAxis(x_center float,y_center float,z_center float,axis_1 float, axis_2 float , angle float, OUT OBbox geometry(polygon) ) 
 	RETURNS geometry AS 
@@ -73,7 +77,7 @@ $BODY$
 		,segments AS (
 			SELECT  dmp.geom AS geom,convex_hull.ch,convex_hull.centroid, angle.angle
 			FROM convex_hull   
-				, rc_DumpSegments(ST_ExteriorRing(ch) ) AS dmp 
+				, rc_lib.rc_DumpSegments(ST_ExteriorRing(ch) ) AS dmp 
 				,ST_Azimuth(ST_StartPoint(dmp.geom),ST_EndPoint(dmp.geom)) AS angle
 				WHERE ST_IsEmpty(convex_hull.ch) = FALSE
 		)  
@@ -92,7 +96,7 @@ $BODY$
 		SELECT a.angle, a.l1,a.l2, obbox.obbox  INTO angle, l1,l2,obbox
 		FROM  areas AS a
 			, ST_Rotate(ST_Centroid(box),  -a.angle ,  centroid) aS rot_bbox_center
-			,rc_BboxOrientedFromAxis(ST_X(rot_bbox_center), ST_Y(rot_bbox_center), 0 , a.l1,a.l2, - a.angle * 180/3.14)  AS obbox ;
+			,rc_lib.rc_BboxOrientedFromAxis(ST_X(rot_bbox_center), ST_Y(rot_bbox_center), 0 , a.l1,a.l2, - a.angle * 180/3.14)  AS obbox ;
 	 
 		obbox := ST_SetSRID(obbox,ST_SRID(i_geom)) ; 
 	RETURN  ;
