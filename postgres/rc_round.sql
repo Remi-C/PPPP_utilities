@@ -4,7 +4,21 @@
 -- writting files with python
 --This script expects a postgres >= 9.3, Postgis >= 2.0.2 , pointcloud
 --------------------------------------------
+--SET search_path to rc_lib, public;  
 
+ 
+DROP FUNCTION IF EXISTS round(  double precision, int) ;
+CREATE OR REPLACE FUNCTION round( i double precision, d int) RETURNS double precision AS
+$BODY$
+	--@brief : returns rouding, with automatic numeric casting
+		DECLARE  
+		BEGIN   
+			RETURN round(i::numeric,d::int) ; 
+		END ; 
+$BODY$
+ LANGUAGE plpgsql IMMUTABLE STRICT;
+
+ 
 
 	DROP FUNCTION IF EXISTS rc_round(in val anyelement , IN round_step anyelement, out o_val DOUBLE PRECISION) ;
 	CREATE OR REPLACE FUNCTION rc_round(in val anyelement , IN round_step anyelement, out o_val double precision) AS
