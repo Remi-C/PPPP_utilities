@@ -176,8 +176,8 @@ FOR ROW
 EXECUTE PROCEDURE test.rc_update_parallelogram() ;
  */
 
-
+/*
  SELECT *
  FROM test.test_crossing_editing  
  WHERE gid = 5
-  
+ */

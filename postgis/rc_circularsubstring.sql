@@ -24,6 +24,7 @@ $BODY$
 	$BODY$
 LANGUAGE plpgsql IMMUTABLE STRICT; 
 
+/*
 SELECT ST_Astext(rc_circularsubstring( iline , 0.9, 0.1 )) 
 FROM ST_GeomFromText('LINESTRING(0 0 , 0 10 , 10 10 , 10 0 , 0 0)') AS iline
-	
+*/

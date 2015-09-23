@@ -26,6 +26,7 @@ $BODY$
 	END ;
 	$BODY$
 LANGUAGE plpgsql IMMUTABLE STRICT; 
-
+/*
 SELECT rc_AsText(geom,0.1 )
 FROM ST_GeomFromText('LINESTRING(1 1, 2.2 2.2, 3.23 3.23, 4.234 4.234, 5.2345 5.2345)') AS geom ; 
+*/
