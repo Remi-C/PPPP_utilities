@@ -105,8 +105,7 @@ def is_parallel_lines(line0, line1, threshold_acos_angle=0.875):
 
 
 def build_bezier_curve_from_PCs(list_PCs, nbSegments=30):
-    """
-
+    """ 
     :param list_PCs:
     :param nbSegments:
     :return:
@@ -114,12 +113,16 @@ def build_bezier_curve_from_PCs(list_PCs, nbSegments=30):
     # print 'nbSegments: ', nbSegments
     import Bernstein as b
     npts = len(list_PCs)
-    tstep = 1.0/(nbSegments+1)
-    list_interpoled_points = [
-        reduce(lambda x, y: x+y, [b.Bernstein(npts-1, i, t) * list_PCs[i] for i in range(0, npts, 1)])
-        for t in np.arange(0.0, 1.0+tstep, tstep)
-    ]
-    return np.array(list_interpoled_points), list_PCs[1:-1]
+    tstep = 1.0/(nbSegments+1) 
+    
+    if len(list_PCs) >0 : #safeguard against empty entry
+        list_interpoled_points = [
+            reduce(lambda x, y: x+y, [b.Bernstein(npts-1, i, t) * list_PCs[i] for i in range(0, npts, 1)])
+            for t in np.arange(0.0, 1.0+tstep, tstep)
+        ]
+        return np.array(list_interpoled_points), list_PCs[1:-1]
+    else :
+        return None, None
 
 def build_bezier_curve_from_PCs_with_optim_bernstein(list_PCs, nbSegments=30):
     """
@@ -253,6 +256,10 @@ def bezier_curve(i_wkb,i_wbk_centre, parallel_threshold,nbSegments,in_server=Tru
     np_points = input_geom_to_np(i_wkb,in_server)
     intersection_centre = input_geom_to_np(i_wbk_centre,in_server) 
     #plpy.notice('np_points ',np_points,' intersection_centre ',intersection_centre)
+    
+    if len(np_points) == 0:
+        return None, None
+    
     if len(np_points) == 4:
         
         np_line, PC = create_bezier_curve(

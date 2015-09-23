@@ -5,14 +5,14 @@
 --------------------------------------------
 
 DROP FUNCTION IF EXISTS rc_bezier_from_seg(seg_points geometry, centre_of_intersection geometry, parallel_threshold float, nb_segs int);
-CREATE OR REPLACE FUNCTION rc_bezier_from_seg(seg_points geometry,centre_of_intersection geometry, parallel_threshold float, nb_segs int, OUT bezier geometry, OUT pc geometry)
+CREATE OR REPLACE FUNCTION rc_lib.rc_bezier_from_seg(seg_points geometry,centre_of_intersection geometry, parallel_threshold float, nb_segs int, OUT bezier geometry, OUT pc geometry)
   AS
 $BODY$
 #this function takes 2 segments, and build a Bezier curve to join the segments
 import sys
 sys.path.insert(0, '/media/sf_E_RemiCura/PROJETS/PPPP_utilities/postgis')
 #sys.path.insert(0, '/media/sf_perso_PROJETS/PPPP_utilities/postgis')
-sys.path.insert(0, '/home/remi/PPPP_utilities/postgis')
+#sys.path.insert(0, '/home/remi/PPPP_utilities/postgis')
 import rc_py_generate_bezier_curve as rc
 
 #reload(rc)
@@ -25,3 +25,12 @@ bezier, pc = tempo
 return (bezier,pc)
 $BODY$
 LANGUAGE plpythonu STABLE STRICT; 
+
+
+/*  
+SELECT *
+FROM rc_lib.rc_bezier_from_seg(ST_GeomFromText('MULTIPOINT EMPTY')
+	, ST_GeomFromText('POINT EMPTY')
+	, 0.1
+	, 30) 
+*/
