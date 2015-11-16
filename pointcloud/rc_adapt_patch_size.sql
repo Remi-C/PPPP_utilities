@@ -28,8 +28,8 @@
 		/** given a patch, this function may merge it or split it, so it fits in the target density
 		*/
 
-		RAISE WARNING 'patch_id % , size %, merged_split %, num_points : % , min_density %, max_density %', patch_id , size , merged_split 
-			, pc_numpoints(ipatch), min_density , max_density ; 
+		--RAISE WARNING 'patch_id % , size %, merged_split %, num_points : % , min_density %, max_density %', patch_id , size , merged_split 
+		--	, pc_numpoints(ipatch), min_density , max_density ; 
 		--shall we split the patch (too big and was not merged)?
 		IF pc_numpoints(ipatch) > max_density AND (merged_split != -1 OR merged_split IS NULL) THEN
 			RAISE NOTICE 'splitting' ; 
@@ -42,7 +42,7 @@
 			, patches AS (
 				SELECT pc_patch(pt) as n_patch
 				FROM points
-				GROUP BY floor(x/(size/2.0)), floor(y/(size/2.0)), floor(z/(size/2.0)), floor(gps_time/(size/2.0))  
+				GROUP BY floor(x/(size/2.0)), floor(y/(size/2.0)), floor(z/(size/2.0)) --, floor(gps_time/(size/2.0))  
 			)
 			, deleting_patch AS (
 				DELETE FROM copy_bench WHERE gid = patch_id RETURNING gid
@@ -62,12 +62,12 @@
 			SELECT array_agg(gid)  INTO _useless
 			FROM inserting_patch ; 
 
-			RAISE NOTICE 'inserted %' , _useless; 
+		--	RAISE NOTICE 'inserted %' , _useless; 
 
 			RETURN array_length(_useless,1); 
 
 		ELSIF pc_numpoints(ipatch) < min_density AND (merged_split != 1 OR merged_split IS NULL )THEN
-			RAISE NOTICE 'merging' ; 
+		--	RAISE NOTICE 'merging' ; 
 		--shall we merge the patch (too small and was not split)?
 			-- get the patches that would be merged
 			-- if the merging doesn't produces a patch too big, merge
@@ -79,13 +79,14 @@
 					AND floor(ST_X(centre) / (2*size) ) = floor(ST_X(candidate_centre) / (2*size) )
 					AND floor(ST_Y(centre) / (2*size) ) = floor(ST_Y(candidate_centre) / (2*size) )
 					AND floor(pc_patchavg(ipatch,'z') / (2*size) ) = floor(avg_z / (2*size) )
-					AND floor(pc_patchavg(ipatch,'gps_time') / (2*size) ) = floor(avg_time / (2*size) )
+					--AND floor(pc_patchavg(ipatch,'gps_time') / (2*size) ) = floor(avg_time / (2*size) )
 					AND (cp.merged_split  != +1 OR cp.merged_split IS NULL) 
 					AND num_points < max_density 
 
 			)
 			SELECT array_agg(gid) INTO _to_work_on 
 			FROM patches_candidates;
+			--RAISE NOTICE '% patches found for the merge', array_length(_to_work_on,1) ; 
 
 			IF array_length(_to_work_on,1) > 1 THEN 
 				--merge
@@ -114,31 +115,59 @@
 						)
 					RETURNING gid
 					)
-					SELECT (select array_agg(gid) from deleting_old_patches), (select * from inserting_merged_patch) 
+					SELECT (select array_agg(-1*gid) from deleting_old_patches), (select * from inserting_merged_patch) 
 						INTO _useless, _useless2 ; 
 			ELSE
 				--simply put a 0 in merged_split ot show it has been considered
 				UPDATE copy_bench AS cp
 				SET merged_split = 0  
-				WHERE gid  = patch_id
-					AND cp.merged_split IS NULL;
+				WHERE gid  = patch_id; 
 			END IF ;
 
 		
 
-				RAISE NOTICE 'deleted % patches , inserted %',_useless , _useless2;
+			--	RAISE NOTICE 'deleted % patches , inserted %',_useless , _useless2;
 
-			RETURN array_length(_useless,1);  
+			RETURN sign(_useless[1]) * array_length(_useless,1);  
 
 		ELSE
-			--doing nothing
-			RAISE NOTICE 'doing nothing' ; 
+			--indicating that nothing can be done for this patch
+			UPDATE copy_bench AS cp
+				SET merged_split = 0  
+				WHERE gid  = patch_id ;
+		--	RAISE NOTICE 'doing nothing' ; 
 			RETURN NULL ;	
 		END IF ; 
 		
 		RETURN NULL;
 		END ; 
 		$$ LANGUAGE 'plpgsql' VOLATILE CALLED ON NULL INPUT; 
+
+
+--creating a trigger to recompute   geom, num_points,  avg_z, avg_time when inserting or updating
+
+	CREATE OR REPLACE FUNCTION rc_update_patch_in_copy_bench(  )
+	  RETURNS  trigger  AS
+	$BODY$ 
+		--update secondary fields 
+			DECLARE  
+			BEGIN  
+				NEW.geom = NEW.patch::geometry(polygon,932011) ;  
+				NEW.num_points = PC_NumPoints(NEW.patch); 
+				NEW.avg_z =pc_patchavg(NEW.patch,'z'); 
+				NEW.avg_time =pc_patchavg(NEW.patch,'gps_time'); 
+				 
+			RETURN NEW;
+			END ;
+			$BODY$
+	  LANGUAGE plpgsql VOLATILE;
+
+	DROP TRIGGER IF EXISTS  rc_update_patch_in_copy_bench ON test_grouping.copy_bench; 
+	CREATE  TRIGGER rc_update_patch_in_copy_bench   AFTER  INSERT OR UPDATE 
+	    ON test_grouping.copy_bench
+	 FOR EACH ROW  
+	    EXECUTE PROCEDURE rc_update_patch_in_copy_bench(); 
+
 
 	/** testing
 
@@ -153,7 +182,7 @@ CREATE TABLE copy_bench (LIKE benchmark_cassette_2013.riegl_pcpatch_space INCLUD
 INSERT INTO copy_bench 
 SELECT * 
 FROM benchmark_cassette_2013.riegl_pcpatch_space
-WHERE gid < 1000  ; 
+WHERE ST_DWIthin(patch::geometry, ST_SetSRID(ST_MakePoint(1907.18,21165.05),932011),10)=TRUE; 
 
   
 
@@ -199,7 +228,16 @@ LIMIT 1
 		, min_density:=100
 		, max_density:=1000
 		)
-	WHERE gid= 55 ; 
+	WHERE gid= 26318 ; 
+
+	 SELECT gid, *
+    FROM copy_bench AS cp
+    WHERE (num_points < 100 OR 
+		num_points > 1000)
+      AND COALESCE(merged_split,-1) != 0 
+      ORDER BY gid ASC 
+    LIMIT 1
+    
 
 /**
 	SELECT count(*)
@@ -208,6 +246,7 @@ LIMIT 1
 	SELECT *
 	FROM copy_bench
 	WHERE gid > 23000
+
 
 
 	WITH idata AS (
@@ -243,6 +282,21 @@ SELECT *
 	ORDER BY gid ASC 
  LIMIT 1
 
+
+create function h_int(text) returns int as $$
+ select ('x'||substr(md5($1),1,8))::bit(32)::int;
+$$ language sql;
+
+
+COPY  (
+WITH patches AS (
+	SELECT gid, patch, random()*255  AS R, random()*255  AS G, random()*255  AS B , spatial_size
+	FROM copy_bench
+)
+	SELECT  round(pc_get(pt,'x')::numeric,3) AS x, round(pc_get(pt,'y')::numeric,3) AS y, round(pc_get(pt,'z')::numeric,3) AS z,  gid, R::int, G::int , B::int , spatial_size
+	FROM patches, pc_explode(patch) AS pt
+)TO '/media/sf_E_RemiCura/export_pointcloud_patch_merged.csv'
+WITH HEADER CSV
 
 SELECT *
 FROM copy_bench
@@ -285,3 +339,7 @@ WHERE (
 			--)
 			SELECT array_agg(gid)  INTO _useless
 			FROM inserting_patch ; 
+
+
+SELECT count(*)
+FROM copy_bench 
