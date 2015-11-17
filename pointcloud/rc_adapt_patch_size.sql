@@ -1,4 +1,4 @@
----------------
+﻿---------------
 --Remi C 09/2014
 --
 --------------
@@ -13,10 +13,7 @@
 	
 		----
 		--delete function if it exists
-		DROP FUNCTION IF EXISTS  rc_adapt_patch_size(int, PCPATCH,float,int, int, int);
-
-		----
-		--creating function
+		DROP FUNCTION IF EXISTS  rc_adapt_patch_size(int, PCPATCH,float,int, int, int); 
 		CREATE OR REPLACE FUNCTION rc_adapt_patch_size(patch_id int, ipatch PCPATCH
 			, size FLOAT, merged_split INT, min_density INT, max_density INT)
 		RETURNS INT AS $$ 
@@ -32,7 +29,7 @@
 		--	, pc_numpoints(ipatch), min_density , max_density ; 
 		--shall we split the patch (too big and was not merged)?
 		IF pc_numpoints(ipatch) > max_density AND (merged_split != -1 OR merged_split IS NULL) THEN
-			RAISE NOTICE 'splitting' ; 
+			--RAISE NOTICE 'splitting' ; 
 				--split patch
 			WITH points AS (
 				SELECT *
@@ -152,18 +149,23 @@
 		--update secondary fields 
 			DECLARE  
 			BEGIN  
-				NEW.geom = NEW.patch::geometry(polygon,932011) ;  
-				NEW.num_points = PC_NumPoints(NEW.patch); 
-				NEW.avg_z =pc_patchavg(NEW.patch,'z'); 
-				NEW.avg_time =pc_patchavg(NEW.patch,'gps_time'); 
+			--	RAISE NOTICE 'updating' ;
+				NEW.geom := NEW.patch::geometry(polygon,932011) ;  
+				NEW.num_points := PC_NumPoints(NEW.patch); 
+				NEW.avg_z := pc_patchavg(NEW.patch,'z'); 
+				NEW.avg_time := pc_patchavg(NEW.patch,'gps_time'); 
+
+				IF NEW.spatial_size IS NULL THEN NEW.spatial_size := 1; END IF ; 
+
+			--	RAISE NOTICE 'NEW.geom : %, NEW.num_points % , NEW.avg_z % , NEW.avg_time % ', NEW.geom, NEW.num_points, NEW.avg_z, NEW.avg_time ; 
 				 
 			RETURN NEW;
 			END ;
 			$BODY$
-	  LANGUAGE plpgsql VOLATILE;
+	  LANGUAGE plpgsql IMMUTABLE CALLED ON NULL INPUT;
 
 	DROP TRIGGER IF EXISTS  rc_update_patch_in_copy_bench ON test_grouping.copy_bench; 
-	CREATE  TRIGGER rc_update_patch_in_copy_bench   AFTER  INSERT OR UPDATE 
+	CREATE  TRIGGER rc_update_patch_in_copy_bench   BEFORE  INSERT OR UPDATE 
 	    ON test_grouping.copy_bench
 	 FOR EACH ROW  
 	    EXECUTE PROCEDURE rc_update_patch_in_copy_bench(); 
@@ -180,7 +182,12 @@ TRUNCATE copy_bench ;
 
 CREATE TABLE copy_bench (LIKE benchmark_cassette_2013.riegl_pcpatch_space INCLUDING ALL) ;
 INSERT INTO copy_bench 
-SELECT * 
+SELECT * ,  patch::geometry(polygon,932011) AS geom
+	,  PC_NumPoints( patch) AS num_points
+	, 1::float AS spatial_size
+	, NULL AS merged_split
+	, pc_patchavg(patch,'z') AS z
+	, pc_patchavg(patch,'gps_time') AS avg_time
 FROM benchmark_cassette_2013.riegl_pcpatch_space
 WHERE ST_DWIthin(patch::geometry, ST_SetSRID(ST_MakePoint(1907.18,21165.05),932011),10)=TRUE; 
 
@@ -214,7 +221,7 @@ UPDATE copy_bench SET spatial_size =1.0 ;
 
 SELECT *
 FROM copy_bench
-LIMIT 1
+LIMIT 10
 
 	*/ 
 
