@@ -17,8 +17,8 @@ def connect_to_base():
     return conn, cur 
 
 def split_merging_one():
-    min_density = 100
-    max_density = 1000    
+    min_density = 500
+    max_density = 2000    
     from datetime import datetime as d
     beg = d.now()
     conn,cur = connect_to_base() 
@@ -69,9 +69,6 @@ def split_merge_patch(patch_id, min_density, max_density, cur, conn):
     SELECT f.*
 	FROM copy_bench , rc_adapt_patch_size(
 		patch_id:= gid
-		, ipatch:= patch
-		, size:=spatial_size
-		, merged_split:=merged_split
 		, min_density:=%s
 		, max_density:=%s
 		) AS f
