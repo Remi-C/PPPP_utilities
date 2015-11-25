@@ -17,8 +17,8 @@ def connect_to_base():
     return conn, cur 
 
 def split_merging_one():
-    min_density = 500
-    max_density = 2000    
+    min_density = 400
+    max_density = 10000    
     from datetime import datetime as d
     beg = d.now()
     conn,cur = connect_to_base() 
@@ -41,6 +41,8 @@ def split_merging_one():
             print(patch_id,' gid, ', r)
     cur.close()
     conn.close()
+    print beg
+    print d.now() - beg
     return condition
 
 def get_patch_to_work_on( min_density, max_density, cur, conn,):
