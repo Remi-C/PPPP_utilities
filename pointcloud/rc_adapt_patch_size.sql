@@ -14,39 +14,40 @@
 	DROP TABLE IF EXISTS copy_bench; 
 	TRUNCATE copy_bench ;
 
-	CREATE TABLE copy_bench_2  (LIKE benchmark_cassette_2013.riegl_pcpatch_space INCLUDING ALL) ;
-	INSERT INTO copy_bench_2 
-	SELECT *,  patch::geometry(polygon,932011) AS geom
+	CREATE TABLE copy_bench  ( -- LIKE benchmark_cassette_2013.riegl_pcpatch_space INCLUDING ALL) 
+		LIKE medical. stereo_medical INCLUDING ALL);
+	INSERT INTO copy_bench 
+	SELECT *,  patch::geometry(polygon,0) AS geom
 		,  PC_NumPoints( patch) AS num_points
-		, 1::float AS spatial_size
+		, 0.01::float AS spatial_size
 		, NULL AS merged_split
 		, pc_patchavg(patch,'z') AS z
-		, pc_patchavg(patch,'gps_time') AS avg_time 
-	FROM benchmark_cassette_2013.riegl_pcpatch_space
+		, NULL -- pc_patchavg(patch,'gps_time') AS avg_time 
+	FROM medical. stereo_medical -- benchmark_cassette_2013.riegl_pcpatch_space
 	WHERE ST_DWIthin(patch::geometry, ST_SetSRID(ST_MakePoint(1907.18,21165.05),932011),50)=TRUE; 
 
 	  
 
-	ALTER TABLE copy_bench_2 ADD COLUMN geom   geometry(polygon,932011)  ;
-	CREATE INDEX ON copy_bench_2 USING GIST(geom) ;
-	ALTER TABLE copy_bench_2 ADD COLUMN num_points   float ;
-	CREATE INDEX ON copy_bench_2  (num_points) ;
-	ALTER TABLE copy_bench_2 ADD COLUMN spatial_size   float ;
-	CREATE INDEX ON copy_bench_2  (spatial_size) ;
-	ALTER TABLE copy_bench_2 ADD COLUMN merged_split   SMALLINT ;
-	CREATE INDEX ON copy_bench_2  (merged_split) ;
+	ALTER TABLE copy_bench ADD COLUMN geom   geometry(polygon,932011)  ;
+	CREATE INDEX ON copy_bench USING GIST(geom) ;
+	ALTER TABLE copy_bench ADD COLUMN num_points   float ;
+	CREATE INDEX ON copy_bench  (num_points) ;
+	ALTER TABLE copy_bench ADD COLUMN spatial_size   float ;
+	CREATE INDEX ON copy_bench  (spatial_size) ;
+	ALTER TABLE copy_bench ADD COLUMN merged_split   SMALLINT ;
+	CREATE INDEX ON copy_bench  (merged_split) ;
 	-- -1 means merging, +1 means split
-	ALTER TABLE copy_bench_2 ADD COLUMN avg_z   float ;
-	CREATE INDEX ON copy_bench_2  (avg_z) ; 
-	ALTER TABLE copy_bench_2 ADD COLUMN avg_time   float ;
-	CREATE INDEX ON copy_bench_2  (avg_time) ; 
+	ALTER TABLE copy_bench ADD COLUMN avg_z   float ;
+	CREATE INDEX ON copy_bench  (avg_z) ; 
+	ALTER TABLE copy_bench ADD COLUMN avg_time   float ;
+	CREATE INDEX ON copy_bench  (avg_time) ; 
 
 	UPDATE copy_bench SET geom = patch::geometry(polygon,932011) ;  
 	UPDATE copy_bench SET num_points = PC_NumPoints(patch); 
 	UPDATE copy_bench SET avg_z =pc_patchavg(patch,'z'); 
 	UPDATE copy_bench SET avg_time =pc_patchavg(patch,'gps_time'); 
 
-	UPDATE copy_bench_2  SET spatial_size =1.0 ; 
+	UPDATE copy_bench_3  SET spatial_size =1.0 ; 
 */
 
 
@@ -212,9 +213,9 @@ SELECT *
 	/*
 	COPY  ( 
 		SELECT  round(pc_get(pt,'x')::numeric,3) AS x, round(pc_get(pt,'y')::numeric,3) AS y, round(pc_get(pt,'z')::numeric,3) AS z,  gid  , spatial_size, ln(spatial_size)/ln(2) AS ss_log
-		FROM copy_bench, rc_exploden_random(patch,300) AS pt
+		FROM copy_bench,pc_explode(patch) as pt --  rc_exploden_random(patch,300) AS pt
 		--LIMIT  10000
-	)TO '/media/sf_E_RemiCura/PROJETS/articles_ISPRS_Geospatial_Week/experiments/grouping_rules/variable_patch_size/export_pointcloud_patch_merged_random.csv'
+	)TO '/media/sf_E_RemiCura/PROJETS/articles_ISPRS_Geospatial_Week/experiments/grouping_rules/variable_patch_size/export_pointcloud_patch_merged_random_medical.csv'
 	WITH HEADER CSV; 
 	*/
 
