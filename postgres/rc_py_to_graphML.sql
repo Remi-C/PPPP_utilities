@@ -2,8 +2,8 @@
 --SET SEARCH_PATH to rc_lib, public;  
 
 
-DROP FUNCTION IF EXISTS rc_to_graphML (  int[], float[], INT[], INT[] , float[],  path_to_file text);
-CREATE FUNCTION rc_to_graphML ( node int[], node_z float[], node1 INT[], node2 INT[] , tcost float[] ,  path_to_file text )  
+DROP FUNCTION IF EXISTS rc_to_graphML (  int[], float[], float[],float[],INT[], INT[] , float[],  path_to_file text);
+CREATE FUNCTION rc_to_graphML ( node int[], node_x float[], node_y float[],node_z float[], node1 INT[], node2 INT[] , tcost float[] ,  path_to_file text )  
 RETURNS boolean
 AS $$
 """
@@ -19,6 +19,8 @@ import networkx as nx;
 
 # converting the 1D array to numpy array
 nodes= np.array(node)
+nodes_X = np.array(node_x)
+nodes_Y = np.array(node_y)
 nodes_Z = np.array(node_z)
 n1 = np.array(node1) 
 n2 = np.array(node2) 
@@ -29,7 +31,7 @@ G=nx.Graph()
 
 # creating the nodes
 for n,node_ in enumerate(nodes):
-	G.add_node(node_, Z=float(nodes_Z[n]))
+	G.add_node(node_, X=float(nodes_X[n]) ,Y=float(nodes_Y[n]) ,  Z=float(nodes_Z[n]))
 
 #creating the edges
 #G.add_weighted_edges_from(edge)
