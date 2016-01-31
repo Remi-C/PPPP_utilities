@@ -22,7 +22,7 @@ def reordering_patch_following_midoc_test( ):
 def reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level):
     """ main function : reorder patch following midoc ordering"""
     import pg_pointcloud_classes as pgp
-    import midoc_ordering as mid
+    import midoc_ordering as midoc
      
     
     ################# only for test
@@ -50,7 +50,7 @@ def reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level):
     num_points = npoints
     
     #compute midoc ordering 
-    result = mid.order_by_octree(pt_xyz, tot_level, stop_level)
+    result = midoc.order_by_octree(pt_xyz, tot_level, stop_level)
     result_completed = mid.complete_and_shuffle_result(result, num_points)
     pt_per_class = midoc.count_points_per_class(result, stop_level)
     #transfer ordering to full points 
@@ -58,7 +58,7 @@ def reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level):
     #create new patch
     
     wkb_ordered_patch = pgp.numpy_double_to_WKB_patch(reordered_arr, mschema)
-    return wkb_ordered_patch
+    return wkb_ordered_patch, pt_per_class
     
 
 def artificial_schema():
