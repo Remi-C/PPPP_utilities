@@ -277,7 +277,7 @@ def create_GD_if_not_exists():
     if 'GD' not in globals():
     #we are not executing in postgres, we need to emulate postgres global dict 
         global GD        
-        GD = {}
+        GD = dict()
     return GD  
 
 
@@ -423,17 +423,17 @@ def test_schema(schemas, connection_string):
         "03000000B30200007D0200001C00000007001B020000DC030000E" +\
         "F0000000200EB020000E3010000A40200000300"
     np_points,(mschema,endianness, compression, npoints) = patch_string_buff_to_numpy(patch_text, schemas, connection_string)
-    print np_points
+    print(np_points)
         
     schema  = get_schema(1,schemas,connection_string)
     name_index_dict = schema.getNamesIndexesDictionnary()
-    print name_index_dict['X']
+    print(name_index_dict['X'])
     #print np_points
     numpy_double, schema = patch_numpy_to_numpy_double(np_points, schema)
     numpy_spec = numpy_double_to_numpy_spec(numpy_double, schema)
     patch = numpy_spec_to_patch(numpy_spec, schema)
     import difflib
-    print "\n".join(difflib.ndiff([patch_text.upper()], [patch.upper()]))
+    print ("\n".join(difflib.ndiff([patch_text.upper()], [patch.upper()])) )
     
     #print schema
     try:
