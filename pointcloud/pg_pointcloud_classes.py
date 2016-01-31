@@ -197,21 +197,20 @@ def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True)
     """ @FIXME : using a double loop is very lame, could be done with pure numpy"""
     import numpy as np
     #create result
-    points_double = np.zeros((numpy_spec_dtype.shape[0], mschema.ndims), dtype=np.float64)
-    
+    points_double = np.zeros((numpy_spec_dtype.shape[0], len(numpy_spec_dtype.dtype)), dtype=np.float64) 
     if use_scale_offset == True: 
         #getting offset and scales
         scales, offsets = mschema.construct_scales_offset()
         #print scales, offsets
         #filling it
         for i in range(0, numpy_spec_dtype.shape[0]):
-            for j in range(0, mschema.ndims):
+            for j in range(0, len(numpy_spec_dtype.dtype)):
                 points_double[i][j] = numpy_spec_dtype[i][j] * scales[j] + offsets[j]
 
            
     if use_scale_offset == False: 
         for i in range(0, numpy_spec_dtype.shape[0]):
-            for j in range(0, mschema.ndims):
+            for j in range(0, len(numpy_spec_dtype.dtype)):
                 points_double[i][j] = numpy_spec_dtype[i][j]
     
     return points_double, mschema
