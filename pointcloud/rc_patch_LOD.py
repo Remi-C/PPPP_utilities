@@ -16,10 +16,10 @@ def reordering_patch_following_midoc_test( ):
     uncompressed_patch = "010100000000000000" +\
         "03000000B30200007D0200001C00000007001B020000DC030000E" +\
         "F0000000200EB020000E3010000A40200000300" 
-    re = reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level)
+    re = reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level, connection_string)
     print re
     
-def reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level):
+def reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level, connection_string):
     """ main function : reorder patch following midoc ordering"""
     import pg_pointcloud_classes as pgp
     import midoc_ordering as midoc
@@ -41,17 +41,25 @@ def reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level):
     
     
     pt_arr, (mschema,endianness, compression, npoints) = \
-        pgp.patch_string_buff_to_numpy(uncompressed_patch, GD['rc']['schemas'], [])
+        pgp.patch_string_buff_to_numpy(uncompressed_patch, GD['rc']['schemas'], connection_string)
+         
     #pt_arr, (mschema,endianness, compression, npoints) = pgp.patch_string_buff_to_numpy(uncompressed_patch, temp_schema, [])
-    numpy_double, mschema = pgp.patch_numpy_to_numpy_double(pt_arr[ ["X","Y","Z"]], mschema)
-     
+    numpy_double, mschema = pgp.patch_numpy_to_numpy_double(pt_arr[ ["x","y","z"]], mschema)
+    
+    ######################
+    # WARNING DEBUG
+    # to be removed
+    # numpy_double [:,0] = numpy_double [:,0] #+ 649000
+    #numpy_double [:,1] = numpy_double [:,1] + 6840000
+    ######################
+      
     #keep only the relevant dimensions   
     pt_xyz = numpy_double
     num_points = npoints
     
     #compute midoc ordering 
     result = midoc.order_by_octree(pt_xyz, tot_level, stop_level)
-    result_completed = mid.complete_and_shuffle_result(result, num_points)
+    result_completed = midoc.complete_and_shuffle_result(result, num_points)
     pt_per_class = midoc.count_points_per_class(result, stop_level)
     #transfer ordering to full points 
     reordered_arr = pt_arr[result_completed[:,0].astype('int32')] 
@@ -115,5 +123,51 @@ def artificial_schema():
     schema = pgp.pcschema()
     schema.parsexml(xml_schema)
     return schema
+     
+
+def connect_to_base():
+    import psycopg2
+    conn = psycopg2.connect(  
+        database='test_pointcloud'
+        ,user='postgres'
+        ,password='postgres'
+        ,host='172.16.3.50'
+        ,port='5432' ) ; 
+    cur = conn.cursor()
+    return conn, cur ; 
+
+def execute_querry(q,arg_list,conn,cur): 
+    import psycopg2
+    #print q % arg_list ;  
+    cur.execute( q ,arg_list)
+    conn.commit() 
     
-#reordering_patch_following_midoc_test( )
+def test_ordering_with_real_data():
+    """ read a patch on the server and order it""" 
+    import psycopg2
+    import numpy as np
+    conn, cur  =connect_to_base()  
+    
+    gid = 906855
+    tot_level = 7
+    stop_level = 7
+    
+    #print("connectin string : ", conn.dsn)
+    connection_string = "dbname=test_pointcloud user=postgres password=postgres host=172.16.3.50 port=5432"
+    q =  """
+        SELECT pc_uncompress(patch)
+        FROM acquisition_tmob_012013.riegl_pcpatch_space_proxy 
+        ORDER BY gid ASC        
+        OFFSET 100        
+        LIMIT 1  
+    """ ;
+    arg_list = [gid] ; 
+    execute_querry(q,arg_list,conn,cur) ;
+    patch =  cur.fetchall() 
+    
+    import rc_patch_LOD as rcp
+    wkb_ordered_patch, pt_per_class = rcp.reordering_patch_following_midoc(patch[0][0], tot_level, stop_level,connection_string)    
+    #print("point per class : ", np.sum( pt_per_class))
+    conn.close()
+    
+#test_ordering_with_real_data()
