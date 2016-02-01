@@ -321,7 +321,7 @@ def get_schema(pcid, schemas, connection_string):
     if executing_in_postgres == True:
         #use DBAPI to get the schema with given pcid
         #print "getting the schema of pcid : %s from within database (DBAPI)\n" % pcid
-        plpy.notice("getting the schema of pcid : "+str(pcid)+" from within database (DBAPI)\n")
+        #plpy.notice("getting the schema of pcid : "+str(pcid)+" from within database (DBAPI)\n")
         query = """SELECT pf.srid, pf.schema, srs.srtext
             FROM pointcloud_formats as pf 
                 LEFT OUTER JOIN public.spatial_ref_sys AS srs ON (srs.srid = pf.srid)
