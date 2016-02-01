@@ -86,7 +86,7 @@ def compute_dim_descriptor_from_patch(uncompressed_patch):
     pt_arr, (mschema,endianness, compression, npoints) = \
         pgp.patch_string_buff_to_numpy(uncompressed_patch, GD['rc']['schemas'], [])
     #pt_arr, (mschema,endianness, compression, npoints) = pgp.patch_string_buff_to_numpy(uncompressed_patch, temp_schema, [])
-    numpy_double, mschema = pgp.patch_numpy_to_numpy_double(pt_arr[ ["X","Y","Z"]], mschema)
+    numpy_double, mschema = pgp.patch_numpy_to_numpy_double(pt_arr[ ["x","y","z"]], mschema)
     
     #computing descriptors 
     descriptors = compute_descriptors_from_points(numpy_double)
@@ -188,8 +188,7 @@ def fit_data_to_theoretical_function(points_per_level,max_level_consolidated ):
     x = np.arange(1,max_level_consolidated) 
     if x.size == 0:
         return None,None
-    theoretical_dim, cov = curve_fit(theoretical_function,  x , values ,
-                                p0=None, sigma=None, absolute_sigma=False)
+    theoretical_dim, cov = curve_fit(theoretical_function,  x , values )
     if theoretical_dim is not None: 
         theoretical_dim = theoretical_dim[0]
         cov = cov[0][0]
