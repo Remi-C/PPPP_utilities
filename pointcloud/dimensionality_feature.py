@@ -90,7 +90,7 @@ def compute_dim_descriptor_from_patch(uncompressed_patch):
     
     #computing descriptors 
     descriptors = compute_descriptors_from_points(numpy_double)
-    return descriptors 
+    return descriptors
     
 
 
@@ -211,4 +211,4 @@ def compute_rough_descriptor_test():
 
 
     
-compute_rough_descriptor_test()
+#compute_rough_descriptor_test()
