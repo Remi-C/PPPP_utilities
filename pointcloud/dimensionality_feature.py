@@ -87,7 +87,10 @@ def compute_dim_descriptor_from_patch(uncompressed_patch, connection_string):
         pgp.patch_string_buff_to_numpy(uncompressed_patch, GD['rc']['schemas'], connection_string)
     #pt_arr, (mschema,endianness, compression, npoints) = pgp.patch_string_buff_to_numpy(uncompressed_patch, temp_schema, [])
     numpy_double, mschema = pgp.patch_numpy_to_numpy_double(pt_arr[ ["x","y","z"]], mschema)
-    
+    ###########
+    #warning: to be removed ! @TODO 
+    numpy_double[:,1] = numpy_double[:,1]  + 6840000
+    ###########
     #computing descriptors 
     descriptors = compute_descriptors_from_points(numpy_double)
     return descriptors
