@@ -71,7 +71,7 @@ def compute_descriptors_from_points(points):
     
     
     
-def compute_dim_descriptor_from_patch(uncompressed_patch):
+def compute_dim_descriptor_from_patch(uncompressed_patch, connection_string):
     """ given a patch, extract points and compute dim descriptors"""
     import pg_pointcloud_classes as pgp
   
@@ -84,7 +84,7 @@ def compute_dim_descriptor_from_patch(uncompressed_patch):
     	GD['rc']['schemas'] = dict() 
     
     pt_arr, (mschema,endianness, compression, npoints) = \
-        pgp.patch_string_buff_to_numpy(uncompressed_patch, GD['rc']['schemas'], [])
+        pgp.patch_string_buff_to_numpy(uncompressed_patch, GD['rc']['schemas'], connection_string)
     #pt_arr, (mschema,endianness, compression, npoints) = pgp.patch_string_buff_to_numpy(uncompressed_patch, temp_schema, [])
     numpy_double, mschema = pgp.patch_numpy_to_numpy_double(pt_arr[ ["x","y","z"]], mschema)
     
