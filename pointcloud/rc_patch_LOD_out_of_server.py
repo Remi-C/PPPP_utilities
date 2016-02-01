@@ -44,8 +44,8 @@ def simple_order(gid, tot_level,stop_level,data_dim,conn,cur):
     execute_querry(q,arg_list,conn,cur)
     #print gid
     gid , patch =  cur.fetchall()[0]
-    #opatch,ppl = order_patch_by_octree(conn,cur, patch, tot_level,stop_level,data_dim)
-    #ppl = ppl.astype('int32').tolist()
+    opatch,ppl = order_patch_by_octree(conn,cur, patch, tot_level,stop_level,data_dim)
+    ppl = ppl.astype('int32').tolist()
     
     opatch = patch
     ppl = np.array([0,0,0,0,0]).astype('int32').tolist()  
