@@ -129,7 +129,8 @@ def compute_rough_descriptor(points_per_level,num_points):
     #print("max level consolidated : ",max_level_consolidated)
     
     #find the function best fitting the data from level 1 up to the max level
-    theoretical_dim, cov = fit_data_to_theoretical_function(points_per_level,max_level_consolidated ) 
+    #theoretical_dim, cov = fit_data_to_theoretical_function(points_per_level,max_level_consolidated ) 
+    theoretical_dim = 0
     #print('theoretical_dim with least square fitting',theoretical_dim,' cov',cov)
         
     #measure the distance to ideal values
