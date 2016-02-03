@@ -17,7 +17,7 @@ import numpy as np
  
 def compute_3D_cov_matrix_test():
     from numpy import random
-    num_points =  1000
+    num_points =  15
     #defining fake points
     points = random.random((num_points,3)) 
     points[:,2]= 3
@@ -27,12 +27,14 @@ def compute_3D_cov_matrix_test():
     print( descriptors )
 
 def filter_points(points, filter_point=False):
+    n_p = points.shape[0]
     if filter_point==True:
         max_dist =  np.max(np.abs(points),axis=0) 
-        second_max = np.sort(max_dist)[1] 
+        second_max = max(np.sort(max_dist)[1] , np.sort(max_dist)[2]/2.0) 
         #all points with one value bigger than the max value of the second largest dim
         #wont be used
         points = points[np.all(np.less_equal(points,second_max),axis=1)]
+    #print('removed ',1- points.shape[0]/(1.0*n_p), '% of the poiints')
     return points
     
     
@@ -48,7 +50,7 @@ def compute_3D_cov_matrix(points):
     points -= Centroid
     
     #pottentially remove points that are too far away, not a good idea
-    points = filter_points(points, filter_point=False)
+    points = filter_points(points, filter_point=True)
     #filling the empty matrix
     for pt in points:
         # note : inverted X.T x X because of numpy. newaxis necessary to make it understand that it is 2D array
@@ -167,11 +169,10 @@ def reject_outliers(data, m = 2.):
     mdev = np.median(d) 
     return data[d<=m*mdev] 
     
-def ppl_to_multiscale_dim(points_per_level,max_level_consolidated):
+def ppl_to_multiscale_dim(points_per_level ):
     """This function takes ppl arrya, max_leve, and return p_dim for 1D,2D,3D"""
     #computing the perfect distribution matrix for each dim, log2
-    
-    s_ppl = points_per_level[0:max_level_consolidated] 
+    s_ppl = points_per_level
     points_per_level = s_ppl 
     #print('sppl')
     #print(s_ppl)
@@ -186,7 +187,7 @@ def ppl_to_multiscale_dim(points_per_level,max_level_consolidated):
     ppl[ppl<0] = 0
     dif_ppl[dif_ppl<0] = 0
     ppl[ppl>3] = 3
-    dif_ppl[dif_ppl>3] = 3
+    dif_ppl[dif_ppl>3] = 3 
     return  ppl ,  dif_ppl 
     
     
@@ -198,21 +199,21 @@ def compute_rough_descriptor(points_per_level,num_points):
       
     #with the number of points, what is the max level attainable 
     max_level_consolidated = find_max_usable_level(points_per_level,num_points)
+    points_per_level = points_per_level[0:max_level_consolidated+1]
     #print("max level consolidated : ",max_level_consolidated)
-    
-    #find the function best fitting the data from level 1 up to the max level
-    theoretical_dim, cov = fit_data_to_theoretical_function(points_per_level,max_level_consolidated ) 
-    
+      
     #find the distance to each ideal distribution
-    multiscale_dim, multiscale_dim_var = ppl_to_multiscale_dim(points_per_level,max_level_consolidated)
+    multiscale_dim, multiscale_dim_var = ppl_to_multiscale_dim(points_per_level ) 
+    all_mscale = np.hstack((multiscale_dim, multiscale_dim_var)) 
     
-    
-    multiscale_fused = reject_outliers(np.hstack((multiscale_dim, multiscale_dim_var)), m = 1.)
+    #find the function best fitting the data from level 1 up to the max level 
+    multiscale_fused = reject_outliers(all_mscale, m = 1.)
     multiscale_fused = np.average(multiscale_fused) 
-    #print('max_dim')
-    #print(max_dim)
     
-    return multiscale_dim, multiscale_dim_var, multiscale_fused, theoretical_dim
+    
+    theoretical_dim, cov = fit_data_to_theoretical_function(all_mscale) 
+    
+    return multiscale_dim, multiscale_dim_var, multiscale_fused, theoretical_dim, cov
     
 def find_max_usable_level(points_per_level,num_points):
     """given a number of points per level, the total number of points in the
@@ -224,33 +225,30 @@ def find_max_usable_level(points_per_level,num_points):
     #find the theoretical max level based on number of points 
     #this can t be used as upper limit though
     from math import log, floor
-    max_theoretical_level = floor(log(num_points,2))  
+    max_theoretical_level = floor(log(num_points,2)) 
 
     #find if any level has less points than the next, if it is the case
     # discard it
     max_less = points_per_level.shape[0]
     for i in np.arange(1,points_per_level.shape[0]):
-        if points_per_level[i]< 1.5* points_per_level[i-1]:
-            max_less = i 
+        if points_per_level[i]<  points_per_level[i-1]-1:
+            max_less = i-1 
      
     #the max level will be min(max(max_theroretical_level,max_less),points_per_level.shape[0]) 
-    max_level_consolidated = min(max(max_theoretical_level,max_less),points_per_level.shape[0])
-    return max_level_consolidated   
+    max_level_consolidated = min(min(max_theoretical_level,max_less),points_per_level.shape[0]) 
+    return int(max_level_consolidated) 
 
-def fit_data_to_theoretical_function(points_per_level,max_level_consolidated ):
-    """ the theoreticalfunction is exp(i * ln(2**k)), where is the level
-    the data is points_per_level"""
+def fit_data_to_theoretical_function(all_mscale):
+    """ given a set of potential dim, look for the more probable using ransac"""
     #from scipy.optimize import curve_fit
-    values = points_per_level[1:max_level_consolidated] 
-    x = np.arange(1,max_level_consolidated) 
-    if x.size == 0:
+    values = all_mscale
+    x = np.arange(1,all_mscale.size+1) 
+    if x.size == 0: 
         return None,None
     theoretical_dim, cov  = fit_with_ransac(values,x)
     #theoretical_dim, cov = curve_fit(theoretical_function,  x , values )
     if theoretical_dim is not None: 
         theoretical_dim = theoretical_dim[0]
-        if cov is not None:
-            cov = cov[0][0]
     theoretical_dim = 0 if theoretical_dim <0 else theoretical_dim
     theoretical_dim = 3 if theoretical_dim >3 else theoretical_dim
     return theoretical_dim, cov 
@@ -265,35 +263,33 @@ def compute_rough_descriptor_test():
     #points_per_level= np.array((1,4,15,60,230))
     points_per_level= np.array((1,7,61,400,2500))
     points_per_level = np.array([ 1,2 ,4 ,8,16,63,83,23])
+    points_per_level = np.array([ 1 , 4 ,16 ,53, 35,  0])
+    points_per_level = np.array([ 1,  4 , 5 , 8 ,16 ,35])
     #points_per_level= np.array((1,6,20,250,1000))
-    #num_points = np.sum(points_per_level)
-    num_points = 100 
-    multiscale_dim, multiscale_dim_var, multiscale_dim_fuse, theoretical_dim = compute_rough_descriptor(points_per_level,num_points)
+    num_points = np.sum(points_per_level)
+    #num_points = 100 
+    multiscale_dim, multiscale_dim_var, multiscale_dim_fuse, theoretical_dim, cov = compute_rough_descriptor(points_per_level,num_points)
     #print(rough_dim_vector, theoretical_dim)
 
 #compute_rough_descriptor_test()
 
-def fit_with_ransac(points_per_level,x):
-    """ given an input point_per_level, linear_regression with ransac on ln(ppl)/ln(2)"""
-    import numpy as np 
-    #working on that
-    log_ppl = np.log2(points_per_level)[np.newaxis] 
-    X = np.arange(0, log_ppl.size)[np.newaxis]
+def fit_with_ransac(values,X):
+    """ given an input set of points, linear_regression with ransac """
+    import numpy as np  
         
     #now ransac stuff 
-    from sklearn import linear_model 
-    model = linear_model.LinearRegression()
-     
-    model.fit(X.T, log_ppl.T) 
+    from sklearn import linear_model  
     # Robustly fit linear model with RANSAC algorithm
     model_ransac = linear_model.RANSACRegressor(linear_model.LinearRegression(),
                                                 min_samples=2 ,max_trials=3000,
                                                 residual_threshold=0.6)
-    model_ransac.fit(X.T, log_ppl.T) 
-     
+ 
+    model_ransac.fit(X[np.newaxis].T, values[np.newaxis].T) 
+ 
+    
     # Compare estimated coefficients 
     #print( model.coef_, model_ransac.estimator_.coef_)
-    return model_ransac.estimator_.coef_[0] , None
+    return  model_ransac.predict(values.shape[0]/2.0)[0], np.abs(1-np.abs(model_ransac.estimator_.coef_[0][0]))
    
    
 def fit_with_ransac_test():
