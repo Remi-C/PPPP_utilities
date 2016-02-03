@@ -26,6 +26,16 @@ def compute_3D_cov_matrix_test():
     descriptors = cov_matrix_to_dim_descriptors(C)
     print( descriptors )
 
+def filter_points(points, filter_point=False):
+    if filter_point==True:
+        max_dist =  np.max(np.abs(points),axis=0) 
+        second_max = np.sort(max_dist)[1] 
+        #all points with one value bigger than the max value of the second largest dim
+        #wont be used
+        points = points[np.all(np.less_equal(points,second_max),axis=1)]
+    return points
+    
+    
 def compute_3D_cov_matrix(points):
     """this function takes a numpy array of 3D points and compute the cov matrix"""
     import numpy as np
@@ -35,16 +45,19 @@ def compute_3D_cov_matrix(points):
     
     #averaging the points to find centroid
     Centroid = np.average(points, axis=0)
-    #print(Centroid) 
+    points -= Centroid
+    
+    #pottentially remove points that are too far away, not a good idea
+    points = filter_points(points, filter_point=False)
     #filling the empty matrix
     for pt in points:
         # note : inverted X.T x X because of numpy. newaxis necessary to make it understand that it is 2D array
-        C += (np.dot((pt-Centroid)[np.newaxis].T ,(Centroid-pt)[np.newaxis])) /(points.shape[0])
+        C += (np.dot((pt)[np.newaxis].T ,(-pt)[np.newaxis])) /(points.shape[0])
         #print(C)
     #C = C / (points.shape[0])
     #print(C)
     return C
-    
+#compute_3D_cov_matrix_test() 
 def cov_matrix_to_dim_descriptors(cov_matrix):
     """ withcov matrix, compute dim descriptor"""
     
@@ -117,13 +130,15 @@ def compute_dim_descriptor_from_patch(uncompressed_patch, connection_string):
     if 'schemas' not in GD['rc']:  # creating the schemas dict if necessary
     	GD['rc']['schemas'] = dict() 
     
+    restrict_dim = ["x","y","z"]
     pt_arr, (mschema,endianness, compression, npoints) = \
         pgp.patch_string_buff_to_numpy(uncompressed_patch, GD['rc']['schemas'], connection_string)
     #pt_arr, (mschema,endianness, compression, npoints) = pgp.patch_string_buff_to_numpy(uncompressed_patch, temp_schema, [])
     numpy_double, mschema = pgp.patch_numpy_to_numpy_double( \
-        pt_arr[ ["x","y","z"]], mschema,use_scale_offset=False)
+        pt_arr[ restrict_dim], mschema,use_scale_offset=True,dim_to_use=restrict_dim) 
     ###########
     #warning: to be removed ! @TODO 
+    #numpy_double[:,0] = numpy_double[:,0]  + 649000
     #numpy_double[:,1] = numpy_double[:,1]  + 6840000
     ########### 
     #computing descriptors 
@@ -157,6 +172,7 @@ def ppl_to_multiscale_dim(points_per_level,max_level_consolidated):
     #computing the perfect distribution matrix for each dim, log2
     
     s_ppl = points_per_level[0:max_level_consolidated] 
+    points_per_level = s_ppl 
     #print('sppl')
     #print(s_ppl)
     dif_ppl = np.zeros(points_per_level.size-1)
@@ -167,10 +183,10 @@ def ppl_to_multiscale_dim(points_per_level,max_level_consolidated):
     for i in np.arange(1,points_per_level.size):
         ppl[i-1] = np.log2(s_ppl[i].astype('float32'))/(i)
     
-    #print('dif_ppl')
-    #print(dif_ppl)
-    #print('ppl')
-    #print( ppl )
+    ppl[ppl<0] = 0
+    dif_ppl[dif_ppl<0] = 0
+    ppl[ppl>3] = 3
+    dif_ppl[dif_ppl>3] = 3
     return  ppl ,  dif_ppl 
     
     
@@ -190,11 +206,13 @@ def compute_rough_descriptor(points_per_level,num_points):
     #find the distance to each ideal distribution
     multiscale_dim, multiscale_dim_var = ppl_to_multiscale_dim(points_per_level,max_level_consolidated)
     
-    max_dim = np.max(np.vstack((multiscale_dim, multiscale_dim_var)),axis=0)
+    
+    multiscale_fused = reject_outliers(np.hstack((multiscale_dim, multiscale_dim_var)), m = 1.)
+    multiscale_fused = np.average(multiscale_fused) 
     #print('max_dim')
     #print(max_dim)
     
-    return multiscale_dim, multiscale_dim_var, max_dim, theoretical_dim
+    return multiscale_dim, multiscale_dim_var, multiscale_fused, theoretical_dim
     
 def find_max_usable_level(points_per_level,num_points):
     """given a number of points per level, the total number of points in the
@@ -246,10 +264,11 @@ def compute_rough_descriptor_test():
     #points_per_level= np.array((1,2,4,7,15))
     #points_per_level= np.array((1,4,15,60,230))
     points_per_level= np.array((1,7,61,400,2500))
+    points_per_level = np.array([ 1,2 ,4 ,8,16,63,83,23])
     #points_per_level= np.array((1,6,20,250,1000))
     #num_points = np.sum(points_per_level)
     num_points = 100 
-    multiscale_dim, multiscale_dim_var, theoretical_dim = compute_rough_descriptor(points_per_level,num_points)
+    multiscale_dim, multiscale_dim_var, multiscale_dim_fuse, theoretical_dim = compute_rough_descriptor(points_per_level,num_points)
     #print(rough_dim_vector, theoretical_dim)
 
 #compute_rough_descriptor_test()
@@ -268,8 +287,8 @@ def fit_with_ransac(points_per_level,x):
     model.fit(X.T, log_ppl.T) 
     # Robustly fit linear model with RANSAC algorithm
     model_ransac = linear_model.RANSACRegressor(linear_model.LinearRegression(),
-                                                min_samples=2 ,max_trials=1000,
-                                                residual_threshold=0.5)
+                                                min_samples=2 ,max_trials=3000,
+                                                residual_threshold=0.6)
     model_ransac.fit(X.T, log_ppl.T) 
      
     # Compare estimated coefficients 
