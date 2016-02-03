@@ -90,8 +90,7 @@ def process_one_gid(one_gid, conn, cur, connection_string):
     
     q = """ SELECT pc_uncompress(patch) AS patch, points_per_level, num_points
         FROM acquisition_tmob_012013.riegl_pcpatch_space_proxy
-        WHERE gid = %s  
-        AND num_points > 100"""
+        WHERE gid = %s   """
     arg_list = [one_gid.tolist()]
     execute_querry(q,arg_list,conn,cur)
     result =  cur.fetchall()[0]
@@ -103,7 +102,6 @@ def process_one_gid(one_gid, conn, cur, connection_string):
     desc = dim.compute_dim_descriptor_from_patch(u_patch, connection_string) 
     cov_i = dim.proba_to_dim_power(desc)
     cov_i = np.round(cov_i,3)
-    #print(desc)
     desc = np.round( desc, 3)
     
     multiscale_dim, multiscale_dim_var, multiscale_fused, theoretical_dim = dim.compute_rough_descriptor(points_per_level,num_points)
@@ -122,11 +120,13 @@ def process_one_gid(one_gid, conn, cur, connection_string):
         WHERE gid = %s; """
     arg_list = [desc.tolist(), cov_i ,theoretical_dim ,multiscale_dim.tolist(),
                 multiscale_dim_var.tolist(),multiscale_fused ,one_gid]
-    printing_arglist(points_per_level, arg_list)
+    #printing_arglist(points_per_level, arg_list)
     execute_querry(q,arg_list,conn,cur) 
     return True
 
 def printing_arglist(points_per_level, arg_list):
+    print('gid of the patch')
+    print(arg_list[6])
     print('cov_descriptor')
     print(arg_list[0])
     print('dim from cov descriptor')
