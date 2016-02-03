@@ -192,8 +192,9 @@ def patch_string_buff_to_numpy(string_buf, schemas, connection_string):
     return np.frombuffer(binary_string, dtype=mschema.numpy_dtype, offset=1 + 4 + 4 + 4) ,  (mschema,endianness, compression, npoints) 
 
 
-def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True):
-    """convert an input numpy point array with custom dtype to numpy with double[] dtype"""
+def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True, dim_to_use=None):
+    """convert an input numpy point array with custom dtype to numpy with double[] dtype
+    dim_to_use is a list of dim name that will only be considered for scale and offset"""
     """ @FIXME : using a double loop is very lame, could be done with pure numpy"""
     import numpy as np
     #create result
@@ -202,11 +203,21 @@ def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True)
         #getting offset and scales
         scales, offsets = mschema.construct_scales_offset()
         #print scales, offsets
-        #filling it
-        for i in range(0, numpy_spec_dtype.shape[0]):
-            for j in range(0, len(numpy_spec_dtype.dtype)):
-                points_double[i][j] = numpy_spec_dtype[i][j] * scales[j] + offsets[j]
-
+        #filling it  
+        if dim_to_use is not None:
+            #the dimension are not in the correct position because some may be missing,
+            #looking to translate actual osition vs original position
+            d_s = np.zeros(len(numpy_spec_dtype.dtype), np.float64) 
+            for i in np.arange(0,len(numpy_spec_dtype.dtype)):
+                d_s[i] = mschema.getNameIndex(dim_to_use[i])[0]
+            for i in range(0, numpy_spec_dtype.shape[0]):
+                for j in range(0, len(numpy_spec_dtype.dtype)):
+                    points_double[i][j] = numpy_spec_dtype[i][j] * scales[d_s[j]] + offsets[d_s[j]]
+        else:
+            for i in range(0, numpy_spec_dtype.shape[0]):
+                for j in range(0, len(numpy_spec_dtype.dtype)):
+                    points_double[i][j] = numpy_spec_dtype[i][j] * scales[j] + offsets[j]
+        
            
     if use_scale_offset == False: 
         for i in range(0, numpy_spec_dtype.shape[0]):
