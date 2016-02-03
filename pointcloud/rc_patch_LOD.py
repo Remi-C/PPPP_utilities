@@ -39,13 +39,13 @@ def reordering_patch_following_midoc(uncompressed_patch, tot_level, stop_level, 
     	GD['rc']['schemas'] = dict()
  
     
-    
+    restrict_dim = ["x","y","z"]
     pt_arr, (mschema,endianness, compression, npoints) = \
         pgp.patch_string_buff_to_numpy(uncompressed_patch, GD['rc']['schemas'], connection_string)
-         
+        
     #pt_arr, (mschema,endianness, compression, npoints) = pgp.patch_string_buff_to_numpy(uncompressed_patch, temp_schema, [])
-    numpy_double, mschema = pgp.patch_numpy_to_numpy_double(pt_arr[ ["x","y","z"]], mschema)
-    
+    numpy_double, mschema = pgp.patch_numpy_to_numpy_double(pt_arr[ restrict_dim], mschema,use_scale_offset=True,dim_to_use=restrict_dim)
+     
     ######################
     # WARNING DEBUG
     # to be removed
