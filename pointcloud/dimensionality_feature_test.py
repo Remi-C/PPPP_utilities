@@ -36,7 +36,7 @@ def get_list_of_job(limit):
     q = """ SELECT gid 
         FROM lod.dim_descr_comparison
         WHERE points_per_level IS NOT NULL
-        AND gid = 913476
+        --AND gid = 906820
         ORDER BY gid ASC 
         LIMIT %s """ 
     execute_querry(q,[limit],conn,cur)
@@ -73,13 +73,19 @@ def process_one_chunk( gid_extract  ):
     
     #create connection
     conn, cur = connect_to_base()
-    #deal with the chunk
+    #deal with the chunk 
     for i in gid_extract:
-        #print('i ',i)
-        result = process_one_gid(i,conn, cur,connection_string)
+        #print('i ',i) 
+        try: 
+            result = process_one_gid(i,conn, cur,connection_string) 
+        except: 
+            err = 'error with gid : '+str(i)
+            raise NameError(err)
     #close connection
     cur.close()
-    conn.close()
+    conn.close() 
+        
+        
 
 
 def process_one_gid(one_gid, conn, cur, connection_string):
@@ -88,23 +94,24 @@ def process_one_gid(one_gid, conn, cur, connection_string):
     import numpy as np
     #get data
     
-    q = """ SELECT pc_uncompress(patch) AS patch, points_per_level, num_points
+    q = """ SELECT pc_uncompress(patch) AS patch, dim.points_per_level_py, num_points
         FROM acquisition_tmob_012013.riegl_pcpatch_space_proxy
+            LEFT OUTER JOIN lod.dim_descr_comparison AS dim USING(gid)
         WHERE gid = %s   """
     arg_list = [one_gid.tolist()]
     execute_querry(q,arg_list,conn,cur)
     result =  cur.fetchall()[0]
     u_patch = result[0]
-    points_per_level = np.asarray(result[1])
+    points_per_level = np.asarray(result[1]) 
     num_points = result[2]
-    #process
     
+    #process 
     desc = dim.compute_dim_descriptor_from_patch(u_patch, connection_string) 
     cov_i = dim.proba_to_dim_power(desc)
-    cov_i = np.round(cov_i,3)
+    cov_i = np.round(cov_i,3) 
     desc = np.round( desc, 3)
     
-    multiscale_dim, multiscale_dim_var, multiscale_fused, theoretical_dim = dim.compute_rough_descriptor(points_per_level,num_points)
+    multiscale_dim, multiscale_dim_var, multiscale_fused, theoretical_dim, th_confidence = dim.compute_rough_descriptor(points_per_level,num_points)
     theoretical_dim = np.round(theoretical_dim,3)
     multiscale_dim = np.round(multiscale_dim,3)
     multiscale_dim_var = np.round(multiscale_dim_var,3)
@@ -114,11 +121,12 @@ def process_one_gid(one_gid, conn, cur, connection_string):
     q = """ UPDATE lod.dim_descr_comparison
             SET ( cov_desc, cov_to_i  
                 , theoretical_i
+                , th_confidence
                 , multiscale_dim
                 , multiscale_dim_var
-                , multiscale_fused ) = (%s,%s,%s,%s,%s,%s )
+                , multiscale_fused ) = (%s,%s,%s,%s,%s,%s,%s )
         WHERE gid = %s; """
-    arg_list = [desc.tolist(), cov_i ,theoretical_dim ,multiscale_dim.tolist(),
+    arg_list = [desc.tolist(), cov_i ,theoretical_dim ,th_confidence,multiscale_dim.tolist(),
                 multiscale_dim_var.tolist(),multiscale_fused ,one_gid]
     #printing_arglist(points_per_level, arg_list)
     execute_querry(q,arg_list,conn,cur) 
@@ -146,8 +154,8 @@ def printing_arglist(points_per_level, arg_list):
     
 def test_mono():
     import numpy as np
-    max_chunk_size = 8
-    overall_max = 8 
+    max_chunk_size = 4
+    overall_max = 100
     
     gid = get_list_of_job(overall_max)
     #print("gid : ",gid)
@@ -185,11 +193,11 @@ def multiprocess():
     print 'duration : %s ' % (time_end-time_start)
     return results
     
-test_mono()
+#test_mono()
 
 
 ##dirty windows trick
-#def main():
-#    multiprocess()
-#if __name__ == "__main__":
-#    main()
+def main():
+    multiprocess()
+if __name__ == "__main__":
+    main()
