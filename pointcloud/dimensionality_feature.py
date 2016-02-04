@@ -50,7 +50,7 @@ def compute_3D_cov_matrix(points):
     points -= Centroid
     
     #pottentially remove points that are too far away, not a good idea
-    points = filter_points(points, filter_point=True)
+    points = filter_points(points, filter_point=False)
     #filling the empty matrix
     for pt in points:
         # note : inverted X.T x X because of numpy. newaxis necessary to make it understand that it is 2D array
