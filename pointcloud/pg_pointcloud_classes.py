@@ -197,30 +197,30 @@ def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True,
     dim_to_use is a list of dim name that will only be considered for scale and offset"""
     """ @FIXME : using a loop is very lame, could do without, but can convert a structured array into the correct float array"""
     import numpy as np
-    #create result
+    #create result 
     if dim_to_use is not None:  
         points_double = np.zeros((numpy_spec_dtype.shape[0], len(dim_to_use)), dtype=np.float64) 
     else :
-    points_double = np.zeros((numpy_spec_dtype.shape[0], len(numpy_spec_dtype.dtype)), dtype=np.float64) 
+        points_double = np.zeros((numpy_spec_dtype.shape[0], len(numpy_spec_dtype.dtype)), dtype=np.float64)
      
-    if use_scale_offset == True: 
+    if use_scale_offset == True:  
         #getting offset and scales
         scales, offsets = mschema.construct_scales_offset()
         #print scales, offsets
         #filling it *
         
-        if dim_to_use is not None:
+        if dim_to_use is not None: 
             #the dimension are not in the correct position because some may be missing,
             #looking to translate actual osition vs original position
              
             d_s = np.zeros(len(dim_to_use), np.int) 
             for i in np.arange(0,len(dim_to_use)):  
-                d_s[i] = mschema.getNameIndex(dim_to_use[i])[0]
+                d_s[i] = mschema.getNameIndex(dim_to_use[i])[0] 
              
             for i,dim  in enumerate(dim_to_use):  
                 points_double[:,i] =  numpy_spec_dtype[dim] * scales[d_s[i]] + offsets[d_s[i]]
 
-        else:
+        else: 
             for i, n in enumerate(numpy_spec_dtype.dtype.names):
                 points_double[:,i] =  numpy_spec_dtype[n] * scales[i] + offsets[i]
              
@@ -232,7 +232,7 @@ def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True,
     if use_scale_offset == False: 
         for i, n in enumerate(numpy_spec_dtype.dtype.names):
             points_double[:,i] =  numpy_spec_dtype[n]
-    
+ 
     return points_double, mschema
 
 
