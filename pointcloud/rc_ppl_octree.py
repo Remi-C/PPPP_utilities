@@ -12,19 +12,20 @@ import numpy as np
 
 
 def test_ppl_octree():
-    npoints = [9,9,9]
-    multi = 100
-    random_strength = 0.1
+    npoints = [8,8,1]
+    multi = 1
+    random_strength = 0.01
     points = []
-    for i in np.arange(1,npoints[0]):
-        for j  in np.arange(1,npoints[1]): 
-            for k  in np.arange(1,npoints[2]): 
-                to_append=  ( np.array([i,j,k])  + (0.5 - np.random.random()) * random_strength ) * multi 
+    for i in np.arange(0,npoints[0]):
+        for j  in np.arange(0,npoints[1]): 
+            for k  in np.arange(0,npoints[2]): 
+                to_append=  np.round( ( np.array([i,j,k])  + (0.5 - np.random.random()) * random_strength ) * multi)
+                #to_append = np.array([i,j,k])
                 points.append(
                    to_append.astype(np.int)
-                    )
-    
+                    )   
     points = np.asarray(points)
+    #plot_points(points)
     #the points should be translated inreference to 0 
     points = points- np.min(points)
     return ppl_octree(points.astype(np.int32) )
@@ -44,11 +45,12 @@ def plot_points(points):
 # count
 # return count 
 
-def affected_cell_number(diff_points):
+def affected_cell_number(point):
     """ from the differnece of 2 morton codes, look for the highest bit and 
     conclude about cell level"""
-    import math 
-    return int(np.floor(math.log(diff_points, 2)))    
+    #import math 
+    return int(point).bit_length()
+    #return int(np.floor(math.log(diff_points, 2)))    
     
     
 def ppl_octree(points):
@@ -80,7 +82,11 @@ def ppl_octree(points):
     level = -( decoded_log-np.max(decoded_log))
     #print decoded_log
     #print level
-    print np.bincount(level)
+    ppl_iso = np.bincount(level)
+    ppl = ppl_iso.copy()
+    for i in np.arange(1,ppl.shape[0]):
+        ppl[i] = ppl[i] + ppl[i-1]
+    print ppl
     return 
     
     
