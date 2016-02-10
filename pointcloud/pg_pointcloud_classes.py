@@ -195,44 +195,53 @@ def patch_string_buff_to_numpy(string_buf, schemas, connection_string):
 def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True, dim_to_use=None):
     """convert an input numpy point array with custom dtype to numpy with double[] dtype
     dim_to_use is a list of dim name that will only be considered for scale and offset"""
-    """ @FIXME : using a double loop is very lame, could be done with pure numpy"""
+    """ @FIXME : using a loop is very lame, could do without, but can convert a structured array into the correct float array"""
     import numpy as np
     #create result
+    if dim_to_use is not None:  
+        points_double = np.zeros((numpy_spec_dtype.shape[0], len(dim_to_use)), dtype=np.float64) 
+    else :
     points_double = np.zeros((numpy_spec_dtype.shape[0], len(numpy_spec_dtype.dtype)), dtype=np.float64) 
+     
     if use_scale_offset == True: 
         #getting offset and scales
         scales, offsets = mschema.construct_scales_offset()
         #print scales, offsets
-        #filling it  
+        #filling it *
+        
         if dim_to_use is not None:
             #the dimension are not in the correct position because some may be missing,
             #looking to translate actual osition vs original position
-            d_s = np.zeros(len(numpy_spec_dtype.dtype), np.float64) 
-            for i in np.arange(0,len(numpy_spec_dtype.dtype)):
+             
+            d_s = np.zeros(len(dim_to_use), np.int) 
+            for i in np.arange(0,len(dim_to_use)):  
                 d_s[i] = mschema.getNameIndex(dim_to_use[i])[0]
-            for i in range(0, numpy_spec_dtype.shape[0]):
-                for j in range(0, len(numpy_spec_dtype.dtype)):
-                    points_double[i][j] = numpy_spec_dtype[i][j] * scales[d_s[j]] + offsets[d_s[j]]
+             
+            for i,dim  in enumerate(dim_to_use):  
+                points_double[:,i] =  numpy_spec_dtype[dim] * scales[d_s[i]] + offsets[d_s[i]]
+
         else:
-            for i in range(0, numpy_spec_dtype.shape[0]):
-                for j in range(0, len(numpy_spec_dtype.dtype)):
-                    points_double[i][j] = numpy_spec_dtype[i][j] * scales[j] + offsets[j]
+            for i, n in enumerate(numpy_spec_dtype.dtype.names):
+                points_double[:,i] =  numpy_spec_dtype[n] * scales[i] + offsets[i]
+             
+#            for i in range(0, points_double.shape[1]):
+#                for j in range(0, len(numpy_spec_dtype.dtype)):
+#                    points_double[i][j] = numpy_spec_dtype[i][j] * scales[j] + offsets[j]
         
            
     if use_scale_offset == False: 
-        for i in range(0, numpy_spec_dtype.shape[0]):
-            for j in range(0, len(numpy_spec_dtype.dtype)):
-                points_double[i][j] = numpy_spec_dtype[i][j]
+        for i, n in enumerate(numpy_spec_dtype.dtype.names):
+            points_double[:,i] =  numpy_spec_dtype[n]
     
     return points_double, mschema
 
 
-def WKB_patch_to_numpy_double(binary_patch_text, schemas, connection_string):
+def WKB_patch_to_numpy_double(binary_patch_text, schemas, connection_string, dim_to_use=None):
     """This function uses as input a binary representation of the patch
     and convert it to a 2D numpy double array
     """
     np_points, (mschema,endianness, compression, npoints) = patch_string_buff_to_numpy(binary_patch_text, schemas, connection_string)
-    return patch_numpy_to_numpy_double(np_points, mschema)
+    return patch_numpy_to_numpy_double(np_points, mschema,dim_to_use=dim_to_use)
 
 
 def numpy_double_to_numpy_spec(numpy_double_array_2D, mschema):
