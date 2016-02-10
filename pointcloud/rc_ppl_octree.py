@@ -133,7 +133,7 @@ def unique_rows(a):
     a = np.ascontiguousarray(a)
     unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1]))
     return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))    
- 
+
 
 def highest_bit_set(point ):
     """given an int, look for the highest bit set""" 
@@ -190,7 +190,7 @@ def pointcloud_to_ppl(untranslated_unscaled_points,tot_level):
         ppl[i] = ppl[i] + ppl[i-1]
     ppl[0] = 1 #level 0  should always be at 1 if the patch is not empty
     #returning result
-    return ppl     
+    return ppl
 
 #test_ppl_octree(10)
 #benchmark_ppl()
