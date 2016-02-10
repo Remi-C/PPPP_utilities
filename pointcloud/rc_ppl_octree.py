@@ -133,7 +133,24 @@ def unique_rows(a):
     a = np.ascontiguousarray(a)
     unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1]))
     return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))    
+ 
 
+def highest_bit_set(point ):
+    """given an int, look for the highest bit set""" 
+    return int(point).bit_length()    
+    
+def order_array_by_morton(points, coordinate_bit_size):
+    import zorder
+    ndim = points.shape[1] 
+    #could be 32 or 64, we shalel chose
+    bits = 64
+    if coordinate_bit_size*3 <= 32:
+        bits = 32 
+    bits = 64 
+    enc = zorder.ZEncoder(ndim, bits)
+    morton = np.apply_along_axis(enc.encode, 1, points)   
+    return np.asarray(np.sort(morton)), enc
+ 
 def pointcloud_to_ppl(untranslated_unscaled_points,tot_level):
     """ given points, center scale quantize points, order pby morton
     get number of points per level"""
@@ -171,107 +188,9 @@ def pointcloud_to_ppl(untranslated_unscaled_points,tot_level):
     ppl[1:] = ppl_iso
     for i in np.arange(2,ppl.shape[0]):
         ppl[i] = ppl[i] + ppl[i-1]
-    ppl[0] = 1 
+    ppl[0] = 1 #level 0  should always be at 1 if the patch is not empty
     #returning result
-    return ppl 
-
-def highest_bit_set(point ):
-    """given an int, look for the highest bit set""" 
-    return int(point).bit_length()    
-    
-def order_array_by_morton(points, coordinate_bit_size):
-    import zorder
-    ndim = points.shape[1] 
-    #could be 32 or 64, we shalel chose
-    bits = 64
-    if coordinate_bit_size*3 <= 32:
-        bits = 32 
-    bits = 64 
-    enc = zorder.ZEncoder(ndim, bits)
-    morton = np.apply_along_axis(enc.encode, 1, points)   
-    return np.asarray(np.sort(morton)), enc
-    
-    
-def ppl_octree(points):
-    import zorder
-    #orde rpoints following z order
-    ndim = 3 
-    enc = zorder.ZEncoder(ndim, bits = 64)
-    morton = np.apply_along_axis(enc.encode, 1, points) 
-    
-    morton = np.sort(morton)
-    
-    #plot_points(points)
-    
-    #print morton
-    #loop on points, for each pair of successive points, compute the affected cell
-    #level  =0)
-    
-    diff = np.bitwise_xor(morton ,np.roll(morton,1,axis=0))
-    
-    #print 'diff', diff
-    
-    decoding = np.vectorize(enc.decode)
-    decoded = decoding( diff)
-    decoded =  np.max(decoded,axis = 0 )
-    
-    finding_c_number = np.vectorize(highest_bit_set)
-    decoded_log = finding_c_number( decoded)
-    level = -( decoded_log-np.max(decoded_log))
-    #print decoded_log
-    #print level
-    ppl_iso = np.bincount(level)
-    ppl = ppl_iso.copy()
-    for i in np.arange(1,ppl.shape[0]):
-        ppl[i] = ppl[i] + ppl[i-1]
-    print ppl
-    return 
-    
-    
-    for i in decoded:
-        print("\t \t",highest_bit_set(i))
-        print np.binary_repr(i, width = 8)
-        
-    print decoded
-    print -(decoded- np.max(decoded))
-    
-    
-    for i in diff:
-        #print np.binary_repr(i,width=32)
-        max_level = np.max(enc.decode(i)) 
-        print("\t \t",highest_bit_set(max_level))
-        print np.binary_repr(max_level, width = 8)
-        
-    
-    
-    level = np.floor( np.log(diff)/np.log(2)/3.0).astype(np.int)
-    print(level-3)    
-    print np.bincount(level)
-    return
-      
-    finding_c_number = np.vectorize(highest_bit_set)
-    lev_offset = finding_c_number( diff)
-    print('lev_offset')
-    print lev_offset
-    lev = lev_offset 
-    
-    max_level = np.max(lev) - np.min(lev_offset) +1 
-    print('max_level')
-    print max_level
-    ppl_octree = np.zeros(max_level-1)
-    ppl_octree[0]=1
-    for i in np.arange(1,max_level-1):
-        print('i', i) 
-        print('i+ np.min(lev_offset)+1')
-        print(i+ np.min(lev_offset)+1)
-        ppl_octree[i] =  np.sum((lev <= i+ np.min(lev_offset)+1 ).astype(np.int))
-        print('size')
-        print np.sum((lev <= i+ np.min(lev_offset)+1 ).astype(np.int))
-    
-    print('ppl_octree')
-    print ppl_octree
-           
-    return ppl_octree
+    return ppl     
 
 #test_ppl_octree(10)
 #benchmark_ppl()
