@@ -206,13 +206,13 @@ def center_scale_quantize(pointcloud,tot_level ):
     max_r = 1 ;
     new_max = np.amax(np.amax(pointcloud_int.T,axis=1)) #look for max range in X then Y then Z, then take the max of it
     if new_max !=0: #protection against pointcloud with only one points or line(2D) or flat(3D)
-        max_r = new_max;
+        max_r = float(new_max);
     
     #dividing so max scale is 0 . Now all the dimension are between [0,1]
     pointcloud_int = pointcloud_int/ max_r ; 
     
     #quantizing 
-    smallest_int_size_possible = max(8*np.ceil(tot_level/8.0),8) #protection against 0 size
+    smallest_int_size_possible = max(8*np.ceil(tot_level/8.0)+1,8) #protection against 0 size
     if smallest_int_size_possible > 8 : 
         if smallest_int_size_possible > 32 :
             smallest_int_size_possible = max(32*np.ceil(tot_level/32.0),32) #protection against 0 size
