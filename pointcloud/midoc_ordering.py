@@ -212,12 +212,12 @@ def center_scale_quantize(pointcloud,tot_level ):
     pointcloud_int = pointcloud_int/ max_r ; 
     
     #quantizing 
-    smallest_int_size_possible = max(8*np.ceil(tot_level/8),8) #protection against 0 size
+    smallest_int_size_possible = max(8*np.ceil(tot_level/8.0),8) #protection against 0 size
     if smallest_int_size_possible > 8 : 
         if smallest_int_size_possible > 32 :
-            smallest_int_size_possible = max(32*np.ceil(tot_level/32),32) #protection against 0 size
+            smallest_int_size_possible = max(32*np.ceil(tot_level/32.0),32) #protection against 0 size
         else :
-            smallest_int_size_possible = max(16*np.ceil(tot_level/16),16) #protection against 0 size
+            smallest_int_size_possible = max(16*np.ceil(tot_level/16.0),16) #protection against 0 size
 
     pointcloud_int =  np.trunc(abs((pointcloud_int* pow(2,tot_level) )))\
          .astype(np.dtype('uint'+str(int(smallest_int_size_possible))));
