@@ -41,5 +41,5 @@ END;
 $BODY$
   LANGUAGE plpgsql IMMUTABLE;
  
-  SELECT f.*
-  FROM  rc_inverse_interleaving(12,11,5) AS f
+  -- SELECT f.*
+  -- FROM  rc_inverse_interleaving(12,11,5) AS f

@@ -1,5 +1,5 @@
 ﻿
-SET search_path to lod, acquisition_tmob_012013, rc_lib, public; 
+-- SET search_path to lod, acquisition_tmob_012013, rc_lib, public; 
 
 
 ------------------------ creating a proxy table for old acquisition
@@ -36,7 +36,7 @@ CREATE INDEX ON riegl_pcpatch_space_proxy USING GIST(geom);
 */
 ------------------------  
   
-
+/*
 DROP FUNCTION IF EXISTS rc_py_Cov_to_proba_dim( uncompressed_patch PCPATCH );
 CREATE OR REPLACE FUNCTION rc_py_Cov_to_proba_dim(uncompressed_patch PCPATCH , OUT cov_desc float[], OUT cov_desc_i float)
   AS  
@@ -70,12 +70,12 @@ $BODY$
 LANGUAGE plpythonu STABLE STRICT; 
 
 
-SELECT gid, points_per_level 
-	, f1.*
-	, f2.*
-FROM riegl_pcpatch_space_proxy , rc_py_Cov_to_proba_dim(pc_uncompress(patch) ) AS f1
-	 , rc_py_ppl_to_proba_dim( points_per_level[1:7]  , num_points ) AS f2
-WHERE gid BETWEEN 906843 AND 906844 ; 
+-- SELECT gid, points_per_level 
+	-- , f1.*
+	-- , f2.*
+-- FROM riegl_pcpatch_space_proxy , rc_py_Cov_to_proba_dim(pc_uncompress(patch) ) AS f1
+	 -- , rc_py_ppl_to_proba_dim( points_per_level[1:7]  , num_points ) AS f2
+-- WHERE gid BETWEEN 906843 AND 906844 ; 
 
 
 DROP TABLE IF EXISTS dim_descr_comparison ; 
@@ -121,12 +121,17 @@ FROM riegl_pcpatch_space,
    UPDATE riegl_pcpatch_space_proxy  SET points_per_level = ARRAY[1, 2, 4, 8, 16, 63, 83, 23]
    WHERE gid = 908193
 
-SELECT --corr(
-	COALESCE( points_per_level[2],NULL), COALESCE(points_per_level_py[2],NULL)
-	--) 
+SELECT  corr( 
+		points_per_level[1]  
+		, points_per_level_py[1] 
+ ) 
 FROM dim_descr_comparison
 
+SELECT points_per_level, points_per_level_py
+FROM dim_descr_comparison
 
+SELECT 
+FROM dim_descr_comparison
 SELECT gid, points_per_level, points_per_level_py, cov_to_i, theoretical_i, multiscale_fused, th_confidence
 FROM dim_descr_comparison
 WHERE points_per_level_py[6]=0
@@ -212,3 +217,6 @@ COPY (
 	WHERE points_per_level is NOT null
 )
 TO '/ExportPointCloud/dim_descriptors_rough.csv' WITH CSV HEADER DELIMITER AS ',' ;
+
+
+*/

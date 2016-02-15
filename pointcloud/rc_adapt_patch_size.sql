@@ -250,10 +250,10 @@ SELECT *
 	*/
 
 -- how much row reduction ? 
-	SELECT 1-cp*1.0/cp2*1.0
-	FROM (SELECT count(*) AS cp
-	FROM copy_bench )AS cp , (SELECT count(*) AS cp2
-	FROM copy_bench_2 ) AS cp2
+	-- select 1-cp*1.0/cp2*1.0
+	-- from (select count(*) as cp
+	-- from copy_bench )as cp , (select count(*) as cp2
+	-- from copy_bench_2 ) as cp2
 -- analysing what functions are most called
 
 	/*

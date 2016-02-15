@@ -1,6 +1,10 @@
-﻿CREATE SCHEMA IF NOT EXISTS lod_low_disc ; 
+﻿----------
+-- Remi C, 2016, 
+-- generating halton sequence, found on internet
+---
+--CREATE SCHEMA IF NOT EXISTS lod_low_disc ; 
 
-SET search_path to lod_low_disc, rc_lib, public; 
+--SET search_path to lod_low_disc, rc_lib, public; 
 
 
 
@@ -31,7 +35,7 @@ return result
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 
 
-SELECT *
-from rc_generate_Halton_seq(2,20) ; 
+-- SELECT *
+-- from rc_generate_Halton_seq(2,20) ; 
 
 

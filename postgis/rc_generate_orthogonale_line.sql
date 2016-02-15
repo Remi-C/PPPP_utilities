@@ -15,11 +15,9 @@ DROP FUNCTION IF EXISTS rc_generate_orthogonal_point(
 	IN iline geometry
 	, IN icurvabs float
 	, IN  width FLOAT
-	,IN  support_line_size FLOAT
-	,OUT opoint geometry
+	,IN  support_line_size FLOAT 
 	 );
-
-
+ 
 CREATE OR REPLACE FUNCTION rc_generate_orthogonal_point(  
 	IN iline geometry
 	, IN icurvabs float
@@ -87,7 +85,11 @@ BEGIN
 	$BODY$
 LANGUAGE plpgsql IMMUTABLE STRICT; 
 
-	  
+DROP FUNCTION IF EXISTS rc_generate_orthogonal_point(  
+	IN iline geometry
+	, IN ipoint  geometry
+	, IN  width FLOAT
+	,IN  support_line_size  ) ;  
 CREATE OR REPLACE FUNCTION rc_generate_orthogonal_point(  
 	IN iline geometry
 	, IN ipoint  geometry

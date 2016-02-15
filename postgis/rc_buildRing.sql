@@ -32,8 +32,8 @@
 	 LANGUAGE plpgsql  IMMUTABLE STRICT;
  
 	--testing
-		SELECT ST_AsText(result) 
-		FROM ST_GeomFromText('LINESTRING(4 6,7 10,12 14,4 6)', 931008) as geom 
-			,  rc_MakeRing(geom )  AS result ; 
+		-- SELECT ST_AsText(result) 
+		-- FROM ST_GeomFromText('LINESTRING(4 6,7 10,12 14,4 6)', 931008) as geom 
+			-- ,  rc_MakeRing(geom )  AS result ; 
 
  

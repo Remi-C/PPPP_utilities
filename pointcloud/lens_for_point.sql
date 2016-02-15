@@ -4,7 +4,7 @@
 ---
 
 -- creating the lens table (aka control)
-
+/*
 DROP TABLE IF EXISTS tmob_20140616.lens_for_points CASCADE; 
 CREATE TABLE tmob_20140616.lens_for_points (
 gid int  primary key CHECK (gid = 1)
@@ -67,17 +67,18 @@ CREATE MATERIALIZED VIEW tmob_20140616.lens_points AS
  
 
 
-
+*/
+/*
 -- creating trigger to automate refresh
-
+ 
 
 	--editing triggers  
 		CREATE OR REPLACE FUNCTION tmob_20140616.rc_refresh_lens_point(  )
 		  RETURNS  TRIGGER  AS
 		$BODY$ 
-			/** @brief this trigger is designed to update the geometry of edges connected to a node.
-            edge last/first point should be approprietly set to be the node 
-            */
+			--- @brief this trigger is designed to update the geometry of edges connected to a node.
+            -- edge last/first point should be approprietly set to be the node 
+           
 			--we consider that by default a change of geom in node means no topological change
 				DECLARE  
 				BEGIN 
@@ -92,3 +93,4 @@ CREATE MATERIALIZED VIEW tmob_20140616.lens_points AS
 		    ON tmob_20140616.lens_for_points
 		 FOR EACH ROW  
 		    EXECUTE PROCEDURE tmob_20140616.rc_refresh_lens_point(); 
+*/
