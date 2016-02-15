@@ -10,9 +10,9 @@
 -- testing the angle function
 
 --create a matrix of random points, so to test the angle between 3 points
-SET search_path TO test, rc_lib, public;
+-- SET search_path TO test, rc_lib, public;
 
-
+/*
 DROP TABLE IF EXISTS test_angle_3_points ;
 CREATE TABLE  test_angle_3_points AS
 	WITH series AS (
@@ -35,3 +35,4 @@ CREATE TABLE  test_angle_3_points AS
 	 , round(CAST(  (az_line-az_point) + ((az_line-az_point)<0)::int*360 AS INT),3) AS cu_angle
 	, round(degrees(rc_lib.rc_angle(  p1,p2,p3)),3) AS rc_angle;
 -----------------------------------
+*/
