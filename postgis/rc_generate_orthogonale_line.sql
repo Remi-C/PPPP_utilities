@@ -128,7 +128,7 @@ BEGIN
 			ipoint_curvabs  := ST_LineLocatePoint(iline , ipoint) ;
 			--RAISE NOTICE 'type of input : %',  ipoint_type%TYPE ; 
 
-			opoint := rc_generate_orthogonal_point(  iline ,ipoint_curvabs  , width  , support_line_size   ) ; 
+			opoint := rc_lib.rc_generate_orthogonal_point(  iline ,ipoint_curvabs  , width  , support_line_size   ) ; 
 			
 			RETURN ;
 		--EXCEPTION WHEN OTHERS THEN
