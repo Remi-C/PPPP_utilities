@@ -89,7 +89,7 @@ DROP FUNCTION IF EXISTS rc_generate_orthogonal_point(
 	IN iline geometry
 	, IN ipoint  geometry
 	, IN  width FLOAT
-	,IN  support_line_size  ) ;  
+	,IN  support_line_size FLOAT ) ;  
 CREATE OR REPLACE FUNCTION rc_generate_orthogonal_point(  
 	IN iline geometry
 	, IN ipoint  geometry
