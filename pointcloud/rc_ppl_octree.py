@@ -157,8 +157,7 @@ def pointcloud_to_ppl(untranslated_unscaled_points,tot_level):
     #points need to be in [0,1]^3 * tot_level^2
     #print untranslated_unscaled_points
     points, coordinate_bit_size = center_scale_quantize(untranslated_unscaled_points,tot_level)
-    #plot_points(points)
-    
+    #plot_points(points) 
     #removing duplicated points (would gives a wrong result and this is faster)
     points = unique_rows(points)
     
@@ -192,5 +191,19 @@ def pointcloud_to_ppl(untranslated_unscaled_points,tot_level):
     #returning result
     return ppl
 
+def simple_ppl_test():
+    points = np.asarray([[ 0.,0.,0.]
+        ,[ 1.,0.,0.]
+        ,[ 2.,0.,0.]
+        ,[ 0.,1.,0.]
+        ,[ 1.,1.,0.]
+        ,[ 2.,1.,0.]
+        ,[ 0.,2.,0.]
+        ,[ 1.,2.,0.]
+        ,[ 2.,2.,0.]])
+    print(points)
+    ppl = pointcloud_to_ppl(points, 8)
+    print ppl
+#simple_ppl_test()
 #test_ppl_octree(10)
 #benchmark_ppl()
