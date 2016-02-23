@@ -4,10 +4,7 @@ Created on Mon Feb 01 10:30:04 2016
 
 @author: RCura
 """
-
-import psycopg2
  
-
 #########################
 #########################
 
