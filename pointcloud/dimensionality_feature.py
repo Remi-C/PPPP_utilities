@@ -191,7 +191,7 @@ def ppl_to_multiscale_dim(points_per_level ):
     return  ppl ,  dif_ppl 
     
     
-def compute_rough_descriptor(points_per_level,num_points):
+def compute_rough_descriptor(points_per_level,num_points,use_ransac=False):
     """ given the number of points per level (from MidOc), and the ttotal number of points
     , compute a dimensionality descriptor
     the idea is to measure the squarred distance to ideal distribution, taking into account 
@@ -210,8 +210,9 @@ def compute_rough_descriptor(points_per_level,num_points):
     multiscale_fused = reject_outliers(all_mscale, m = 1.)
     multiscale_fused = np.average(multiscale_fused) 
     
-    
-    theoretical_dim, cov = fit_data_to_theoretical_function(all_mscale) 
+    theoretical_dim, cov = None, None
+    if use_ransac == True:
+        theoretical_dim, cov = fit_data_to_theoretical_function(all_mscale) 
     
     return multiscale_dim, multiscale_dim_var, multiscale_fused, theoretical_dim, cov
     
@@ -269,7 +270,7 @@ def compute_rough_descriptor_test():
     num_points = np.sum(points_per_level)
     #num_points = 100 
     multiscale_dim, multiscale_dim_var, multiscale_dim_fuse, theoretical_dim, cov = compute_rough_descriptor(points_per_level,num_points)
-    #print(rough_dim_vector, theoretical_dim)
+    print(multiscale_dim, multiscale_dim_var, multiscale_dim_fuse, theoretical_dim, cov)
 
 #compute_rough_descriptor_test()
 
