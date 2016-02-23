@@ -207,8 +207,7 @@ def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True,
         #getting offset and scales
         scales, offsets = mschema.construct_scales_offset()
         #print scales, offsets
-        #filling it *
-        
+        #filling it * 
         if dim_to_use is not None: 
             #the dimension are not in the correct position because some may be missing,
             #looking to translate actual osition vs original position
@@ -230,8 +229,17 @@ def patch_numpy_to_numpy_double(numpy_spec_dtype, mschema,use_scale_offset=True,
         
            
     if use_scale_offset == False: 
-        for i, n in enumerate(numpy_spec_dtype.dtype.names):
-            points_double[:,i] =  numpy_spec_dtype[n]
+        if dim_to_use is not None:
+            d_s = np.zeros(len(dim_to_use), np.int) 
+            for i in np.arange(0,len(dim_to_use)):  
+                d_s[i] = mschema.getNameIndex(dim_to_use[i])[0] 
+             
+            for i,dim  in enumerate(dim_to_use):  
+                points_double[:,i] =  numpy_spec_dtype[dim]
+            
+        else:                
+            for i, n in enumerate(numpy_spec_dtype.dtype.names):
+                points_double[:,i] =  numpy_spec_dtype[n]
  
     return points_double, mschema
 
