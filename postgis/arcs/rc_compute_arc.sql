@@ -11,6 +11,7 @@
 		--3D input / behavior : 
 		--	_result in 3D
 		--	_3D input safely outputing 2D output?
+		-- SET search_path to rc_lib , public;  
 
 		
 		DROP FUNCTION IF EXISTS rc_compute_arc(p1 geometry, p2 geometry, p3 geometry, max_radius double precision, tolerance double precision, allow_full_circle BOOLEAN  );
@@ -95,7 +96,7 @@
 						ELSE 
 							-- NO : return full circle : that is circle passing by p1/p2 and by the symmetric point of p1/p2 by p3
 								--note : 
-							RETURN rc_MakeArc(
+							RETURN rc_lib.rc_MakeArc(
 								p1,
 								ST_Affine(p3, 1,0,0, 0,1,0, 0,0,1, ST_X(p3)-ST_X(p1) ,ST_Y(p3)-ST_Y(p1),0),
 								p2
@@ -120,7 +121,7 @@
 							x_n := ST_X(p1)+ST_X(p2)-2*ST_X(p3);
 							y_n := ST_Y(p1)+ST_Y(p2)-2*ST_Y(p3);
 							abs_n:=sqrt(x_n^2+y_n^2);
-							RETURN  rc_MakeArc(
+							RETURN  rc_lib.rc_MakeArc(
 								p1,
 								ST_Affine(
 									p3,
