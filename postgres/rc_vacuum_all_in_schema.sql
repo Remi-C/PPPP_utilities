@@ -1,6 +1,5 @@
 ﻿/*
-Rémi Cura 
-THALES INTERNAL
+Rémi Cura  Thales
 28/08/2012
 
 This function generate the query to vacuum all in a schema
