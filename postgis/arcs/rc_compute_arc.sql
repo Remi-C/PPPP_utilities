@@ -66,11 +66,11 @@
 					END IF;
 				END IF;
 				--max_radius should be positive, 0 is allowed and means 'always returns a line'
-				IF  max_radius <0 = true  THEN 
+				IF  max_radius <0 IS true  THEN 
 					RAISE NOTICE 'wrong input for arc computation max_radius should be positiv : it is the maximum possible radius of output, iif radius is above line_limt, a line is returned (and not an arc)'; RETURN NULL; 
 				END IF;
 				--tolerance should be positive, O means no tolerance (exact computation)
-				IF  tolerance <0 = true  THEN 
+				IF  tolerance <0 IS true  THEN 
 					RAISE NOTICE 'wrong input for arc computation : tolerance should be positive : this value is used to make test with a given precision . We set it to 0'; 
 					tolerance := 0;
 					--RETURN NULL; 

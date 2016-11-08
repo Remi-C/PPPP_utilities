@@ -157,10 +157,11 @@ plpy.notice( "mean : %f, var : %f, score : %f" % (r.means_[0, 0], r.covars_[0, 0
 return True ;
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 
-
+/*
 	WITH s AS ( 
 		SELECT s
 		FROM generate_series(1,100) AS s 
 	)
 	SELECT rc_py_fit_gaussian(array_agg(s), ARRAY['test'], '/media/sf_USB_storage/PROJETS/snapping/data/data_in_reduced_export_area/test.svg')
-	FROM s 
+	FROM s  ;
+	*/
